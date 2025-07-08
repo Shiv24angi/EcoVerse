@@ -1,0 +1,142 @@
+[
+  {
+    "barcode": "8902579001360",
+    "product": "Frooti 125ml",
+    "co2_emission": 0.18,
+    "packaging": "Tetra Pak",
+    "transportDistance": "200 km"
+  },
+  {
+    "barcode": "8902080101100",
+    "product": "Frooti 250ml",
+    "co2_emission": 0.35,
+    "packaging": "Tetra Pak",
+    "transportDistance": "250 km"
+  },
+  {
+    "barcode": "8901491100337",
+    "product": "Lays Magic Masala (Green)",
+    "co2_emission": 1.3,
+    "packaging": "Plastic pouch",
+    "transportDistance": "400 km"
+  },
+  {
+    "barcode": "8901491505200",
+    "product": "Dairy Milk Silk",
+    "co2_emission": 3.2,
+    "packaging": "Foil and plastic wrap",
+    "transportDistance": "500 km"
+  },
+  {
+    "barcode": "8906002670192",
+    "product": "Bru Instant Coffee",
+    "co2_emission": 1.5,
+    "packaging": "Glass jar",
+    "transportDistance": "300 km"
+  },
+  {
+    "barcode": "8901030700013",
+    "product": "Maggi Noodles",
+    "co2_emission": 0.9,
+    "packaging": "Plastic pouch",
+    "transportDistance": "350 km"
+  },
+  {
+    "barcode": "8902967110014",
+    "product": "Sunfeast Dark Fantasy",
+    "co2_emission": 1.4,
+    "packaging": "Plastic wrapper",
+    "transportDistance": "420 km"
+  },
+  {
+    "barcode": "8901725121486",
+    "product": "Amul Butter",
+    "co2_emission": 1.8,
+    "packaging": "Foil",
+    "transportDistance": "350 km"
+  },
+  {
+    "barcode": "8904037912131",
+    "product": "Tropicana Orange Juice",
+    "co2_emission": 0.4,
+    "packaging": "Tetra Pak",
+    "transportDistance": "300 km"
+  },
+  {
+    "barcode": "8901063010824",
+    "product": "Kissan Mixed Fruit Jam",
+    "co2_emission": 1.9,
+    "packaging": "Glass jar",
+    "transportDistance": "360 km"
+  },
+  {
+    "barcode": "8901725111029",
+    "product": "Amul Cheese Slices",
+    "co2_emission": 2.1,
+    "packaging": "Plastic wrap",
+    "transportDistance": "300 km"
+  },
+  {
+    "barcode": "8901542002914",
+    "product": "Good Day Butter Cookies",
+    "co2_emission": 1.0,
+    "packaging": "Plastic wrapper",
+    "transportDistance": "330 km"
+  },
+  {
+    "barcode": "8901491100450",
+    "product": "Lays Cream & Onion",
+    "co2_emission": 1.3,
+    "packaging": "Plastic pouch",
+    "transportDistance": "400 km"
+  },
+  {
+    "barcode": "8906002670307",
+    "product": "Taj Mahal Tea",
+    "co2_emission": 1.2,
+    "packaging": "Foil pack",
+    "transportDistance": "380 km"
+  },
+  {
+    "barcode": "8906002670178",
+    "product": "Taj Mahal Tea Bags",
+    "co2_emission": 0.7,
+    "packaging": "Paper box",
+    "transportDistance": "280 km"
+  },
+  {
+    "barcode": "8901725121615",
+    "product": "Amul Milk",
+    "co2_emission": 1.2,
+    "packaging": "Plastic pouch",
+    "transportDistance": "150 km"
+  },
+  {
+    "barcode": "8901058845795",
+    "product": "Pepsi 250ml",
+    "co2_emission": 1.6,
+    "packaging": "PET Bottle",
+    "transportDistance": "350 km"
+  },
+  {
+    "barcode": "8906002670321",
+    "product": "Taj Mahal Strong Chai",
+    "co2_emission": 1.5,
+    "packaging": "Foil pack",
+    "transportDistance": "340 km"
+  },
+  {
+    "barcode": "8901491100436",
+    "product": "Lays Classic Salted",
+    "co2_emission": 1.1,
+    "packaging": "Plastic pouch",
+    "transportDistance": "390 km"
+  },
+  {
+    "barcode": "8901725131331",
+    "product": "Amul Lassi",
+    "co2_emission": 0.9,
+    "packaging": "Tetra Pak",
+    "transportDistance": "250 km"
+  }
+]
