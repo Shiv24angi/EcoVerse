@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&family=Playfair+Display:wght@600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 36 35% 95%;
+    --foreground: 25 15% 20%;
+    --card: 36 35% 95%;
+    --card-foreground: 25 15% 20%;
+    --popover: 36 35% 95%;
+    --popover-foreground: 25 15% 20%;
+    --primary: 100 25% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 40% 80%;
+    --secondary-foreground: 25 15% 20%;
+    --muted: 28 30% 90%;
+    --muted-foreground: 25 10% 30%;
+    --accent: 190 25% 70%;
+    --accent-foreground: 25 15% 20%;
+    --destructive: 0 60% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 25 15% 80%;
+    --input: 25 15% 90%;
+    --ring: 100 25% 60%;
+    --radius: 0.75rem;
+
+    --chart-1: 100 25% 60%;
+    --chart-2: 30 70% 75%;
+    --chart-3: 190 25% 70%;
+    --chart-4: 60 10% 60%;
+    --chart-5: 0 40% 50%;
+
+    --sidebar-background: 100 20% 92%;
+    --sidebar-foreground: 25 10% 20%;
+    --sidebar-primary: 100 25% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 190 25% 70%;
+    --sidebar-accent-foreground: 25 15% 20%;
+    --sidebar-border: 25 15% 80%;
+    --sidebar-ring: 100 25% 60%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142 76% 36%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
+  }
+}
