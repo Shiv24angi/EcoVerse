@@ -11,6 +11,7 @@ import {
   BarChart3,
   Zap,
   Shield,
+  Recycle,
   ArrowRight,
   Star,
   CheckCircle,
@@ -62,9 +63,9 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
       description: "Deep insights into your shopping patterns with predictive recommendations",
     },
     {
-      icon: Shield,
-      title: "Privacy First",
-      description: "Your data is encrypted and secure with zero-knowledge architecture",
+      icon: Recycle,
+      title: "Recyclability Checker",
+      description: "Check if the product is recyclable or not by assessing the packaging composition",
     },
     {
       icon: Globe,
@@ -73,54 +74,50 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
     },
   ]
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-green-950/30 overflow-x-hidden transition-colors duration-300">
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-400/20 to-emerald-600/20 dark:from-green-400/10 dark:to-emerald-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -left-40 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-cyan-600/10 dark:from-blue-400/5 dark:to-cyan-600/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-pink-600/10 dark:from-purple-400/5 dark:to-pink-600/5 rounded-full blur-3xl animate-pulse delay-2000"></div>
-      </div>
+return (
+  <div className="min-h-screen bg-gradient-to-br from-[#fef6f4] via-[#fdf7f5] to-[#f4f4ff] dark:from-[#1f1c2e] dark:via-[#1a1b27] dark:to-[#20242f] overflow-x-hidden transition-colors duration-300">
+    {/* Animated Pastel Background Elements */}
+    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute -top-40 -right-40 w-80 h-80 bg-pink-200/30 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute top-1/2 -left-40 w-96 h-96 bg-sky-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl animate-pulse delay-2000"></div>
+    </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-gray-900/70 border-b border-white/20 dark:border-gray-800/50 shadow-sm transition-colors duration-300">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl blur opacity-75"></div>
-                <div className="relative bg-gradient-to-r from-green-500 to-emerald-600 p-2 rounded-xl">
-                  <Leaf className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                EcoVerse
-              </span>
+    {/* Header */}
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-green-600/70 border-b border-white/20 shadow-sm transition-colors duration-300">
+      <div className="container mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+            <Link href="/" className="flex items-center gap-2">
+  <img src="/logo.png" alt="EcoVerse logo" className="h-10 w-auto" />
+             <span className="text-2xl font-bold text-green-900 ">
+              EcoVerse
+            </span></Link>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <ThemeToggle />
-              </div>
-              <Link href="/auth/signin">
-                <Button
-                  variant="ghost"
-                  className="text-gray-600 hover:text-gray-900 hover:bg-white/50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800/50"
-                >
-                  Sign In
-                </Button>
-              </Link>
+            </div>
+           
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Link href="/auth/signin">
               <Button
-  onClick={onGetStarted}
-  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
->
-  Get Started
-  <ArrowRight className="ml-2 h-4 w-4" />
-</Button>
-
-            </div>
+                variant="ghost"
+                className="text-white/80 hover:text-teal-900 hover:bg-white/50"
+              >
+                Sign In
+              </Button>
+            </Link>
+            <Button
+              onClick={onGetStarted}
+              className="bg-gradient-to-r from-teal-500 to-emerald-400 hover:from-teal-600 hover:to-emerald-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              Get Started
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
       {/* Hero Section */}
       <section className="relative py-32 px-6">
@@ -128,21 +125,21 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 border border-green-200/50 dark:border-green-700/50 mb-8">
               <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-700 dark:text-green-300">Track Your Impact</span>
+              <span className="text-sm font-medium text-green-700 dark:text-green-300">Your Actions, Visualized</span>
             </div>
 
             <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight">
               <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
-                Track. Recycle. Live.
+                Know What You Buy.
               </span>
               <br />
               <span className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 dark:from-green-400 dark:via-emerald-400 dark:to-green-500 bg-clip-text text-transparent">
-                Sustainably
+                Live What You Believe.
               </span>
             </h1>
 
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-16 max-w-3xl mx-auto leading-relaxed">
-              Track your carbon footprint, discover sustainable products, and compete with a global community of
+              Track your carbon footprint, recycle products, discover sustainable products, and compete with a global community of
               eco-conscious shoppers.
             </p>
 
@@ -174,16 +171,7 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
                 </Link>
               </div>
 
-              <Link href="/demo" className="group">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="px-8 py-4 text-lg font-medium border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 transform hover:scale-105"
-                >
-                  <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                  Watch Demo
-                </Button>
-              </Link>
+              
             </div>
 
             {/* Stats */}
@@ -261,77 +249,6 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="relative py-32 px-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800/50">
-        <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-bold mb-8">
-              <span className="bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                Loved by
-              </span>{" "}
-              <span className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
-                eco-warriors
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              See what our community says about their sustainable shopping journey.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Sarah Johnson",
-                role: "Environmental Activist",
-                content:
-                  "EcoVerse has completely transformed how I shop. I've reduced my carbon footprint by 40% in just 3 months!",
-                rating: 5,
-              },
-              {
-                name: "Mike Chen",
-                role: "Tech Professional",
-                content:
-                  "The barcode scanner is incredibly accurate. I love competing with friends on the leaderboard.",
-                rating: 5,
-              },
-              {
-                name: "Emma Rodriguez",
-                role: "Student",
-                content:
-                  "As a college student, this app helps me make better choices on a budget. The analytics are detailed.",
-                rating: 5,
-              },
-            ].map((testimonial, index) => (
-              <div key={index} className="group relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400/20 to-orange-400/20 dark:from-yellow-400/10 dark:to-orange-400/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                <Card className="relative h-full border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-2xl overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/60 dark:from-gray-700/60 to-transparent"></div>
-                  <CardHeader className="relative p-8">
-                    <div className="flex items-center mb-6">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                      ))}
-                    </div>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 text-lg mb-8 leading-relaxed font-medium">
-                      "{testimonial.content}"
-                    </CardDescription>
-                    <div className="flex items-center">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg mr-4 shadow-lg">
-                        {testimonial.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-bold text-gray-900 dark:text-white text-lg">{testimonial.name}</div>
-                        <div className="text-gray-500 dark:text-gray-400">{testimonial.role}</div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="relative py-32 px-6 bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 dark:from-green-700 dark:via-emerald-700 dark:to-green-800 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -350,8 +267,7 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
             </span>
           </h2>
           <p className="text-xl md:text-2xl mb-16 text-green-100 max-w-3xl mx-auto leading-relaxed">
-            Join over 15,000 eco-conscious shoppers who are already making a real impact. Start your sustainable journey
-            today.
+            Start your eco-conscious sustainable journey today.
           </p>
 
           <div className="flex flex-col items-center gap-8">
@@ -379,23 +295,6 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
                 </Button>
               </Link>
             </div>
-
-            <div className="flex items-center gap-6 text-green-100">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                <span>No credit card required</span>
-              </div>
-              <div className="w-px h-4 bg-white/30"></div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                <span>Free forever</span>
-              </div>
-              <div className="w-px h-4 bg-white/30"></div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                <span>Join in 30 seconds</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -407,11 +306,9 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-8">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl blur opacity-75"></div>
-                  <div className="relative bg-gradient-to-r from-green-400 to-emerald-500 p-2 rounded-xl">
-                    <Leaf className="h-8 w-8 text-white" />
-                  </div>
-                </div>
+                  <Link href="/" className="flex items-center gap-2">
+  <img src="/logo.png" alt="EcoVerse logo" className="h-10 w-auto" />
+  </Link></div>
                 <span className="text-3xl font-bold">EcoVerse</span>
               </div>
               <p className="text-gray-300 dark:text-gray-400 mb-8 text-lg leading-relaxed max-w-md">

@@ -42,8 +42,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="bg-secondary border-b border-border px-6 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-  <img src="/logo.png" alt="EcoVerse logo" className="h-8 w-auto" />
-  <span className="font-serif text-xl text-primary text-green-900">EcoVerse</span>
+  <img src="/logo.png" alt="EcoVerse logo" className="h-10 w-auto" />
+  <span className="font-serif text-xl font-bold text-green-900">EcoVerse</span>
 </Link>
 
         </div>
@@ -72,7 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex min-h-screen">
         {/* Sidebar */}
         <aside
           className={cn(

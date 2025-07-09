@@ -7,14 +7,14 @@ import { useAuth } from "@/components/auth-provider"
 import { AvatarId } from "./ui/avatar"
 
 const avatarOptions = [
-  { id: "avatar-1", label: "Leafy", src: "/avatars/av1.jpg" },
-  { id: "avatar-2", label: "Sunny", src: "/avatars/av2.jpg" },
-  { id: "avatar-3", label: "Rocky", src: "/avatars/av3.jpg" },
-  { id: "avatar-4", label: "Aqua", src: "/avatars/av4.jpg" },
-  { id: "avatar-5", label: "River", src: "/avatars/av5.jpg" },
-  { id: "avatar-6", label: "Jasper", src: "/avatars/av6.jpg" },
-  { id: "avatar-7", label: "Ember", src: "/avatars/av7.jpg" },
-  { id: "avatar-8", label: "Blaze", src: "/avatars/av8.jpg" },
+  { id: "avatar-1", src: "/avatars/av1.jpg" },
+  { id: "avatar-2", src: "/avatars/av2.jpg" },
+  { id: "avatar-3", src: "/avatars/av3.jpg" },
+  { id: "avatar-4", src: "/avatars/av4.jpg" },
+  { id: "avatar-5", src: "/avatars/av5.jpg" },
+  { id: "avatar-6", src: "/avatars/av6.jpg" },
+  { id: "avatar-7", src: "/avatars/av7.jpg" },
+  { id: "avatar-8", src: "/avatars/av8.jpg" },
 ]
 
 export default function AvatarSelectionPage() {
@@ -36,7 +36,7 @@ const handleSave = () => {
         <p className="text-center text-muted-foreground">Customize your EcoVerse identity with a unique avatar!</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 place-items-center">
-          {avatarOptions.map(({ id, label, src }) => (
+          {avatarOptions.map(({ id, src }) => (
             <button
               key={id}
               onClick={() => setSelected(id)}
@@ -46,8 +46,7 @@ const handleSave = () => {
                   : "border-transparent hover:border-green-300"
               }`}
             >
-              <Image src={src} alt={label} width={80} height={80} className="rounded-full" />
-              <p className="text-center mt-2 text-sm text-muted-foreground">{label}</p>
+              <Image src={src} width={80} height={80} className="rounded-full" />
             </button>
           ))}
         </div>
