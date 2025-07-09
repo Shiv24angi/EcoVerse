@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/firebase-function-sync-ts/functions/node_modules
+/firebase-function-sync-ts-backup/functions/node_modules
 
 # next.js
 /.next/
