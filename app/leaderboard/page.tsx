@@ -68,7 +68,7 @@ export default function LeaderboardPage() {
         const data: LeaderboardData = await response.json()
         setLeaderboardData(data.leaderboard)
         setStats(data.stats)
-        
+
         // Find current user's rank and data
         if (user) {
           const userEntry = data.leaderboard.find(entry => entry.email === user.email)
@@ -126,22 +126,22 @@ export default function LeaderboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Points Leaderboard</h1>
-          <p className="text-gray-400 mt-2">See how you rank against other eco-warriors by points and level.</p>
+          <h1 className="text-3xl font-bold text-green-700">Points Leaderboard</h1>
+          <p className="text-gray-600 mt-2">See how you rank against other eco-warriors by points and level.</p>
         </div>
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-white" />
-            <span className="ml-2 text-white">Loading leaderboard...</span>
+            <span className="ml-2 text-green-500">Loading leaderboard...</span>
           </div>
         ) : (
           <>
             {/* Current User Stats */}
             {currentUserData && (
-              <Card className="dark-card border-gray-700 bg-gradient-to-r from-purple-900/20 to-blue-900/20">
+              <Card className="border-none shadow-md bg-gradient-to-r from-purple-500/20 to-blue-700/20">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
+                  <CardTitle className="text-green-900 flex items-center gap-2">
                     <Star className="h-5 w-5" />
                     Your Position
                   </CardTitle>
@@ -151,11 +151,11 @@ export default function LeaderboardPage() {
                     <div className="flex items-center gap-4">
                       {getRankIcon(currentUserData.rank)}
                       <div>
-                        <div className="text-lg font-bold text-white">Rank #{currentUserData.rank}</div>
-                        <div className="text-sm text-gray-400">
+                        <div className="text-lg font-bold text-green-900">Rank #{currentUserData.rank}</div>
+                        <div className="text-sm text-gray-600">
                           {currentUserData.totalPointsEarned.toLocaleString()} points • Level {currentUserData.level} • {currentUserData.achievementCount} achievements
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-600">
                           {currentUserData.totalScanned} scans • {currentUserData.streakCount} day streak
                         </div>
                       </div>
@@ -175,16 +175,16 @@ export default function LeaderboardPage() {
             {leaderboardData.length >= 3 && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 {leaderboardData.slice(0, 3).map((userEntry: LeaderboardUser, index: number) => (
-                  <Card key={userEntry.id} className={`dark-card border-gray-700 ${index === 0 ? "ring-2 ring-yellow-400/50" : ""}`}>
+                  <Card key={userEntry.id} className={`bg-green-100 border-none shadow-md ${index === 0 ? "ring-2 ring-yellow-400/50" : ""}`}>
                     <CardHeader className="text-center pb-2">
                       <div className="flex justify-center mb-2">{getRankIcon(userEntry.rank)}</div>
-                      <CardTitle className="text-lg text-white">
+                      <CardTitle className="text-lg text-green-900">
                         {user && userEntry.email === user.email ? "You" : userEntry.name}
                       </CardTitle>
-                      <CardDescription className="text-gray-400">
+                      <CardDescription className="text-green-900">
                         {userEntry.totalPointsEarned.toLocaleString()} points
                       </CardDescription>
-                      <CardDescription className="text-gray-500 text-xs">
+                      <CardDescription className="text-gray-600 text-xs">
                         Level {userEntry.level} • {userEntry.achievementCount} achievements • {userEntry.streakCount} day streak
                       </CardDescription>
                     </CardHeader>
@@ -199,13 +199,13 @@ export default function LeaderboardPage() {
             )}
 
             {/* Full Leaderboard */}
-            <Card className="dark-card border-gray-700">
+            <Card className="bg-green-100 border-none shadow-md">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className="flex items-center gap-2 text-green-800">
                   <TrendingUp className="h-5 w-5" />
                   Points Rankings
                 </CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-green-700">
                   Rankings based on total points earned and level achieved
                 </CardDescription>
               </CardHeader>
@@ -218,13 +218,13 @@ export default function LeaderboardPage() {
                       <div
                         key={userEntry.id}
                         className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-200 ${
-                          isCurrentUser ? "bg-blue-900/30 border-blue-700 ring-1 ring-blue-500/50" : "bg-gray-800/50 border-gray-700 hover:bg-gray-800/70"
+                          isCurrentUser ? "bg-blue-900/30 border-blue-700 ring-1 ring-blue-500/50" : "bg-green-400/30 border-green-700 hover:bg-green-500/50"
                         }`}
                       >
                         <div className="flex items-center gap-4">
                           <div className="flex items-center justify-center w-10">{getRankIcon(userEntry.rank)}</div>
                           <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-gray-100">
+                            <AvatarFallback className="bg-green-100">
                               {userEntry.name
                                 .split(" ")
                                 .map((n: string) => n[0])
@@ -240,11 +240,11 @@ export default function LeaderboardPage() {
                                 </Badge>
                               )}
                             </div>
-                            <div className="text-sm text-gray-400">
+                            <div className="text-sm text-green-800">
                               <Zap className="inline h-3 w-3 mr-1" />
                               {userEntry.totalPointsEarned.toLocaleString()} points • Level {userEntry.level} • {userEntry.achievementCount} achievements
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-green-800">
                               {userEntry.totalScanned} scans • {userEntry.streakCount} day streak • Joined {new Date(userEntry.joinedAt).toLocaleDateString()}
                             </div>
                           </div>
@@ -266,59 +266,59 @@ export default function LeaderboardPage() {
 
             {/* Stats Summary */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
                     <Target className="h-4 w-4" />
                     Your Rank
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">
+                  <div className="text-2xl font-bold text-emerald-900">
                     {currentUserRank ? `#${currentUserRank}` : "N/A"}
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-emerald-700">
                     Out of {stats?.totalUsers || 0} users
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Total Users
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">{stats?.totalUsers || 0}</div>
-                  <p className="text-xs text-gray-500">Active eco-warriors</p>
+                  <div className="text-2xl font-bold text-emerald-900">{stats?.totalUsers || 0}</div>
+                  <p className="text-xs text-emerald-700">Active eco-warriors</p>
                 </CardContent>
               </Card>
 
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
                     Average Points
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">{stats?.averagePoints?.toLocaleString() || "0"}</div>
-                  <p className="text-xs text-gray-500">Community average</p>
+                  <div className="text-2xl font-bold text-emerald-900">{stats?.averagePoints?.toLocaleString() || "0"}</div>
+                  <p className="text-xs text-emerald-700">Community average</p>
                 </CardContent>
               </Card>
 
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
                     <Star className="h-4 w-4" />
                     Average Level
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">{stats?.averageLevel || "1.0"}</div>
-                  <p className="text-xs text-gray-500">Community level</p>
+                  <div className="text-2xl font-bold text-emerald-900">{stats?.averageLevel || "1.0"}</div>
+                  <p className="text-xs text-emerald-700">Community level</p>
                 </CardContent>
               </Card>
             </div>

@@ -53,15 +53,17 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 dark-gradient flex items-center justify-center p-4">
-      <Card className="w-full max-w-md dark-card border-gray-700">
+    <div className="min-h-screen bg-teal-200 dark-gradient flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-peach-light border-none shadow-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Leaf className="h-8 w-8 text-green-600" />
+            <Link href="/" className="flex items-center gap-2">
+  <img src="/logo.png" alt="EcoVerse logo" className="h-8 w-auto" />
             <span className="text-2xl font-bold text-green-800">EcoVerse</span>
+            </Link>
           </div>
-          <CardTitle className="text-white">Welcome Back</CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardTitle className="text-green-900">Welcome Back</CardTitle>
+          <CardDescription className="text-gray-600">
             Sign in to continue tracking your sustainable shopping journey
           </CardDescription>
         </CardHeader>

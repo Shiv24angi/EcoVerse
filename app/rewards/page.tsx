@@ -111,7 +111,7 @@ export default function RewardsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-white">Loading rewards...</div>
+          <div className="text-green-900">Loading rewards...</div>
         </div>
       </DashboardLayout>
     )
@@ -153,34 +153,34 @@ export default function RewardsPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white">Rewards & Achievements 🎉</h1>
-          <p className="text-gray-400 mt-2">Track your sustainability journey and earn rewards!</p>
+          <h1 className="text-3xl font-bold text-green-900">Rewards & Achievements 🎉</h1>
+          <p className="text-gray-700 mt-2">Track your sustainability journey and earn rewards!</p>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800 border-gray-700">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-green-600">Overview</TabsTrigger>
-            <TabsTrigger value="achievements" className="data-[state=active]:bg-green-600">Achievements</TabsTrigger>
-            <TabsTrigger value="shop" className="data-[state=active]:bg-green-600">Reward Shop</TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-green-600">History</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-peach-light border-peach-light">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-green-300">Overview</TabsTrigger>
+            <TabsTrigger value="achievements" className="data-[state=active]:bg-green-300">Achievements</TabsTrigger>
+            <TabsTrigger value="shop" className="data-[state=active]:bg-green-300">Reward Shop</TabsTrigger>
+            <TabsTrigger value="history" className="data-[state=active]:bg-green-300">History</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             {/* Overview Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-lime-100 border-none shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300">Available Points</CardTitle>
+                  <CardTitle className="text-sm font-medium text-lime-700">Available Points</CardTitle>
                   <Gift className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-lime-800">
                     {rewardsData?.pointsSummary?.total || rewardsData?.points || 0}
                   </div>
                   <div className="space-y-1 mt-2">
                     <div className="flex justify-between text-xs">
-                      <span className="text-green-400">✓ Confirmed (Spendable):</span>
-                      <span className="text-green-400 font-medium">
+                      <span className="text-green-600">✓ Confirmed (Spendable):</span>
+                      <span className="text-green-600 font-medium">
                         {rewardsData?.pointsSummary?.confirmed || 0}
                       </span>
                     </div>
@@ -190,16 +190,16 @@ export default function RewardsPage() {
                         {rewardsData?.pointsSummary?.unconfirmed || 0}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">
+                    <div className="text-xs text-gray-600 mt-2">
                       {rewardsData?.totalPointsEarned || 0} total earned
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-lime-100 border-none shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300">Current Level</CardTitle>
+                  <CardTitle className="text-sm font-medium text-lime-700">Current Level</CardTitle>
                   <Star className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -207,7 +207,7 @@ export default function RewardsPage() {
                     Level {rewardsData?.level || 1}
                   </div>
                   <div className="mt-2">
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
                       <span>Progress to next level</span>
                       <span>{rewardsData?.progressToNext.toFixed(0) || 0}%</span>
                     </div>
@@ -216,31 +216,31 @@ export default function RewardsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-lime-100 border-none shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300">Achievements</CardTitle>
+                  <CardTitle className="text-sm font-medium text-lime-700">Achievements</CardTitle>
                   <Trophy className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-lime-800">
                     {rewardsData?.achievements.length || 0}
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600">
                     {rewardsData?.availableAchievements.length || 0} more to unlock
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-lime-100 border-none shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-300">Shop Items</CardTitle>
+                  <CardTitle className="text-sm font-medium text-lime-700">Shop Items</CardTitle>
                   <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-lime-800">
                     {rewardsData?.purchasedItems.length || 0}
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600">
                     {rewardsData?.availableShopItems.length || 0} available to buy
                   </p>
                 </CardContent>
@@ -363,10 +363,10 @@ export default function RewardsPage() {
           <TabsContent value="achievements" className="space-y-6">
             {/* Earned Achievements */}
             {rewardsData && rewardsData.achievements.length > 0 && (
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-white">Earned Achievements</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardTitle className="text-emerald-900">Earned Achievements</CardTitle>
+                  <CardDescription className="text-gray-600">
                     Your sustainability accomplishments
                   </CardDescription>
                 </CardHeader>
@@ -375,7 +375,7 @@ export default function RewardsPage() {
                     {rewardsData.achievements.map((achievement, index) => (
                       <div
                         key={index}
-                        className="p-4 rounded-lg border border-gray-600 bg-gradient-to-br from-green-900/20 to-blue-900/20"
+                        className="p-4 rounded-lg border border-gray-600 bg-gradient-to-br from-green-400/40 to-blue-600/40"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-2xl">{getAchievementIcon(achievement.icon || '🏆')}</span>
@@ -383,9 +383,9 @@ export default function RewardsPage() {
                             +{achievement.points} pts
                           </Badge>
                         </div>
-                        <h3 className="font-semibold text-white mb-1">{achievement.name}</h3>
-                        <p className="text-sm text-gray-400 mb-2">{achievement.description}</p>
-                        <p className="text-xs text-gray-500">
+                        <h3 className="text-2xl font-bold text-green mb-1">{achievement.name}</h3>
+                        <p className="text-sm text-gray-800 mb-2">{achievement.description}</p>
+                        <p className="text-xs text-gray-800">
                           {formatDate(achievement.earnedAt)}
                         </p>
                       </div>
@@ -397,10 +397,10 @@ export default function RewardsPage() {
 
             {/* Available Achievements */}
             {rewardsData && rewardsData.availableAchievements.length > 0 && (
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-white">Available Achievements</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardTitle className="text-emerald-900">Available Achievements</CardTitle>
+                  <CardDescription className="text-gray-600">
                     Keep going to unlock these rewards!
                   </CardDescription>
                 </CardHeader>
@@ -409,17 +409,17 @@ export default function RewardsPage() {
                     {rewardsData.availableAchievements.map((achievement, index) => (
                       <div
                         key={index}
-                        className="p-4 rounded-lg border border-gray-600 bg-gray-800/30 opacity-75"
+                        className="p-4 rounded-lg border border-emerald-600 bg-emerald-800/30 opacity-75"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-2xl grayscale">{achievement.icon}</span>
-                          <Badge variant="outline" className="border-gray-500 text-gray-400">
+                          <Badge variant="outline" className="border-emerald-500 text-emerald-400">
                             +{achievement.points} pts
                           </Badge>
                         </div>
-                        <h3 className="font-semibold text-gray-300 mb-1">{achievement.name}</h3>
-                        <p className="text-sm text-gray-400 mb-2">{achievement.description}</p>
-                        <div className="flex items-center text-xs text-gray-500">
+                        <h3 className="text-2xl text-green mb-1">{achievement.name}</h3>
+                        <p className="text-sm text-gray-800 mb-2">{achievement.description}</p>
+                        <div className="flex items-center text-xs text-gray-800">
                           <Calendar className="h-3 w-3 mr-1" />
                           {achievement.progress === 100 ? 'Ready to unlock!' : 'In progress...'}
                         </div>
@@ -433,10 +433,10 @@ export default function RewardsPage() {
 
           <TabsContent value="shop" className="space-y-6">
             {/* Reward Shop */}
-            <Card className="dark-card border-gray-700">
+            <Card className="bg-blue-100 border-none shadow-md">
               <CardHeader>
-                <CardTitle className="text-white">Reward Shop 🛍️</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardTitle className="text-blue-900">Reward Shop 🛍️</CardTitle>
+                <CardDescription className="text-gray-600">
                   Use your points to unlock exclusive features and badges
                 </CardDescription>
               </CardHeader>
@@ -452,7 +452,7 @@ export default function RewardsPage() {
                       return (
                         <div
                           key={item.id}
-                          className="p-4 rounded-lg border border-gray-600 bg-gray-800/50 hover:bg-gray-800/70 transition-colors"
+                          className="p-4 rounded-lg border border-blue-400 bg-blue-400/30 hover:bg-blue-400/40 transition-colors"
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div className="text-2xl">{getItemIcon(item.icon)}</div>
@@ -468,8 +468,8 @@ export default function RewardsPage() {
                               {item.cost} pts
                             </Badge>
                           </div>
-                          <h3 className="font-semibold text-white mb-1">{item.name}</h3>
-                          <p className="text-sm text-gray-400 mb-3">{item.description}</p>
+                          <h3 className="text-xl font-semibold text-blue-600 mb-1">{item.name}</h3>
+                          <p className="text-sm text-gray-600 mb-3">{item.description}</p>
 
                           {!canAfford && wouldAffordWithUnconfirmed && (
                             <div className="mb-3 p-2 rounded bg-yellow-900/20 border border-yellow-700">
@@ -506,10 +506,10 @@ export default function RewardsPage() {
 
             {/* Purchased Items */}
             {rewardsData && rewardsData.purchasedItems.length > 0 && (
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-blue-100 border-none shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-white">Your Items</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardTitle className="text-blue-900">Your Items</CardTitle>
+                  <CardDescription className="text-gray-600">
                     Items you've purchased from the reward shop
                   </CardDescription>
                 </CardHeader>
@@ -546,10 +546,10 @@ export default function RewardsPage() {
           <TabsContent value="history" className="space-y-6">
             {/* Recent Transactions */}
             {rewardsData && rewardsData.transactions.length > 0 && (
-              <Card className="dark-card border-gray-700">
+              <Card className="bg-teal-100 border-none shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-white">Recent Activity</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardTitle className="text-teal-900">Recent Activity</CardTitle>
+                  <CardDescription className="text-gray-600">
                     Your latest reward transactions
                   </CardDescription>
                 </CardHeader>
@@ -558,21 +558,21 @@ export default function RewardsPage() {
                     {rewardsData.transactions.slice(-15).reverse().map((transaction, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30"
+                        className="flex items-center justify-between p-3 rounded-lg bg-teal-600/30"
                       >
                         <div className="flex items-center space-x-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${transaction.type === 'earned' ? 'bg-green-500/20' : 'bg-red-500/20'
                             }`}>
                             {transaction.type === 'earned' ? (
-                              <TrendingUp className="h-4 w-4 text-green-400" />
+                              <TrendingUp className="h-4 w-4 text-green-600" />
                             ) : (
-                              <ShoppingCart className="h-4 w-4 text-red-400" />
+                              <ShoppingCart className="h-4 w-4 text-red-600" />
                             )}
                           </div>
                           <div>
-                            <p className="text-white font-medium">{transaction.description}</p>
+                            <p className="text-teal-900 font-medium">{transaction.description}</p>
                             <div className="flex items-center gap-2">
-                              <p className="text-xs text-gray-500">{formatDate(transaction.date)}</p>
+                              <p className="text-xs text-gray-600">{formatDate(transaction.date)}</p>
                               {transaction.type === 'earned' && transaction.pointsType && (
                                 <Badge
                                   variant="outline"

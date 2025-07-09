@@ -26,7 +26,14 @@ type OpenFoodFactsResponse = {
 
 export async function POST(req: Request) {
   const { barcode } = await req.json()
-  const userEmail = "test@example.com" // ✅ Hardcoded email for dev/testing
+
+  // ✅ Hardcoded test user (keep this for dev)
+  const userEmail = "test@example.com"
+
+  // ✅ Add extra hardcoded user (shivangi)
+  const secondaryUserEmail = "shivangidps40@gmail.com"
+  const secondaryUserPassword = "shiv_2005"
+  const secondaryUserName = "shivangi"
 
   if (!barcode) {
     return NextResponse.json({ error: "Barcode missing" }, { status: 400 })
@@ -52,11 +59,16 @@ export async function POST(req: Request) {
     try {
       await dbConnect()
 
-      const user = await User.findOne({ email: userEmail })
+      // Try with primary test user first
+      let user = await User.findOne({ email: userEmail })
 
+      // If not found, try with secondary user
       if (!user) {
-        console.error("❌ No user found with email:", userEmail)
-        return NextResponse.json({ error: "User not found" }, { status: 404 })
+        user = await User.findOne({ email: secondaryUserEmail })
+        if (!user) {
+          console.error("❌ No user found with either test@example.com or shivangidps40@gmail.com")
+          return NextResponse.json({ error: "User not found" }, { status: 404 })
+        }
       }
 
       const isFirstScan = (user.totalScanned ?? 0) === 0
@@ -70,7 +82,6 @@ export async function POST(req: Request) {
       const isConfirmed = pointsData.isConfirmed
       const pointsEarned = pointsData.points
 
-      // ✅ Update points directly in DB
       const updateFields: any = {
         $inc: {
           monthlyCarbon: carbonEstimate,
@@ -84,10 +95,9 @@ export async function POST(req: Request) {
         }
       }
 
-      await User.updateOne({ email: userEmail }, updateFields)
+      await User.updateOne({ email: user.email }, updateFields)
 
-      // ✅ Refetch updated user
-      const updatedUser = await User.findOne({ email: userEmail })
+      const updatedUser = await User.findOne({ email: user.email })
 
       if (!updatedUser) {
         return NextResponse.json({ error: "Failed to re-fetch user" }, { status: 500 })
@@ -99,14 +109,13 @@ export async function POST(req: Request) {
       const monthlyBonus = calculateMonthlyBonus ? calculateMonthlyBonus(updatedUser) : 0
       const pointsSummary = getUserPointsSummary(updatedUser)
 
-      // ✅ Sync reward fields
       updatedUser.level = levelData.level
       updatedUser.achievements = earnedAchievements
       updatedUser.confirmedPoints = updatedUser.points?.confirmed || 0
       updatedUser.unconfirmedPoints = updatedUser.points?.unconfirmed || 0
       updatedUser.rewardPoints = updatedUser.confirmedPoints + updatedUser.unconfirmedPoints
       updatedUser.totalPointsEarned = updatedUser.rewardPoints
-      updatedUser.pointsSummary = getUserPointsSummary(updatedUser) // 👈 this line helps if dashboard uses pointsSummary
+      updatedUser.pointsSummary = getUserPointsSummary(updatedUser)
 
       await updatedUser.save()
 

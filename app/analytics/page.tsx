@@ -76,13 +76,13 @@ export default function AnalyticsPage() {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
-        return "bg-green-900/50 text-green-400 border-green-700"
+        return "bg-green-900/20 text-green-800 border-green-700"
       case "Medium":
-        return "bg-yellow-900/50 text-yellow-400 border-yellow-700"
+        return "bg-yellow-900/20 text-yellow-800 border-yellow-700"
       case "Hard":
-        return "bg-red-900/50 text-red-400 border-red-700"
+        return "bg-red-900/20 text-red-800 border-red-700"
       default:
-        return "bg-gray-900/50 text-gray-400 border-gray-700"
+        return "bg-gray-900/20 text-gray-800 border-gray-700"
     }
   }
 
@@ -90,60 +90,60 @@ export default function AnalyticsPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Carbon Analytics</h1>
-          <p className="text-gray-400 mt-2">
+          <h1 className="text-3xl font-bold text-teal-900">Carbon Analytics</h1>
+          <p className="text-gray-800 mt-2">
             Detailed insights into your sustainability journey and carbon footprint trends.
           </p>
         </div>
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="dark-card border-gray-700">
+          <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">Total CO₂ Saved</CardTitle>
+              <CardTitle className="text-sm font-medium text-teal-700">Total CO₂ Saved</CardTitle>
               <Leaf className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{totalCarbonSaved.toFixed(1)} kg</div>
-              <p className="text-xs text-gray-500">vs monthly goals</p>
+              <div className="text-2xl font-bold text-teal-800">{totalCarbonSaved.toFixed(1)} kg</div>
+              <p className="text-xs text-teal-700">vs monthly goals</p>
             </CardContent>
           </Card>
 
-          <Card className="dark-card border-gray-700">
+          <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">Monthly Change</CardTitle>
+              <CardTitle className="text-sm font-medium text-teal-700">Monthly Change</CardTitle>
               <TrendingDown className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-teal-800">
                 {carbonChange > 0 ? "+" : ""}
                 {carbonChange.toFixed(1)} kg
               </div>
-              <p className="text-xs text-gray-500">from last month</p>
+              <p className="text-xs text-teal-700">from last month</p>
             </CardContent>
           </Card>
 
-          <Card className="dark-card border-gray-700">
+          <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">Products Scanned</CardTitle>
+              <CardTitle className="text-sm font-medium text-teal-700">Products Scanned</CardTitle>
               <BarChart3 className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{currentMonth.scanned}</div>
-              <p className="text-xs text-gray-500">+{scanChange} from last month</p>
+              <div className="text-2xl font-bold text-teal-800">{currentMonth.scanned}</div>
+              <p className="text-xs text-teal-700">+{scanChange} from last month</p>
             </CardContent>
           </Card>
 
-          <Card className="dark-card border-gray-700">
+          <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">Goal Achievement</CardTitle>
+              <CardTitle className="text-sm font-medium text-teal-700">Goal Achievement</CardTitle>
               <Target className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-teal-800">
                 {currentMonth.carbon < currentMonth.goal ? "✅" : "❌"}
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-teal-700">
                 {currentMonth.carbon < currentMonth.goal ? "Goal met!" : "Above goal"}
               </p>
             </CardContent>
@@ -152,26 +152,26 @@ export default function AnalyticsPage() {
 
         {/* Monthly Trends */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="dark-card border-gray-700">
+          <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-teal-700">
                 <TrendingDown className="h-5 w-5" />
                 Carbon Footprint Trend
               </CardTitle>
-              <CardDescription className="text-gray-400">Monthly CO₂ emissions over time</CardDescription>
+              <CardDescription className="text-teal-500">Monthly CO₂ emissions over time</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {monthlyData.map((data, index) => (
                   <div key={data.month} className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-300">{data.month}</span>
+                      <span className="text-sm font-medium text-teal-500">{data.month}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400 w-16 text-right">{data.carbon}kg</span>
-                        <span className="text-xs text-gray-500">(Goal: {data.goal}kg)</span>
+                        <span className="text-sm text-teal-500 w-16 text-right">{data.carbon}kg</span>
+                        <span className="text-xs text-teal-500">(Goal: {data.goal}kg)</span>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-gray-400 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${data.carbon <= data.goal ? "bg-green-500" : "bg-red-500"}`}
                         style={{ width: `${Math.min((data.carbon / 60) * 100, 100)}%` }}
@@ -180,10 +180,10 @@ export default function AnalyticsPage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 p-3 bg-green-900/20 rounded-lg border border-green-800">
+              <div className="mt-4 p-3 bg-teal-900/20 rounded-lg border border-teal-800">
                 <div className="flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4 text-green-400" />
-                  <span className="text-sm font-medium text-green-400">
+                  <TrendingDown className="h-4 w-4 text-green" />
+                  <span className="text-sm font-medium text-green">
                     {carbonChange < 0 ? "Decreased" : "Increased"} by {Math.abs(carbonChange).toFixed(1)}kg this month
                   </span>
                 </div>
@@ -191,26 +191,26 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="dark-card border-gray-700">
+          <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-teal-700">
                 <Calendar className="h-5 w-5" />
                 Weekly Progress
               </CardTitle>
-              <CardDescription className="text-gray-400">This month's weekly breakdown</CardDescription>
+              <CardDescription className="text-teal-700">This month's weekly breakdown</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {weeklyProgress.map((week) => (
                   <div key={week.week} className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-300">{week.week}</span>
+                      <span className="text-sm font-medium text-teal-500">{week.week}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400">
+                        <span className="text-sm text-teal-500">
                           {week.carbon}kg / {week.target}kg
                         </span>
                         {week.carbon <= week.target && (
-                          <Badge className="bg-green-900/50 text-green-400 border-green-700">✓</Badge>
+                          <Badge className="bg-green-400/50 text-green-600 border-green-500">✓</Badge>
                         )}
                       </div>
                     </div>
@@ -223,13 +223,13 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Category Breakdown */}
-        <Card className="dark-card border-gray-700">
+        <Card className="bg-teal-100 border-none shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-teal-700">
               <BarChart3 className="h-5 w-5" />
               Carbon Footprint by Category
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-teal-500">
               Breakdown of your CO₂ emissions by product category this month
             </CardDescription>
           </CardHeader>
@@ -238,13 +238,13 @@ export default function AnalyticsPage() {
               {categoryBreakdown.map((category) => (
                 <div key={category.category} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-300">{category.category}</span>
+                    <span className="text-sm font-medium text-teal-900">{category.category}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">{category.carbon}kg</span>
-                      <span className="text-xs text-gray-500">({category.percentage}%)</span>
+                      <span className="text-sm text-teal-500">{category.carbon}kg</span>
+                      <span className="text-xs text-teal-500">({category.percentage}%)</span>
                     </div>
                   </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div className="w-full bg-teal-700 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${category.color}`}
                       style={{ width: `${category.percentage}%` }}
@@ -257,27 +257,27 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Sustainability Tips */}
-        <Card className="dark-card border-gray-700">
+        <Card className="bg-teal-100 border-none shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-teal-700">
               <Award className="h-5 w-5" />
               Personalized Sustainability Tips
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-teal-600">
               Based on your shopping patterns, here are ways to reduce your carbon footprint
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {sustainabilityTips.map((tip, index) => (
-                <div key={index} className="p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                <div key={index} className="p-4 rounded-lg bg-teal-200/50 border border-teal-600">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">{tip.icon}</span>
                     <div className="flex-1">
-                      <h4 className="font-medium text-white mb-1">{tip.title}</h4>
-                      <p className="text-sm text-gray-400 mb-2">{tip.description}</p>
+                      <h4 className="font-medium text-teal-700 mb-1">{tip.title}</h4>
+                      <p className="text-sm text-teal-700 mb-2">{tip.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-green-400 font-medium">{tip.impact}</span>
+                        <span className="text-xs text-green-700 font-medium">{tip.impact}</span>
                         <Badge className={getDifficultyColor(tip.difficulty)}>{tip.difficulty}</Badge>
                       </div>
                     </div>
@@ -289,32 +289,32 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Environmental Impact */}
-        <Card className="dark-card border-gray-700">
+        <Card className="bg-teal-100 border-none shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-teal-900">
               <Leaf className="h-5 w-5" />
               Environmental Impact Comparison
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-teal-700">
               See how your carbon footprint compares to various activities
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+              <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
                 <div className="text-2xl mb-2">🚗</div>
-                <div className="text-lg font-bold text-white">{(currentMonth.carbon * 2.3).toFixed(0)} km</div>
-                <div className="text-sm text-gray-400">Equivalent car driving</div>
+                <div className="text-lg font-bold text-teal-900">{(currentMonth.carbon * 2.3).toFixed(0)} km</div>
+                <div className="text-sm text-teal-700">Equivalent car driving</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+              <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
                 <div className="text-2xl mb-2">🌳</div>
-                <div className="text-lg font-bold text-white">{Math.ceil(currentMonth.carbon / 22)} trees</div>
-                <div className="text-sm text-gray-400">Needed to offset CO₂</div>
+                <div className="text-lg font-bold text-teal-900">{Math.ceil(currentMonth.carbon / 22)} trees</div>
+                <div className="text-sm text-teal-700">Needed to offset CO₂</div>
               </div>
-              <div className="text-center p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+              <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
                 <div className="text-2xl mb-2">💡</div>
-                <div className="text-lg font-bold text-white">{(currentMonth.carbon * 1.2).toFixed(0)} hours</div>
-                <div className="text-sm text-gray-400">LED bulb equivalent</div>
+                <div className="text-lg font-bold text-teal-900">{(currentMonth.carbon * 1.2).toFixed(0)} hours</div>
+                <div className="text-sm text-teal-700">LED bulb equivalent</div>
               </div>
             </div>
           </CardContent>

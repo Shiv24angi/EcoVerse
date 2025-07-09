@@ -193,18 +193,18 @@ export default function ScanPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Scan Product</h1>
+          <h1 className="text-3xl font-bold text-cyan-900">Scan Product</h1>
           <p className="text-gray-400 mt-2">
-            Enter or scan a barcode to check the carbon footprint and sustainability score.
+            Enter or scan a barcode to check the recyclability, carbon footprint and your sustainability score.
           </p>
         </div>
 
-        <Card className="dark-card border-gray-700">
+        <Card className="bg-cyan-100 border-none shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-cyan-700">
               <Scan className="h-5 w-5" /> Product Scanner
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-gray-600">
               Enter a barcode manually, use your camera to scan, or try the demo barcodes below
             </CardDescription>
           </CardHeader>
@@ -235,9 +235,9 @@ export default function ScanPage() {
         </Card>
 
         {product && (
-          <Card className="dark-card border-gray-700">
+          <Card className="bg-cyan-100 border-none shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between text-white">
+              <CardTitle className="flex items-center justify-between text-cyan-700">
                 <span>{product.product}</span>
                 <div className="flex gap-2">
                   <Badge className={`${getSustainabilityColor(product.sustainabilityScore!)} border`}>
@@ -278,7 +278,7 @@ export default function ScanPage() {
                       })()}
                     </div>
                     {product.calculation && (
-                      <p className="text-sm text-gray-400 mt-2">
+                      <p className="text-sm text-green mt-2">
                         Calculation: {product.calculation}
                       </p>
                     )}
@@ -287,20 +287,20 @@ export default function ScanPage() {
                   <Separator />
 
                   <div>
-                    <h4 className="font-medium mb-2 text-gray-300">♻️ Packaging Info</h4>
+                    <h4 className="font-medium mb-2 text-green">♻️ Packaging Info</h4>
                     {product.packaging ? (
-                      <div className="space-y-1 text-sm text-gray-400">
+                      <div className="space-y-1 text-sm text-green">
                         <div className="flex justify-between">
                           <span>Material:</span>
-                          <span className="text-gray-300">{product.packaging.material}</span>
+                          <span className="text-green">{product.packaging.material}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Recyclable:</span>
-                          <span className="text-gray-300">{product.packaging.recyclable ? "✅ Yes" : "❌ No"}</span>
+                          <span className="text-green">{product.packaging.recyclable ? "✅ Yes" : "❌ No"}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Biodegradable:</span>
-                          <span className="text-gray-300">{product.packaging.biodegradable ? "✅ Yes" : "❌ No"}</span>
+                          <span className="text-green">{product.packaging.biodegradable ? "✅ Yes" : "❌ No"}</span>
                         </div>
                         {product.packaging.inferred && (
                           <p className="text-yellow-400 text-xs mt-1">
@@ -309,15 +309,15 @@ export default function ScanPage() {
                         )}
                       </div>
                     ) : (
-                      <p className="text-gray-500">No packaging data available.</p>
+                      <p className="text-green">No packaging data available.</p>
                     )}
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-medium mb-2 text-gray-300">Description</h4>
-                <p className="text-gray-400">{product.description}</p>
+                <h4 className="font-medium mb-2 text-green">Description</h4>
+                <p className="text-green">{product.description}</p>
               </div>
             </CardContent>
           </Card>
