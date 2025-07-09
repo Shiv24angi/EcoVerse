@@ -52,16 +52,6 @@ MONGODB_URI=your-mongodb-uri
 
 Visit http://localhost:3000 in your browser.
 
----
-
-👥 Contributors
-Imant — UI/UX Design, Theming, Styling
-
-Shivangi Sharma — Backend Integration, MongoDB, Firebase Auth, Rewards Logic
-
-Harshit — Backend Integration, MongoDB, Firebase Sync, Rewards System
-
-Jatinder — Frontend Development, Scan Feature, Barcode Integration
 
 
 
