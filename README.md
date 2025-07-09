@@ -52,6 +52,8 @@ MONGODB_URI=your-mongodb-uri
 
 Visit http://localhost:3000 in your browser.
 
+---
+
 👥 Contributors
 Imant — UI/UX Design, Theming, Styling
 
