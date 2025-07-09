@@ -2,17 +2,25 @@
 
 import { useEffect, useState } from "react"
 import LandingPage from "@/components/landing-page"
-import AvatarSelectionPage from "@/components/avatar-selection-page" // adjust path if needed
+import AvatarSelectionPage from "@/components/avatar-selection-page"
 
 export default function Home() {
   const [hasAvatar, setHasAvatar] = useState<boolean | null>(null)
+  const [started, setStarted] = useState<boolean>(false)
 
   useEffect(() => {
     const storedAvatar = localStorage.getItem("user-avatar")
-    setHasAvatar(!!storedAvatar) // true if avatar exists
+    setHasAvatar(!!storedAvatar)
   }, [])
 
-  if (hasAvatar === null) return null // wait for localStorage to load
+  if (hasAvatar === null) return null // wait for localStorage
 
-  return hasAvatar ? <LandingPage /> : <AvatarSelectionPage />
+  return hasAvatar ? (
+  <LandingPage />
+) : started ? (
+  <AvatarSelectionPage />
+) : (
+  <LandingPage onGetStarted={() => setStarted(true)} />
+)
+
 }

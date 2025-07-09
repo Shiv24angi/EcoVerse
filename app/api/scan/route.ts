@@ -106,6 +106,7 @@ export async function POST(req: Request) {
       updatedUser.unconfirmedPoints = updatedUser.points?.unconfirmed || 0
       updatedUser.rewardPoints = updatedUser.confirmedPoints + updatedUser.unconfirmedPoints
       updatedUser.totalPointsEarned = updatedUser.rewardPoints
+      updatedUser.pointsSummary = getUserPointsSummary(updatedUser) // 👈 this line helps if dashboard uses pointsSummary
 
       await updatedUser.save()
 
