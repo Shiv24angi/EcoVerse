@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.syncLeaderboardDelete = exports.syncLeaderboardUpdate = exports.syncLeaderboardCreate = exports.handleUserDeletion = exports.handleUserSignup = void 0;
+const authSync_1 = require("./authSync");
+Object.defineProperty(exports, "handleUserSignup", { enumerable: true, get: function () { return authSync_1.handleUserSignup; } });
+Object.defineProperty(exports, "handleUserDeletion", { enumerable: true, get: function () { return authSync_1.handleUserDeletion; } });
+const firestoreSync_1 = require("./firestoreSync");
+Object.defineProperty(exports, "syncLeaderboardCreate", { enumerable: true, get: function () { return firestoreSync_1.syncLeaderboardCreate; } });
+Object.defineProperty(exports, "syncLeaderboardUpdate", { enumerable: true, get: function () { return firestoreSync_1.syncLeaderboardUpdate; } });
+Object.defineProperty(exports, "syncLeaderboardDelete", { enumerable: true, get: function () { return firestoreSync_1.syncLeaderboardDelete; } });

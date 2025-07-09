@@ -82,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         >
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between px-4 py-3 border-b border-sidebar-border">
-              {!collapsed && <span className="font-semibold text-lg">Navigation</span>}
+              {!collapsed && <span className="font-semibold text-lg">Menu</span>}
               <Button
                 variant="ghost"
                 size="sm"

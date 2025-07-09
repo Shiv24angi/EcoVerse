@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react"
 
-type Theme = "light" // only allowing light since you're disabling dark/system
+type Theme = "light" | "dark" | "system"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -19,7 +19,7 @@ const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undef
 
 export function ThemeProvider({
   children,
-  defaultTheme = "light", // ✅ set to light
+  defaultTheme = "light",
   storageKey = "vite-ui-theme",
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme)
@@ -27,20 +27,26 @@ export function ThemeProvider({
 
   useEffect(() => {
     const storedTheme = localStorage.getItem(storageKey) as Theme
-    if (storedTheme) {
-      setThemeState(storedTheme)
-    } else {
-      setThemeState("light") // ✅ fallback to light
-    }
+    setThemeState(storedTheme || defaultTheme)
     setMounted(true)
-  }, [storageKey])
+  }, [storageKey, defaultTheme])
 
   useEffect(() => {
     if (!mounted) return
 
     const root = window.document.documentElement
-    root.classList.remove("dark") // ✅ ensure dark mode class is removed
-    root.classList.add("light")   // ✅ explicitly apply light
+
+    if (theme === "dark") {
+      root.classList.add("dark")
+      root.classList.remove("light")
+    } else if (theme === "light") {
+      root.classList.add("light")
+      root.classList.remove("dark")
+    } else if (theme === "system") {
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+      root.classList.add(isDark ? "dark" : "light")
+      root.classList.remove(isDark ? "light" : "dark")
+    }
 
     localStorage.setItem(storageKey, theme)
   }, [theme, mounted, storageKey])

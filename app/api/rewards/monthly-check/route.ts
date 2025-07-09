@@ -5,24 +5,15 @@ import { calculateMonthlyBonus, POINT_REWARDS } from "@/lib/rewards-system"
 
 // POST /api/rewards/monthly-check - Check and award monthly bonuses
 export async function POST(req: Request) {
-  const { email: _email } = await req.json()
+  const { email } = await req.json()
 
-  // ✅ Hardcoded test user (keep this for dev)
-  const primaryEmail = "test@example.com"
-  const fallbackEmail = "shivangidps40@gmail.com"
-
-  const email = _email || primaryEmail
+  if (!email) {
+    return NextResponse.json({ error: "Email required" }, { status: 400 })
+  }
 
   try {
     await dbConnect()
-
-    // Try primary user
-    let user = await User.findOne({ email: email }) as any
-
-    // Fallback if primary not found
-    if (!user && email === primaryEmail) {
-      user = await User.findOne({ email: fallbackEmail }) as any
-    }
+    const user = await User.findOne({ email }) as any
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -30,15 +21,17 @@ export async function POST(req: Request) {
 
     const currentDate = new Date()
     const lastCheck = user.lastMonthlyBonusCheck ? new Date(user.lastMonthlyBonusCheck) : null
-
+    
+    // Check if we need to award monthly bonus
     if (!lastCheck || lastCheck.getMonth() !== currentDate.getMonth()) {
       const monthlyBonus = calculateMonthlyBonus(user)
-
+      
       if (monthlyBonus) {
+        // Monthly bonuses are always confirmed
         user.confirmedPoints = (user.confirmedPoints || 0) + monthlyBonus.points
         user.rewardPoints = (user.confirmedPoints || 0) + (user.unconfirmedPoints || 0)
         user.totalPointsEarned = (user.totalPointsEarned || 0) + monthlyBonus.points
-
+        
         user.rewardTransactions = user.rewardTransactions || []
         user.rewardTransactions.push({
           type: 'earned',
@@ -49,12 +42,12 @@ export async function POST(req: Request) {
           date: currentDate,
           confirmedAt: currentDate
         })
-
+        
         user.lastMonthlyBonusCheck = currentDate
         user.monthlyBonusesEarned = (user.monthlyBonusesEarned || 0) + 1
-
+        
         await user.save()
-
+        
         return NextResponse.json({
           bonusAwarded: true,
           bonus: monthlyBonus,
@@ -79,20 +72,15 @@ export async function POST(req: Request) {
 // GET /api/rewards/monthly-check - Get monthly bonus status
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const _email = searchParams.get('email')
+  const email = searchParams.get('email')
 
-  const primaryEmail = "test@example.com"
-  const fallbackEmail = "shivangidps40@gmail.com"
-
-  const email = _email || primaryEmail
+  if (!email) {
+    return NextResponse.json({ error: "Email required" }, { status: 400 })
+  }
 
   try {
     await dbConnect()
-
-    let user = await User.findOne({ email: email }).lean() as any
-    if (!user && email === primaryEmail) {
-      user = await User.findOne({ email: fallbackEmail }).lean() as any
-    }
+    const user = await User.findOne({ email }).lean() as any
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -101,9 +89,9 @@ export async function GET(req: Request) {
     const currentDate = new Date()
     const lastCheck = user.lastMonthlyBonusCheck ? new Date(user.lastMonthlyBonusCheck) : null
     const eligibleForBonus = !lastCheck || lastCheck.getMonth() !== currentDate.getMonth()
-
+    
     const monthlyBonus = calculateMonthlyBonus(user)
-
+    
     return NextResponse.json({
       eligibleForBonus,
       monthlyBonus,
