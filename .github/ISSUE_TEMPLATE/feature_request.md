@@ -1,40 +1,33 @@
-\---
-
+---
 name: Feature Request
-
-about: Suggest a new idea or improvement for EcoVerse
-
-title: "\[FEAT] "
-
+about: Got an idea to make EcoVerse better? We'd love to hear it!
+title: "[FEAT] "
 labels: enhancement
-
 assignees: ''
+---
 
-\---
+## What Problem Does This Solve?
 
+<!-- Is there something that frustrates you or feels missing? Tell us about it! -->
+<!-- Example: "I always have to manually do X, it would be great if it was automatic" -->
 
+## What Would You Like to See?
 
-\## Is your feature request related to a problem?
+<!-- Describe your idea! Don't worry about the technical details, just tell us what you want it to do. -->
 
-A clear description of what the problem is.
+## Why Would This Be Useful?
 
-Example: I'm always frustrated when...
+<!-- Who else do you think would benefit from this? How would it improve the experience? -->
 
+## Any Examples or References?
 
+<!-- Seen something similar in another app? Share a link or screenshot! -->
 
-\## Describe the Solution You'd Like
+## Would You Like to Work on This?
 
-A clear description of what you want to happen.
+- [ ] Yes, I'd like to be assigned to this feature
+- [ ] No, just suggesting
 
+## Anything Else?
 
-
-\## Alternatives Considered
-
-Any alternative solutions or features you've considered.
-
-
-
-\## Additional Context
-
-Add any other context or screenshots about the feature request here.
-
+<!-- Any extra details, mockups, or context that might help us understand your idea better. -->

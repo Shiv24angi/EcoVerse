@@ -1,86 +1,29 @@
-\# Code of Conduct
+# Code of Conduct
 
+## Our Commitment
 
+We are committed to fostering an open, welcoming, and respectful environment for everyone participating in EcoVerse.
 
-\## Our Pledge
+## Expected Behavior
 
+* Be respectful and professional.
+* Welcome constructive feedback.
+* Collaborate effectively with other contributors.
+* Help create a positive community experience.
 
+## Unacceptable Behavior
 
-We as contributors and maintainers pledge to make participation in EcoVerse
+* Harassment or discrimination of any kind.
+* Personal attacks or insulting language.
+* Spam or disruptive behavior.
+* Sharing private information without consent.
 
-a harassment-free experience for everyone, regardless of age, body size,
+## Enforcement
 
-disability, ethnicity, gender identity, level of experience, nationality,
+Project maintainers are responsible for enforcing this Code of Conduct and may remove comments, issues, pull requests, or contributors that violate these guidelines.
 
-personal appearance, race, religion, or sexual identity and orientation.
+## Reporting Issues
 
+If you experience or witness unacceptable behavior, please contact the maintainers through a private communication channel.
 
-
-\## Our Standards
-
-
-
-Examples of behavior that contributes to a positive environment:
-
-
-
-\- Using welcoming and inclusive language
-
-\- Being respectful of differing viewpoints and experiences
-
-\- Gracefully accepting constructive criticism
-
-\- Focusing on what is best for the community
-
-\- Showing empathy towards other community members
-
-
-
-Examples of unacceptable behavior:
-
-
-
-\- The use of sexualized language or imagery
-
-\- Trolling, insulting/derogatory comments, and personal or political attacks
-
-\- Public or private harassment
-
-\- Publishing others' private information without explicit permission
-
-\- Other conduct which could reasonably be considered inappropriate
-
-
-
-\## Our Responsibilities
-
-
-
-Project maintainers are responsible for clarifying the standards of acceptable
-
-behavior and are expected to take appropriate and fair corrective action in
-
-response to any instances of unacceptable behavior.
-
-
-
-\## Enforcement
-
-
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-
-reported by contacting the project maintainer at GitHub. All complaints will
-
-be reviewed and investigated and will result in a response that is deemed
-
-necessary and appropriate to the circumstances.
-
-
-
-\## Attribution
-
-
-
-This Code of Conduct is adapted from the \[Contributor Covenant](https://www.contributor-covenant.org), version 2.0.
-
+All reports will be reviewed and handled appropriately.

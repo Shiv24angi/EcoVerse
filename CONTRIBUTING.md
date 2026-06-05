@@ -1,150 +1,159 @@
-\# Contributing to EcoVerse 🌱
+# Contributing to EcoVerse
 
+Thank you for your interest in contributing to EcoVerse. We welcome contributions from developers of all experience levels. Whether you are fixing bugs, improving documentation, enhancing the user experience, or building new features, your contributions help make the project better for everyone.
 
+## Before You Start
 
-Thank you for your interest in contributing to EcoVerse! We welcome contributions from everyone.
+* Check the existing issues before creating a new one.
+* Comment on the issue you would like to work on and wait for assignment.
+* Create a new issue if the problem or feature has not already been reported.
+* Be respectful and follow the project's Code of Conduct.
 
+---
 
+## Development Setup
 
-\## Getting Started
+### 1. Fork the Repository
 
+Fork the repository to your GitHub account.
 
+### 2. Clone Your Fork
 
-\### 1. Fork the Repository
-
-Click the \*\*Fork\*\* button on the top right of the repository page.
-
-
-
-\### 2. Clone Your Fork
+Clone your forked repository to your local machine:
 
 ```bash
-
-git clone https://github.com/YOUR\_USERNAME/EcoVerse.git
+git clone https://github.com/YOUR_USERNAME/EcoVerse.git
 
 cd EcoVerse
-
 ```
 
-
-
-\### 3. Install Dependencies
+Add the original repository as an upstream remote:
 
 ```bash
+git remote add upstream https://github.com/Shiv24angi/EcoVerse.git
+```
 
+### 3. Install Dependencies
+
+```bash
 npm install
-
 ```
 
+### 4. Configure Environment Variables
 
+Create a `.env.local` file and add the required environment variables.
 
-\### 4. Set Up Environment Variables
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 
-Copy the example env file and fill in your values:
-
-```bash
-
-cp .env.example .env.local
-
+MONGODB_URI=
 ```
 
-
-
-\### 5. Run the App Locally
+### 5. Start the Development Server
 
 ```bash
-
 npm run dev
-
 ```
 
-Visit http://localhost:3000 in your browser.
+Open `http://localhost:3000` in your browser.
 
+---
 
+## Branch Naming Convention
 
-\## Branch Naming Conventions
+Use descriptive branch names:
 
+```text
+feat/add-carbon-analytics
+fix/login-redirect
+docs/update-readme
+chore/update-dependencies
+```
 
+---
 
-\- `feat/your-feature-name` — for new features
+## Commit Message Convention
 
-\- `fix/your-bug-fix` — for bug fixes
+This project follows Conventional Commits.
 
-\- `docs/your-doc-change` — for documentation changes
+Examples:
 
-\- `chore/your-task` — for maintenance tasks
+```text
+feat: add barcode scanning support
 
+fix: resolve leaderboard ranking issue
 
+docs: improve installation guide
 
-\## Commit Message Guidelines
+refactor: simplify rewards calculation
+```
 
+---
 
+## Pull Request Guidelines
 
-Use clear and descriptive commit messages:
+Before submitting a pull request:
 
-\- `feat: add barcode scanning feature`
+* Ensure the project builds successfully.
+* Test your changes locally.
+* Keep pull requests focused on a single feature or fix.
+* Update documentation when necessary.
+* Remove unused code and debugging statements.
 
-\- `fix: resolve login redirect issue`
+When opening a pull request:
 
-\- `docs: update README with setup instructions`
+* Provide a clear title and description.
+* Link the related issue.
 
+Example:
 
+```text
+Closes #123
+```
 
-\## Pull Request Process
+* Include screenshots for UI changes whenever applicable.
 
+---
 
+## Coding Standards
 
-1\. Make sure your code works locally before submitting
+* Use TypeScript whenever possible.
+* Follow the existing project structure and coding style.
+* Write reusable and maintainable code.
+* Use meaningful names for variables, functions, and components.
+* Avoid unnecessary comments and dead code.
 
-2\. Keep your PR focused — one feature or fix per PR
+---
 
-3\. Write a clear title and description for your PR
+## Reporting Bugs
 
-4\. Reference the issue your PR fixes using `Fixes #issue\_number`
+When reporting a bug, please include:
 
-5\. Wait for a maintainer to review your PR
+* Steps to reproduce
+* Expected behavior
+* Actual behavior
+* Screenshots or recordings, if applicable
 
+---
 
+## Suggesting Features
 
-\## Coding Standards
+When proposing a feature, describe:
 
+* The problem it solves
+* The proposed solution
+* Any implementation ideas or references
 
+---
 
-\- Use TypeScript where possible
+## Contributors
 
-\- Follow the existing code style
+We appreciate every contribution to EcoVerse.
 
-\- Use meaningful variable and function names
+<a href="https://github.com/Shiv24angi/EcoVerse/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Shiv24angi/EcoVerse" alt="Contributors" />
+</a>
 
-\- Add comments where the code is not self-explanatory
-
-
-
-\## Reporting Bugs
-
-
-
-Open a new issue and include:
-
-\- A clear description of the bug
-
-\- Steps to reproduce it
-
-\- Expected vs actual behavior
-
-\- Screenshots if helpful
-
-
-
-\## Requesting Features
-
-
-
-Open a new issue and describe:
-
-\- What feature you'd like to see
-
-\- Why it would be useful
-
-\- Any implementation ideas you have
-
+Thank you for helping build a more sustainable future with EcoVerse.
