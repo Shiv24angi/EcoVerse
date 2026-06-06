@@ -26,7 +26,7 @@ type OpenFoodFactsResponse = {
 
 export async function POST(req: Request) {
   const { barcode } = await req.json()
-  const userEmail = "test@example.com" // ✅ Hardcoded email for dev/testing
+  const userEmail = req.headers.get("x-user-email") || "test@example.com" // ✅ Fallback to dev email if no JWT session exists
 
   if (!barcode) {
     return NextResponse.json({ error: "Barcode missing" }, { status: 400 })

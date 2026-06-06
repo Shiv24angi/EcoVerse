@@ -7,7 +7,7 @@ import { calculateLevel, getSustainabilityTier } from "@/lib/rewards-system"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const email = searchParams.get('email')
+  const email = req.headers.get("x-user-email") || searchParams.get('email') || "test@example.com"
 
   if (!email) {
     return NextResponse.json({ error: "Email required" }, { status: 400 })

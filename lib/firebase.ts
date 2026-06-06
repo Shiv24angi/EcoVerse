@@ -3,13 +3,13 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDuXpd3VY3N9CBfLnow3PfmWtpo2ZxlgW4",
-  authDomain: "ecoverse-18a2c.firebaseapp.com",
-  projectId: "ecoverse-18a2c",
-  storageBucket: "ecoverse-18a2c.appspot.com", // ✅ NOTE: .com NOT .app
-  messagingSenderId: "969012837163",
-  appId: "1:969012837163:web:5cf1b30e0e98acfdeb636e",
-  measurementId: "G-8CHJ86L9S6"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, // NOTE: .com NOT .app
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];

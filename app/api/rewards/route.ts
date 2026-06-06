@@ -12,7 +12,7 @@ import {
 // GET /api/rewards - Get user's complete rewards data
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const email = "test@example.com" // 🔒 Hardcoded temporarily
+  const email = req.headers.get("x-user-email") || "test@example.com" // 🔒 Fallback to dev email if no JWT session exists
 
   if (!email) {
     return NextResponse.json({ error: "Email required" }, { status: 400 })
@@ -99,7 +99,7 @@ export async function GET(req: Request) {
 // POST /api/rewards/redeem - Redeem reward points for shop items
 export async function POST(req: Request) {
   const { itemId } = await req.json()
-  const email = "test@example.com" // 🔒 use same hardcoded email
+  const email = req.headers.get("x-user-email") || "test@example.com" // 🔒 Fallback to dev email if no JWT session exists
 
 
   if (!email || !itemId) {

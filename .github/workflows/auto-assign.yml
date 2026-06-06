@@ -1,0 +1,97 @@
+name: Auto Assign Contributor
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  assign:
+    name: Assign Contributor
+    if: github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+
+    steps:
+      - name: Auto Assign
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const owner = 'Shiv24angi';
+            const repo = 'EcoVerse';
+            const issue_number = context.issue.number;
+            const commenter = context.payload.comment.user.login;
+            const commentBody = context.payload.comment.body;
+
+            const body = commentBody.toLowerCase();
+
+            const shouldAssign =
+              body.includes('/assign') ||
+              body.includes('@shiv24angi');
+
+            if (!shouldAssign) {
+              return;
+            }
+
+            const { data: allIssues } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              assignee: commenter,
+            });
+
+            const otherAssignedIssues = allIssues.filter(
+              (i) => i.number !== issue_number
+            );
+
+            if (otherAssignedIssues.length > 0) {
+              const assignedIssue = otherAssignedIssues[0];
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: `Hey @${commenter}! You are currently assigned to #${assignedIssue.number}. Please resolve that first .`,
+              });
+              return;
+            }
+
+            const { data: issue } = await github.rest.issues.get({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            const assignees = issue.assignees || [];
+
+            if (assignees.length > 0) {
+              const currentAssignee = assignees[0].login;
+
+              if (currentAssignee === commenter) {
+                return;
+              }
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: `This issue is currently assigned to @${currentAssignee}. Please look for another unassigned issue.`,
+              });
+
+              return;
+            }
+
+            await github.rest.issues.addAssignees({
+              owner,
+              repo,
+              issue_number,
+              assignees: [commenter],
+            });
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: `Assigned @${commenter} to this issue. Thank you for contributing! If you enjoy the project, consider giving the repository a 🌟.`,
+            });
