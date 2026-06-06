@@ -26,12 +26,15 @@ export async function POST(req: Request) {
     }
 
     const user = await User.create({
-      _id: firebaseUid,
+      firebaseUid,
       name,
       email,
+      password: "firebase-managed",
       monthlyCarbon: 0,
       totalScanned: 0,
       joinedAt: new Date().toISOString(),
+      avatarId: "avatar-1",
+      avatarCustomization: {},
     })
 
     console.log("✅ User created:", user)

@@ -70,6 +70,9 @@ const UserSchema = new mongoose.Schema({
   // Monthly bonuses tracking
   lastMonthlyBonusCheck: { type: Date, default: null },
   monthlyBonusesEarned: { type: Number, default: 0 },
+  // Avatar selection and customization foundation (Issue #33)
+  avatarId: { type: String, default: "avatar-1" },
+  avatarCustomization: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, {
   timestamps: true
 })

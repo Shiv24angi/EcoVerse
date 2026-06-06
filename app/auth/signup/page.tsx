@@ -75,7 +75,7 @@ export default function SignUp() {
           title: "Welcome to EcoVerse!",
           description: "Your account has been created successfully.",
         })
-        router.push("/dashboard")
+        router.push("/avatar-selection")
       } else {
         toast({
           title: "Sign up failed",
@@ -108,7 +108,7 @@ export default function SignUp() {
           <CardDescription className="text-gray-700">Join the community of sustainable shoppers</CardDescription>
         </CardHeader>
         <CardContent>
-          <GoogleSignInButton text="Sign up with Google" className="mb-6" />
+          <GoogleSignInButton text="Sign up with Google" className="mb-6" redirectUrl="/avatar-selection" />
           
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">

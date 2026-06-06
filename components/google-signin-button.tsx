@@ -9,11 +9,13 @@ import { useState } from "react"
 interface GoogleSignInButtonProps {
   text?: string
   className?: string
+  redirectUrl?: string
 }
 
 export default function GoogleSignInButton({ 
   text = "Continue with Google", 
-  className = "" 
+  className = "",
+  redirectUrl = "/dashboard"
 }: GoogleSignInButtonProps) {
   const { signInWithGoogle } = useAuth()
   const router = useRouter()
@@ -29,7 +31,7 @@ export default function GoogleSignInButton({
           title: "Welcome!",
           description: "You've successfully signed in with Google.",
         })
-        router.push("/dashboard")
+        router.push(redirectUrl)
       } else {
         toast({
           title: "Sign in failed",

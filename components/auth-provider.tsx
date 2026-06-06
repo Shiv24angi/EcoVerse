@@ -10,6 +10,7 @@ import {
 import {
   signInWithPopup,
   createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   User as FirebaseUser
 } from "firebase/auth"
 import { auth, googleProvider } from "@/lib/firebase"
@@ -21,6 +22,7 @@ interface User {
   email: string
   name: string
   avatarId?: AvatarId
+  avatarCustomization?: any
   monthlyCarbon: number
   totalScanned: number
   joinedAt: string
@@ -47,13 +49,13 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
+  console.log("Context avatar:", user?.avatarId)
+
   useEffect(() => {
   const storedUser = localStorage.getItem("ecoverse-user")
-  const avatarId = localStorage.getItem("avatarId")
   if (storedUser) {
     const parsed = JSON.parse(storedUser)
-    const userWithAvatar = { ...parsed, avatarId } // ✅ merge avatarId
-    setUser(userWithAvatar)
+    setUser(parsed)
   }
 }, [])
 
@@ -112,14 +114,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // 1. Authenticate with Firebase first
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+
+      // 2. Fetch the local user session
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ 
+          email, 
+          password, 
+          firebaseUid: userCredential.user.uid 
+        })
       })
 
       const data = await res.json()
       if (res.ok) {
+        console.log("Signin avatar:", data.user.avatarId)
         setUser(data.user)
         localStorage.setItem("ecoverse-user", JSON.stringify(data.user))
         return true
@@ -127,8 +138,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn("❌ Login failed:", data.error)
         return false
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("🔥 Login error:", err)
+      toast({
+        title: "Login failed",
+        description: "Invalid credentials or user does not exist.",
+        variant: "destructive"
+      })
       return false
     }
   }
@@ -185,16 +201,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
   
-  const updateAvatar = (avatarId: AvatarId) => {
-  if (user) {
-    const updatedUser = {
-      ...user,
-      avatarId,
+  const updateAvatar = async (avatarId: AvatarId) => {
+    if (user) {
+      console.log("Avatar saved:", avatarId)
+      const updatedUser = {
+        ...user,
+        avatarId,
+      }
+      setUser(updatedUser)
+      localStorage.setItem("ecoverse-user", JSON.stringify(updatedUser))
+
+      try {
+        await fetch("/api/user/avatar", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email, avatarId })
+        })
+      } catch (err) {
+        console.error("Failed to update avatar on server:", err)
+      }
     }
-    setUser(updatedUser)
-    localStorage.setItem("ecoverse-user", JSON.stringify(updatedUser))
   }
-}
 
 
   return (

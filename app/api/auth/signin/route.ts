@@ -7,14 +7,22 @@ import { signToken } from "@/lib/auth";
 
 export async function POST(req: Request) {
   await dbConnect();
-  const { email, password } = await req.json();
+  const { email, password, firebaseUid } = await req.json();
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).lean();
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
+  let isMatch = false;
+  if (firebaseUid && user.firebaseUid === firebaseUid) {
+    // Authenticated via Firebase
+    isMatch = true;
+  } else if (password) {
+    // Fallback for legacy users
+    isMatch = await bcrypt.compare(password, user.password);
+  }
+
   if (!isMatch) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
@@ -25,6 +33,8 @@ export async function POST(req: Request) {
     monthlyCarbon: user.monthlyCarbon || 0,
     totalScanned: user.totalScanned || 0,
     joinedAt: user.createdAt?.toISOString().split("T")[0] || new Date().toISOString().split("T")[0],
+    avatarId: user.avatarId || "avatar-1",
+    avatarCustomization: user.avatarCustomization || {},
   }
 
   // Generate the JWT

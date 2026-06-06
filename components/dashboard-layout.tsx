@@ -36,6 +36,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!user) return null
 
+  console.log("Rendered avatar:", user.avatarId)
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { useAuth } from "@/components/auth-provider"
@@ -19,13 +20,14 @@ const avatarOptions = [
 
 export default function AvatarSelectionPage() {
   const [selected, setSelected] = useState<AvatarId | null>(null)
+  const router = useRouter()
 
 const { updateAvatar } = useAuth()
 
-const handleSave = () => {
+const handleSave = async () => {
   if (selected) {
-    updateAvatar(selected)          // ✅ update context + localStorage
-    window.location.href = "/dashboard" // ✅ redirect to dashboard
+    await updateAvatar(selected)          // ✅ update context + backend
+    router.push("/dashboard") // ✅ redirect to dashboard (soft)
   }
 }
   
@@ -39,14 +41,14 @@ const handleSave = () => {
           {avatarOptions.map(({ id, src }) => (
             <button
               key={id}
-              onClick={() => setSelected(id)}
+              onClick={() => setSelected(id as AvatarId)}
               className={`p-2 rounded-xl transition-all border-2 ${
                 selected === id
                   ? "border-green-500 scale-105 shadow-lg"
                   : "border-transparent hover:border-green-300"
               }`}
             >
-              <Image src={src} width={80} height={80} className="rounded-full" />
+              <Image src={src} alt={`Avatar option ${id}`} width={80} height={80} className="rounded-full" />
             </button>
           ))}
         </div>
