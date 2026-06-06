@@ -1,169 +1,225 @@
-# EcoVerse Architecture Guide
-
-## Overview
-
-This document provides a high-level overview of the EcoVerse codebase to help contributors quickly understand the project structure and navigate the repository efficiently.
+# 🏗️ EcoVerse Architecture Guide
 
 ---
 
-## Frontend Directory
+## 🌍 Overview
 
-### `/app`
+EcoVerse is a full-stack sustainability platform that analyzes consumer products using barcode scanning, estimates carbon footprint, and rewards eco-friendly behavior.
 
-The `app` directory contains the main application routing, pages, layouts, and views.
+It follows a **modular, layered architecture** separating UI, business logic, authentication, and database systems.
 
-Responsibilities include:
+---
 
-* Application routing
-* Page rendering
-* Layout management
-* Navigation flow
-* Feature-specific pages
+## 🧩 High-Level System Architecture
 
-This directory serves as the primary entry point for the Next.js application.
+```
+Frontend (Next.js + React)
+        ↓
+Business Logic Layer (/lib)
+        ↓
+Authentication Layer (Firebase Auth)
+        ↓
+Database Layer (MongoDB)
+        ↓
+External Services (Barcode Scanner, Firebase Functions)
+```
+
+---
+
+## 📁 Frontend Layer
+
+### `/app` (Next.js App Router)
+
+Handles routing and UI rendering.
+
+Responsibilities:
+- Page routing
+- Layout management
+- UI screens
+- Navigation flow
+
+---
 
 ### `/components`
 
-The `components` directory contains reusable UI components used throughout the application.
+Reusable UI components used across the app.
 
-Examples include:
-
-* Navigation bars
-* Buttons and form controls
-* Custom input fields
-* Scanner interface components
-* Shared UI elements
-
-Using reusable components helps maintain consistency and reduces code duplication.
+Examples:
+- Dashboard UI
+- Scanner interface
+- Buttons & inputs
+- Navigation bars
+- Theme components
 
 ---
 
-## Backend & Database Layer
+## ⚙️ Business Logic Layer (`/lib`)
 
-### `/models`
+This is the **core intelligence layer** of EcoVerse.
 
-The `models` directory contains MongoDB schema and model definitions used by the application.
+Contains:
 
-Examples include:
+- 🌱 Carbon footprint calculation logic
+- ♻️ Recyclability detection system
+- 🧠 Reward & eco-points engine
+- 🔥 Firebase configuration
+- 🗄️ MongoDB connection utilities
+- 🧰 Helper functions
 
-* `User.ts`
-* Future product-related models
-
-These models define how data is structured and stored within MongoDB.
-
-### `/lib`
-
-The `lib` directory stores shared utilities, helper functions, and configuration files used throughout the project.
-
-Examples include:
-
-* MongoDB connection helpers
-* Firebase configuration
-* Carbon footprint calculations
-* Packaging analysis utilities
-* Reward system logic
-* General helper functions
-
-Keeping shared logic in one place improves maintainability and reusability.
+👉 Acts as the bridge between UI and backend systems.
 
 ---
 
-## Sync & Build Outputs
+## 🗄️ Database Layer (MongoDB)
 
-### `/firebase-functions-sync-ts`
+MongoDB stores all persistent application data.
 
-This directory is used for Firebase synchronization workflows and related build outputs.
+### Stored Data:
+- User profiles
+- Scan history
+- Eco points & rewards
+- Product insights
 
-**Important Notes**
-
-* May contain compiled JavaScript (`.js`) files
-* May contain source map (`.js.map`) files
-* Generated during build or synchronization processes
-
-⚠️ **Do NOT edit compiled output files directly.**
-
-Always modify the original source files whenever changes are required.
-
-### `/linkFBtoMDB`
-
-This directory contains scripts used to synchronize Firebase and MongoDB data.
-
-Examples include:
-
-* User synchronization scripts
-* Firestore migration utilities
-* Database synchronization helpers
-
-**Important Notes**
-
-* Some files may be generated or compiled outputs
-* Do not directly edit compiled `.js` or `.js.map` files
-* Update the original source files whenever applicable
-
-⚠️ **Do NOT edit compiled output files directly.**
+### Model Layer (`/models`)
+Defines schema structure using Mongoose:
+- User model
+- Product-related models (future expansion)
 
 ---
 
-## Tech Stack Reference
+## 🔐 Authentication System (Firebase Auth)
 
-EcoVerse is built using:
+EcoVerse uses Firebase Authentication for secure login.
 
-* **Next.js** – Application framework and routing
-* **TypeScript** – Type-safe development
-* **Tailwind CSS** – Utility-first styling framework
-* **MongoDB** – Database layer
-* **Firebase Auth** – User authentication and identity management
+### Authentication Flow:
 
----
+```
+User → Google Sign-In
+     → Firebase Auth Token Generated
+     → Token Verified in App
+     → Session Created
+     → Dashboard Access Granted
+```
 
-## How to Contribute (Step by Step Guide)
-
-### Standard Git Workflow
-
-1. Fork this repository to your GitHub profile.
-
-2. Clone your forked repository to your local system.
-
-3. Create a new feature branch:
-
-   ```bash
-   git checkout -b docs/architecture-guide
-   ```
-
-4. Add the required documentation file.
-
-5. Commit your work with a meaningful commit message:
-
-   ```bash
-   git commit -m "docs: add central codebase architecture guide"
-   ```
-
-6. Push your branch to your fork.
-
-7. Open a Pull Request (PR) against the main repository.
-
-### GitHub Browser Workflow (No Git/Terminal Needed)
-
-1. Fork this repository to your GitHub profile.
-2. Open your fork on GitHub.
-3. Click **Add file** → **Create new file**.
-4. Name the file `ARCHITECTURE.md`.
-5. Paste your documentation into the editor.
-6. Commit the changes.
-7. Create a new branch and open a Pull Request.
+### Responsibilities:
+- Secure login
+- Session management
+- Identity verification
 
 ---
 
-## Notes for Contributors
+## 📦 Barcode Scanning System
 
-* Follow the existing project structure when adding new features.
-* Reuse components and utilities whenever possible.
-* Write documentation in clear, beginner-friendly language.
-* Prefer using backticks when referencing folder paths and file names.
-* Do not modify, delete, or refactor existing code unless the issue specifically requires it.
-* Do not edit generated build outputs directly.
-* Keep documentation updated when introducing major architectural changes.
+Powered by `@zxing/browser`.
+
+### Flow:
+
+```
+User opens scanner
+→ Camera activated
+→ Barcode scanned
+→ Product data extracted
+→ Sustainability data fetched
+→ Results shown in UI
+```
 
 ---
 
-This guide serves as a starting point for contributors and should be updated as the project evolves.
+## 🌱 Sustainability Engine
+
+Handles environmental intelligence:
+
+### Functions:
+- Carbon footprint estimation
+- Packaging recyclability detection
+- Eco score generation
+
+Lives inside `/lib` as reusable logic.
+
+---
+
+## 🔄 Firebase ↔ MongoDB Sync System
+
+EcoVerse uses dual persistence:
+
+### Firebase:
+- Authentication
+- User identity management
+
+### MongoDB:
+- Application data storage
+- Scan history
+- Rewards tracking
+
+### Sync Purpose:
+- Maintain consistency across systems
+- Separate auth and data layers
+- Improve scalability
+
+---
+
+## 📊 Core Data Flow
+
+```
+User Login (Google)
+        ↓
+Firebase Auth Verification
+        ↓
+Dashboard Access Granted
+        ↓
+Barcode Scanned
+        ↓
+Product Data Processed
+        ↓
+Carbon + Recyclability Calculated
+        ↓
+MongoDB Stores Data
+        ↓
+Eco Points Updated
+        ↓
+UI Updated in Real Time
+```
+
+---
+
+## 🧱 External Integrations
+
+### Firebase
+- Authentication
+- User sessions
+
+### MongoDB
+- Persistent storage
+- Structured data handling
+
+### ZXing Barcode Scanner
+- Real-time barcode scanning
+- Product identification
+
+---
+
+## 🧠 Architecture Principles
+
+EcoVerse follows:
+
+- 🧩 Modular design (separation of concerns)
+- 🔁 Reusable logic in `/lib`
+- 🔐 Secure authentication layer
+- 📦 Scalable database structure
+- ⚡ Performance-first frontend design
+
+---
+
+## 🚀 Summary
+
+EcoVerse is structured as a clean multi-layer system:
+
+- UI Layer → User interaction
+- Logic Layer → Business rules
+- Auth Layer → Identity security
+- DB Layer → Persistent storage
+- External Layer → Scanning & services
+
+This separation ensures scalability, maintainability, and future expansion potential.
+
+---
