@@ -224,6 +224,15 @@ Based on total eco points and engagement level.
 
 ---
 
+## ⚙️ GitHub Workflow Automation
+
+This repository includes an automated issue assignment workflow.
+- - Contributors can comment **`/assign`** on any issue to automatically assign it to themselves.
+- GitHub Actions handles the assignment process without maintainer intervention.
+- Improves contribution speed and reduces manual triaging work.
+
+---
+
 ## 📄 LICENSE
 
 This project is licensed under the MIT License.
