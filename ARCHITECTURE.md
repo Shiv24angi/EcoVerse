@@ -121,13 +121,14 @@ http://localhost:3000
 
 ## 📁 PROJECT STRUCTURE
 
+```text
 EcoVerse/
 │
 ├── app/                         # Next.js App Router (pages, routes, layouts)
 │   ├── (auth)/                  # Authentication-related routes
 │   ├── dashboard/               # User dashboard (stats, eco points)
 │   ├── scan/                    # Barcode scanning feature pages
-│   └── api/                    # Backend API routes (server actions / handlers)
+│   └── api/                     # Backend API routes (server actions / handlers)
 │
 ├── components/                 # Reusable UI components
 │   ├── ui/                      # Buttons, modals, cards, inputs
@@ -136,37 +137,21 @@ EcoVerse/
 │   └── layout/                 # Navbar, sidebar, footer
 │
 ├── hooks/                      # Custom React hooks
-│   ├── useAuth.ts              # Authentication logic
-│   ├── useScanner.ts          # Barcode scanning logic
-│   └── useEcoPoints.ts        # Rewards & points system logic
+│   ├── useAuth.ts
+│   ├── useScanner.ts
+│   └── useEcoPoints.ts
 │
 ├── lib/                        # Core utilities & configurations
-│   ├── firebase.ts            # Firebase initialization
-│   ├── mongodb.ts             # MongoDB connection setup
-│   ├── auth.ts                # Auth helpers / token handling
-│   └── utils.ts               # Generic utility functions
+│   ├── firebase.ts
+│   ├── mongodb.ts
+│   ├── auth.ts
+│   └── utils.ts
 │
-├── models/                    # MongoDB/Mongoose schemas
-│   ├── User.ts
-│   ├── Product.ts
-│   ├── ScanHistory.ts
-│   └── Rewards.ts
-│
-├── public/                    # Static assets
-│   ├── images/
-│   ├── icons/
-│   └── logos/
-│
-├── styles/                    # Global styles
-│   ├── globals.css
-│   └── themes.css
-│
-├── firebase-functions-sync-ts/   # Firebase cloud functions (sync layer)
-├── middleware.ts               # Route protection & auth middleware
-├── next.config.ts             # Next.js configuration
-├── tailwind.config.ts         # Tailwind configuration
-└── package.json  
-
+├── models/
+├── public/
+├── styles/
+└── package.json
+```
 ---
 
 ## ⚡ HOW IT WORKS
@@ -227,7 +212,7 @@ Based on total eco points and engagement level.
 ## ⚙️ GitHub Workflow Automation
 
 This repository includes an automated issue assignment workflow.
-- - Contributors can comment **`/assign`** on any issue to automatically assign it to themselves.
+- Contributors can comment **`/assign`** on any issue to automatically assign it to themselves.
 - GitHub Actions handles the assignment process without maintainer intervention.
 - Improves contribution speed and reduces manual triaging work.
 
