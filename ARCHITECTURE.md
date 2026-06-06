@@ -12,7 +12,7 @@ It follows a **modular, layered architecture** separating UI, business logic, au
 
 ## 🧩 High-Level System Architecture
 
-```
+```text
 Frontend (Next.js + React)
         ↓
 Business Logic Layer (/lib)
