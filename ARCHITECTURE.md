@@ -1,169 +1,231 @@
-# EcoVerse Architecture Guide
+# ♻️ EcoVerse – Track, Learn, and Earn for Sustainable Living
 
-## Overview
-
-This document provides a high-level overview of the EcoVerse codebase to help contributors quickly understand the project structure and navigate the repository efficiently.
+EcoVerse is a sustainability-focused web application that helps users make eco-conscious decisions by analyzing product impact. Users can scan barcodes, view carbon footprint estimates, check recyclability, and earn rewards for sustainable behavior.
 
 ---
 
-## Frontend Directory
+## ✨ Highlights
 
-### `/app`
-
-The `app` directory contains the main application routing, pages, layouts, and views.
-
-Responsibilities include:
-
-* Application routing
-* Page rendering
-* Layout management
-* Navigation flow
-* Feature-specific pages
-
-This directory serves as the primary entry point for the Next.js application.
-
-### `/components`
-
-The `components` directory contains reusable UI components used throughout the application.
-
-Examples include:
-
-* Navigation bars
-* Buttons and form controls
-* Custom input fields
-* Scanner interface components
-* Shared UI elements
-
-Using reusable components helps maintain consistency and reduces code duplication.
+- Real-time barcode scanning
+- Eco impact analysis (carbon + recyclability)
+- Gamified reward system
+- Firebase + MongoDB hybrid backend
 
 ---
 
-## Backend & Database Layer
+## 🚀 FEATURES
 
-### `/models`
+- 🔐 **Google Authentication (Firebase)**
+  - Secure sign-in using Google account via Firebase Authentication.
+  - Token-based session management for persistent login.
+  - Protects user data with secure authentication flow.
 
-The `models` directory contains MongoDB schema and model definitions used by the application.
+- 📦 **Barcode Scanning**
+  - Real-time product barcode scanning using device camera.
+  - Powered by @zxing/browser for fast and accurate detection.
+  - Supports instant product identification.
 
-Examples include:
+- 🌱 **Carbon Footprint Estimation**
+  - Calculates estimated CO₂ emissions for scanned products.
+  - Uses product metadata to evaluate environmental impact.
+  - Helps users compare eco-impact before making purchases.
 
-* `User.ts`
-* Future product-related models
+- ♻️ **Recyclability Check**
+  - Detects whether product packaging is recyclable or not.
+  - Provides clear yes/no sustainability classification.
+  - Encourages responsible waste disposal habits.
 
-These models define how data is structured and stored within MongoDB.
+- 🧠 **Eco Points System & Rewards**
+  - Awards eco points for sustainable user actions.
+  - Tracks daily and monthly eco-performance.
+  - Unlocks rewards and badges based on user activity.
 
-### `/lib`
+- 🧾 **Dashboard**
+  - Centralized view of all user activity and history.
+  - Displays scanned products and eco-score progress.
+  - Tracks carbon savings over time.
 
-The `lib` directory stores shared utilities, helper functions, and configuration files used throughout the project.
+- 📊 **Leaderboard**
+  - Compares eco-performance with other users.
+  - Encourages healthy competition in sustainability goals.
+  - Updates rankings dynamically based on activity.
 
-Examples include:
+- 🎨 **Dark / Light Theme Toggle**
+  - Switch between themes based on user preference.
+  - Improves accessibility and user experience.
+  - Saves theme preference across sessions.
 
-* MongoDB connection helpers
-* Firebase configuration
-* Carbon footprint calculations
-* Packaging analysis utilities
-* Reward system logic
-* General helper functions
+- 📈 **Analytics Page**
+  - Visualizes user sustainability trends using charts.
+  - Tracks carbon reduction and eco-score growth.
+  - Provides insights into long-term behavior.
 
-Keeping shared logic in one place improves maintainability and reusability.
+- 🔗 **Firebase–MongoDB Sync**
+  - Syncs authentication and application data across databases.
+  - Ensures consistency between frontend and backend storage.
+  - Prevents data loss with real-time synchronization.
+---
+
+## 📦 TECH STACK
+
+- Frontend: Next.js (App Router), TypeScript, Tailwind CSS  
+- Authentication: Firebase Auth (Google Sign-In)  
+- Database: MongoDB + Mongoose  
+- Scanning: @zxing/browser  
+- Backend: Firebase Functions (TypeScript)
 
 ---
 
-## Sync & Build Outputs
+## 📽️ DEMO VIDEO
 
-### `/firebase-functions-sync-ts`
-
-This directory is used for Firebase synchronization workflows and related build outputs.
-
-**Important Notes**
-
-* May contain compiled JavaScript (`.js`) files
-* May contain source map (`.js.map`) files
-* Generated during build or synchronization processes
-
-⚠️ **Do NOT edit compiled output files directly.**
-
-Always modify the original source files whenever changes are required.
-
-### `/linkFBtoMDB`
-
-This directory contains scripts used to synchronize Firebase and MongoDB data.
-
-Examples include:
-
-* User synchronization scripts
-* Firestore migration utilities
-* Database synchronization helpers
-
-**Important Notes**
-
-* Some files may be generated or compiled outputs
-* Do not directly edit compiled `.js` or `.js.map` files
-* Update the original source files whenever applicable
-
-⚠️ **Do NOT edit compiled output files directly.**
+LINK → https://drive.google.com/file/d/1DDff6gDIA4S_em2jsJIeY2Z83XV7iJ65/view?usp=sharing
 
 ---
 
-## Tech Stack Reference
+## 🛠️ INSTALLATION
 
-EcoVerse is built using:
+STEP 1 → Clone Repository  
+git clone https://github.com/Shiv24angi/EcoVerse.git  
 
-* **Next.js** – Application framework and routing
-* **TypeScript** – Type-safe development
-* **Tailwind CSS** – Utility-first styling framework
-* **MongoDB** – Database layer
-* **Firebase Auth** – User authentication and identity management
+STEP 2 → Enter Project Directory  
+cd EcoVerse  
 
----
-
-## How to Contribute (Step by Step Guide)
-
-### Standard Git Workflow
-
-1. Fork this repository to your GitHub profile.
-
-2. Clone your forked repository to your local system.
-
-3. Create a new feature branch:
-
-   ```bash
-   git checkout -b docs/architecture-guide
-   ```
-
-4. Add the required documentation file.
-
-5. Commit your work with a meaningful commit message:
-
-   ```bash
-   git commit -m "docs: add central codebase architecture guide"
-   ```
-
-6. Push your branch to your fork.
-
-7. Open a Pull Request (PR) against the main repository.
-
-### GitHub Browser Workflow (No Git/Terminal Needed)
-
-1. Fork this repository to your GitHub profile.
-2. Open your fork on GitHub.
-3. Click **Add file** → **Create new file**.
-4. Name the file `ARCHITECTURE.md`.
-5. Paste your documentation into the editor.
-6. Commit the changes.
-7. Create a new branch and open a Pull Request.
+STEP 3 → Install Dependencies  
+npm install  
 
 ---
 
-## Notes for Contributors
+## 🔐 ENVIRONMENT SETUP
 
-* Follow the existing project structure when adding new features.
-* Reuse components and utilities whenever possible.
-* Write documentation in clear, beginner-friendly language.
-* Prefer using backticks when referencing folder paths and file names.
-* Do not modify, delete, or refactor existing code unless the issue specifically requires it.
-* Do not edit generated build outputs directly.
-* Keep documentation updated when introducing major architectural changes.
+STEP 4 → Create Environment File  
+File → .env.local  
+
+STEP 5 → Add Required Variables  
+
+NEXT_PUBLIC_FIREBASE_API_KEY=your-key  
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain  
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id  
+MONGODB_URI=your-mongodb-uri  
 
 ---
 
-This guide serves as a starting point for contributors and should be updated as the project evolves.
+## ▶️ RUN PROJECT
+
+STEP 6 → Start Development Server  
+npm run dev  
+
+STEP 7 → Open in Browser  
+http://localhost:3000  
+
+---
+
+## 📁 PROJECT STRUCTURE
+
+EcoVerse/
+│
+├── app/                         # Next.js App Router (pages, routes, layouts)
+│   ├── (auth)/                  # Authentication-related routes
+│   ├── dashboard/               # User dashboard (stats, eco points)
+│   ├── scan/                    # Barcode scanning feature pages
+│   └── api/                    # Backend API routes (server actions / handlers)
+│
+├── components/                 # Reusable UI components
+│   ├── ui/                      # Buttons, modals, cards, inputs
+│   ├── dashboard/              # Dashboard-specific components
+│   ├── scanner/                # Barcode scanner UI components
+│   └── layout/                 # Navbar, sidebar, footer
+│
+├── hooks/                      # Custom React hooks
+│   ├── useAuth.ts              # Authentication logic
+│   ├── useScanner.ts          # Barcode scanning logic
+│   └── useEcoPoints.ts        # Rewards & points system logic
+│
+├── lib/                        # Core utilities & configurations
+│   ├── firebase.ts            # Firebase initialization
+│   ├── mongodb.ts             # MongoDB connection setup
+│   ├── auth.ts                # Auth helpers / token handling
+│   └── utils.ts               # Generic utility functions
+│
+├── models/                    # MongoDB/Mongoose schemas
+│   ├── User.ts
+│   ├── Product.ts
+│   ├── ScanHistory.ts
+│   └── Rewards.ts
+│
+├── public/                    # Static assets
+│   ├── images/
+│   ├── icons/
+│   └── logos/
+│
+├── styles/                    # Global styles
+│   ├── globals.css
+│   └── themes.css
+│
+├── firebase-functions-sync-ts/   # Firebase cloud functions (sync layer)
+├── middleware.ts               # Route protection & auth middleware
+├── next.config.ts             # Next.js configuration
+├── tailwind.config.ts         # Tailwind configuration
+└── package.json  
+
+---
+
+## ⚡ HOW IT WORKS
+
+🔐 1. Authentication
+User signs in using Google via Firebase Auth.  
+A secure session is created and linked with MongoDB user data.
+
+📦 2. Product Scanning
+User opens camera and scans product barcode in real time.  
+Camera captures barcode using live video stream.
+
+📡 3. Barcode Processing (ZXing)
+ZXing decodes barcode into a unique product ID.  
+This ID is sent to backend for processing.
+
+🌱 4. Product Data Fetching
+Backend fetches product details from DB or APIs.  
+Includes name, category, and material information.
+
+🌍 5. Carbon Footprint Calculation
+System evaluates environmental impact of product.  
+Returns score: Low / Medium / High carbon impact.
+
+♻️ 6. Recyclability Check
+Packaging material is analyzed for recyclability.  
+User gets clear recyclable / non-recyclable result.
+
+💾 7. Data Storage
+All scan data is stored in MongoDB securely.  
+Includes user ID, product data, score, and timestamp.
+
+🧠 8. Eco Points System
+User earns points for eco-friendly actions.  
+More sustainable activity = higher rewards.
+
+📊 9. Dashboard Update
+All data updates instantly in user dashboard UI.  
+Shows scans, points, savings, and progress.
+
+🏆 10. Rewards System
+Users unlock badges and leaderboard ranks.  
+Based on total eco points and engagement level.
+
+---
+
+## 🤝 CONTRIBUTING
+
+1 → Fork the repository  
+2 → Create a new branch → git checkout -b feature-name  
+3 → Implement your changes  
+4 → Commit changes → git commit -m "feat: update"  
+5 → Push branch → git push origin feature-name  
+6 → Open a Pull Request  
+
+---
+
+## 📄 LICENSE
+
+This project is licensed under the MIT License.
+
+See the LICENSE file for full details.
