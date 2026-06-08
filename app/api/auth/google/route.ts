@@ -51,9 +51,10 @@ export async function POST(req: Request) {
   )
 }
     
-    console.log("Google login email:", email);
+    // Non-sensitive structured logs (avoid logging PII such as emails or avatar IDs)
+    console.log("Google login attempt:", { hasEmail: !!email, hasFirebaseUid: !!firebaseUid });
     console.log("Mongo user found:", !!userDoc);
-    console.log("Mongo avatar:", userDoc.avatarId);
+    console.log("User has avatar:", !!userDoc.avatarId);
     
     const joinedAt = userDoc.createdAt
       ? new Date(userDoc.createdAt).toISOString().split("T")[0]

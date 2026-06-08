@@ -49,7 +49,7 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
-  console.log("Context avatar:", user?.avatarId)
+  console.log("Auth context updated:", { hasUser: !!user })
 
   useEffect(() => {
   const storedUser = localStorage.getItem("ecoverse-user")
@@ -64,6 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       if (!auth) {
         console.error("❌ Firebase not available")
+        toast({
+          title: "Authentication unavailable",
+          description: "Login/signup is temporarily unavailable. Please try again later."
+        })
         return false
       }
 
@@ -92,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false
       }
 
-      console.log("✅ Signup successful:", data.user)
+      console.log("✅ Signup successful:", { success: true })
       setUser(data.user)
       localStorage.setItem("ecoverse-user", JSON.stringify(data.user))
       return true
@@ -121,6 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       if (!auth) {
         console.error("❌ Firebase not available")
+        toast({
+          title: "Authentication unavailable",
+          description: "Login/signup is temporarily unavailable. Please try again later."
+        })
         return false
       }
 
@@ -140,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const data = await res.json()
       if (res.ok) {
-        console.log("Signin avatar:", data.user.avatarId)
+        console.log("Signin successful:", { success: true })
         setUser(data.user)
         localStorage.setItem("ecoverse-user", JSON.stringify(data.user))
         return true
@@ -163,6 +171,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       if (!auth || !googleProvider) {
         console.error("❌ Firebase not available")
+        toast({
+          title: "Authentication unavailable",
+          description: "Login/signup is temporarily unavailable. Please try again later."
+        })
         return false
       }
 
@@ -186,6 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true
       } else {
         console.error("❌ Failed to authenticate Google user")
+        toast({
+          title: "Google login failed",
+          description: "Unable to sign in with Google. Please try again.",
+          variant: "destructive"
+        })
         return false
       }
     } catch (error) {
@@ -213,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const updateAvatar = async (avatarId: AvatarId) => {
     if (user) {
-      console.log("Avatar saved:", avatarId)
+      console.log("Avatar updated:", { success: true })
       const updatedUser = {
         ...user,
         avatarId,
