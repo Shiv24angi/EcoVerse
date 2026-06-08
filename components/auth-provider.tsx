@@ -205,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         return false
       }
-    } } catch (error) {
+    } catch (error) {
   console.error("🔥 Google sign-in error:", error)
 
   toast({
@@ -216,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return false
 }
+    }
 
   const logout = () => {
     setUser(null)
