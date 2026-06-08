@@ -49,7 +49,6 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
-  //console.log("Auth context updated:", { hasUser: !!user })
 
   useEffect(() => {
   const storedUser = localStorage.getItem("ecoverse-user")
@@ -216,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return false
 }
-    }
+}   
 
   const logout = () => {
     setUser(null)
