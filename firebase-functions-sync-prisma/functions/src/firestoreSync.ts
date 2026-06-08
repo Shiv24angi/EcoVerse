@@ -7,11 +7,12 @@ export const syncLeaderboardCreate = functions.firestore
   .document(path)
   .onCreate(async (snap, context) => {
     const data = snap.data();
+    const points = data.points ?? data.score ?? 0;
     await prisma.leaderboard.create({
       data: {
         firebaseId: context.params.docId,
         name: data.name,
-        score: data.score,
+        points,
       },
     });
     console.log(`📥 Firestore → PostgreSQL: Created ${context.params.docId}`);
@@ -21,11 +22,12 @@ export const syncLeaderboardUpdate = functions.firestore
   .document(path)
   .onUpdate(async (change, context) => {
     const newData = change.after.data();
+    const points = newData.points ?? newData.score ?? 0;
     await prisma.leaderboard.update({
       where: { firebaseId: context.params.docId },
       data: {
         name: newData.name,
-        score: newData.score,
+        points,
       },
     });
     console.log(`🔁 Updated ${context.params.docId}`);

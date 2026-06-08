@@ -1,9 +1,13 @@
 import mongoose, { Mongoose } from "mongoose"
 
-const MONGODB_URI = process.env.MONGODB_URI!
+function getMongoUri() {
+  const mongoUri = process.env.MONGODB_URI
 
-if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable in .env.local")
+  if (!mongoUri) {
+    throw new Error("Please define the MONGODB_URI environment variable in .env.local")
+  }
+
+  return mongoUri
 }
 
 // Fix: Extend the global type
@@ -37,7 +41,7 @@ async function dbConnect(): Promise<Mongoose> {
     console.log("🔄 Attempting to connect to MongoDB Atlas...")
     
     try {
-      cached!.promise = mongoose.connect(MONGODB_URI, opts)
+      cached!.promise = mongoose.connect(getMongoUri(), opts)
       cached!.conn = await cached!.promise
       console.log("✅ MongoDB connected successfully!")
       return cached!.conn

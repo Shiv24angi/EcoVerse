@@ -1,4 +1,4 @@
-import { onUserCreated, onUserDeleted } from "firebase-functions/v2/auth";
+import * as functions from "firebase-functions";
 import {
   onDocumentCreated,
   onDocumentUpdated,
@@ -9,8 +9,7 @@ import { connectToMongo } from "./utils/mongo";
 const leaderboardPath = "leaderboard/{docId}";
 
 // AUTH: onCreate
-export const handleUserSignup = onUserCreated(async (event) => {
-  const user = event.data;
+export const handleUserSignup = functions.auth.user().onCreate(async (user) => {
   const db = await connectToMongo();
   const users = db.collection("users");
 
@@ -26,8 +25,7 @@ export const handleUserSignup = onUserCreated(async (event) => {
 });
 
 // AUTH: onDelete
-export const handleUserDeletion = onUserDeleted(async (event) => {
-  const user = event.data;
+export const handleUserDeletion = functions.auth.user().onDelete(async (user) => {
   const db = await connectToMongo();
   const users = db.collection("users");
 

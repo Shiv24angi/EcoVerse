@@ -1,3 +1,3 @@
-import { onUserCreated } from "firebase-functions/v2/auth";
+import * as functions from "firebase-functions";
 
-console.log("✅ V2 import is working.");
+console.log("✅ Firebase auth import is working.", !!functions.auth.user);

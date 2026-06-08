@@ -62,6 +62,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
+      if (!auth) {
+        console.error("❌ Firebase not available")
+        return false
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
       const response = await fetch("/api/auth/signup", {
@@ -114,6 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      if (!auth) {
+        console.error("❌ Firebase not available")
+        return false
+      }
+
       // 1. Authenticate with Firebase first
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
 

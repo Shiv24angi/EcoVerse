@@ -23,7 +23,7 @@ interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
-  ({ avatarId = "avatar-1", className, ...props }, ref) => {
+  ({ avatarId = "avatar-1", className, children, ...props }, ref) => {
     const src = avatarImages[avatarId]
 
     return (
@@ -32,11 +32,13 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         className={cn("h-10 w-10 rounded-full overflow-hidden border border-border", className)}
         {...props}
       >
-        <img
-          src={src}
-          alt="User avatar"
-          className="h-full w-full object-cover rounded-full"
-        />
+        {children ?? (
+          <img
+            src={src}
+            alt="User avatar"
+            className="h-full w-full object-cover rounded-full"
+          />
+        )}
       </div>
     )
   }
@@ -44,4 +46,17 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
 
 Avatar.displayName = "Avatar"
 
-export { Avatar }
+const AvatarFallback = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex h-full w-full items-center justify-center text-sm font-medium text-foreground", className)}
+    {...props}
+  />
+))
+
+AvatarFallback.displayName = "AvatarFallback"
+
+export { Avatar, AvatarFallback }

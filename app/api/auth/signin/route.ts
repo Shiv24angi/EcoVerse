@@ -5,11 +5,25 @@ import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import { signToken } from "@/lib/auth";
 
+type LeanUserDoc = {
+  _id: { toString(): string }
+  email: string
+  name: string
+  password?: string
+  firebaseUid?: string
+  monthlyCarbon?: number
+  totalScanned?: number
+  joinedAt?: string
+  avatarId?: string
+  avatarCustomization?: Record<string, unknown>
+  createdAt?: Date | string
+}
+
 export async function POST(req: Request) {
   await dbConnect();
   const { email, password, firebaseUid } = await req.json();
 
-  const user = await User.findOne({ email }).lean();
+  const user = (await User.findOne({ email }).lean()) as LeanUserDoc | null;
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -18,7 +32,7 @@ export async function POST(req: Request) {
   if (firebaseUid && user.firebaseUid === firebaseUid) {
     // Authenticated via Firebase
     isMatch = true;
-  } else if (password) {
+  } else if (password && user.password) {
     // Fallback for legacy users
     isMatch = await bcrypt.compare(password, user.password);
   }
@@ -26,13 +40,18 @@ export async function POST(req: Request) {
   if (!isMatch) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
+
+  const joinedAt = user.createdAt
+    ? new Date(user.createdAt).toISOString().split("T")[0]
+    : user.joinedAt || new Date().toISOString().split("T")[0]
+
     const userData = {
     _id: user._id,
     email: user.email,
     name: user.name,
     monthlyCarbon: user.monthlyCarbon || 0,
     totalScanned: user.totalScanned || 0,
-    joinedAt: user.createdAt?.toISOString().split("T")[0] || new Date().toISOString().split("T")[0],
+    joinedAt,
     avatarId: user.avatarId || "avatar-1",
     avatarCustomization: user.avatarCustomization || {},
   }

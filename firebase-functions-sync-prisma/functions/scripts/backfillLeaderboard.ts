@@ -24,14 +24,14 @@ async function backfillLeaderboard() {
 
     for (const doc of snapshot.docs) {
       const data = doc.data();
+      const points = data.points || data.score || 0;
       await prisma.leaderboard.upsert({
         where: { firebaseId: doc.id },
         update: {},
         create: {
           firebaseId: doc.id,
           name: data.name || "Unknown",
-          points: data.points || 0,
-          score: data.score || 0,
+          points,
         },
       });
 
