@@ -52,6 +52,7 @@ const carbonDatabase: CarbonData = {
   lentils: { kgCO2PerKg: 0.9, defaultWeight: 0.5, category: "Nuts & Legumes" },
   
   // Snacks & Sweets
+  nutella: { kgCO2PerKg: 18.7, defaultWeight: 0.4, category: "Snacks & Sweets" },
   chocolate: { kgCO2PerKg: 18.7, defaultWeight: 0.1, category: "Snacks & Sweets" },
   cookies: { kgCO2PerKg: 3.2, defaultWeight: 0.3, category: "Snacks & Sweets" },
   chips: { kgCO2PerKg: 4.6, defaultWeight: 0.15, category: "Snacks & Sweets" },
@@ -90,7 +91,7 @@ export function calculateCarbonFootprint(productName: string, brand?: string): {
     milk: ['milk', 'dairy milk'],
     bread: ['bread', 'loaf', 'baguette'],
     cheese: ['cheese', 'cheddar', 'mozzarella', 'swiss'],
-    chocolate: ['chocolate', 'cocoa', 'candy bar'],
+    chocolate: ['chocolate', 'cocoa', 'candy bar', 'chocolate spread', 'hazelnut spread'],
     coffee: ['coffee', 'espresso', 'cappuccino'],
     apple: ['apple', 'red apple', 'green apple'],
     banana: ['banana', 'plantain'],

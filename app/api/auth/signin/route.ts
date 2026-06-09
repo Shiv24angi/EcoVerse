@@ -53,6 +53,22 @@ if (!isMatch) {
         new Date().toISOString().split("T")[0],
     };
 
+    // Generate the JWT
+    const token = await signToken({
+      email: user.email,
+      userId: user._id.toString()
+    });
+
+    // Set the token securely as an HttpOnly cookie
+    const cookieStore = await cookies();
+    cookieStore.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    });
+
     return NextResponse.json(
       { user: userData },
       { status: 200 }

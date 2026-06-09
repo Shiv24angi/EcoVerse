@@ -33,6 +33,8 @@ interface ProductData {
     biodegradable: boolean;
     inferred?: boolean;
   };
+  ingredients?: string;
+  categories?: string[];
 }
 
 export default function ScanPage() {
@@ -88,12 +90,14 @@ export default function ScanPage() {
     setIsLoading(true)
 
     try {
-      const res = await fetch("/api/scan", {
+     const res = await fetch("/api/scan", {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    "x-user-email": user?.email || "",
+  },
   body: JSON.stringify({
     barcode: actualBarcode,
-    userEmail: "test@example.com"  // 👈 TEMP: use the same email from debug-create-user
   }),
 })
 
@@ -104,15 +108,17 @@ export default function ScanPage() {
 
       setProduct({
         barcode: actualBarcode,
-        product: data.productName,
+        product: data.name || data.productName || "Unknown Product",
         brand: data.brand || "Unknown",
-        category: data.category || "Unknown",
+        category: data.categories && data.categories.length > 0 ? data.categories[0] : (data.category || "Unknown"),
         co2_emission: parseFloat(data.carbonEstimate),
-        confidence: data.confidence,
-        calculation: data.calculation,
-        sustainabilityScore: "B",
-        description: `${data.calculation || "Calculated using scientific data"}`,
-        image: "/placeholder.svg",
+        confidence: data.confidence || "low",
+        calculation: data.calculation || "Calculated carbon footprint",
+        sustainabilityScore: data.ecoscoreGrade ? data.ecoscoreGrade.toUpperCase() : "Unknown",
+        description: data.calculation || "Calculated using scientific data",
+        image: data.image || "/placeholder.svg",
+        ingredients: data.ingredients || "Not available",
+        categories: data.categories || [],
         certifications: [],
         packaging: data.packaging || {
           material: "Unknown",
@@ -178,7 +184,7 @@ export default function ScanPage() {
       case "A": return "bg-green-100 text-green-800 border-green-200"
       case "B+": case "B": return "bg-blue-100 text-blue-800 border-blue-200"
       case "C": return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "D": case "F": return "bg-red-100 text-red-800 border-red-200"
+      case "D": case "E": case "F": return "bg-red-100 text-red-800 border-red-200"
       default: return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
@@ -259,7 +265,22 @@ export default function ScanPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <div></div>
+                <div className="flex items-center justify-center bg-white rounded-lg p-4 shadow-inner">
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.product}
+                      className="max-h-64 object-contain rounded-md"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder.svg";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                      No Image Available
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Carbon Footprint</h3>
@@ -315,9 +336,31 @@ export default function ScanPage() {
                 </div>
               </div>
 
-              <div>
-                <h4 className="font-medium mb-2 text-green">Description</h4>
-                <p className="text-green">{product.description}</p>
+              <div className="space-y-4">
+                {product.ingredients && product.ingredients !== "Not available" && (
+                  <div>
+                    <h4 className="font-medium mb-1 text-cyan-800">🧪 Ingredients</h4>
+                    <p className="text-cyan-700 text-sm">{product.ingredients}</p>
+                  </div>
+                )}
+
+                {product.categories && product.categories.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-1 text-cyan-800">🏷️ Categories</h4>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {product.categories.map((cat, i) => (
+                        <Badge key={i} variant="secondary" className="bg-cyan-200/50 text-cyan-800 border-none text-xs">
+                          {cat}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <h4 className="font-medium mb-1 text-cyan-800">📝 Calculation Details</h4>
+                  <p className="text-cyan-700 text-sm">{product.description}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

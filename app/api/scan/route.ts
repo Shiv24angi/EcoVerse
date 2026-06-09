@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import axios from "axios"
+import fs from "fs"
+import path from "path"
 import dbConnect from "@/lib/mongodb"
 import User from "@/models/User"
 import { calculateCarbonFootprint } from "@/lib/carbon-calculator"
@@ -13,16 +14,31 @@ import {
 } from "@/lib/rewards-system"
 import { inferPackaging } from "@/lib/packaging-inference"
 
-type OpenFoodFactsResponse = {
-  product: {
-    product_name?: string;
-    brands?: string;
-    categories_tags?: string[];
-    ingredients_text?: string;
+function parsePackaging(product: any): { material: string; recyclable: boolean; biodegradable: boolean; inferred: boolean } {
+  const material = product.packaging || "Unknown";
+  const tags = (product.packaging_tags || []).map((t: string) => t.toLowerCase());
+  
+  let recyclable = false;
+  let biodegradable = false;
+  
+  const recyclableMaterials = ["glass", "paper", "cardboard", "aluminium", "aluminum", "pet", "recyclable", "verre", "carton", "bouteille", "bottle", "can", "boîte", "pot-en-verre"];
+  const biodegradableMaterials = ["paper", "cardboard", "biodegradable", "compostable", "carton", "papier"];
+  
+  const materialLower = material.toLowerCase();
+  if (recyclableMaterials.some(m => materialLower.includes(m) || tags.some((t: string) => t.includes(m)))) {
+    recyclable = true;
+  }
+  if (biodegradableMaterials.some(m => materialLower.includes(m) || tags.some((t: string) => t.includes(m)))) {
+    biodegradable = true;
+  }
+  
+  return {
+    material,
+    recyclable,
+    biodegradable,
+    inferred: false
   };
-  status: number;
-  code: string;
-};
+}
 
 export async function POST(req: Request) {
   const { barcode } = await req.json()
@@ -39,144 +55,240 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Barcode missing" }, { status: 400 })
   }
 
+  let productData: {
+    productName: string;
+    brand: string;
+    image: string;
+    ingredients: string;
+    categories: string[];
+    packaging: { material: string; recyclable: boolean; biodegradable: boolean; inferred: boolean };
+    ecoscoreGrade: string;
+    carbonEstimate: number;
+    category: string;
+    confidence: "high" | "medium" | "low";
+    calculation: string;
+  } | null = null;
+
   try {
-    const productRes = await axios.get<OpenFoodFactsResponse>(
-      `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
-    )
+    console.log(`🔍 Fetching product data for barcode: ${barcode}`);
+    const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 1 && data.product) {
+        const p = data.product;
+        const categories = (p.categories_tags || []).map((cat: string) => cat.replace("en:", ""));
+        const packaging = p.packaging && p.packaging !== "Unknown" ? parsePackaging(p) : inferPackaging(categories);
+        const carbonData = calculateCarbonFootprint(p.product_name || "", p.brands);
 
-    const product = productRes.data.product
-
-    if (!product?.product_name) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+        productData = {
+          productName: p.product_name || "Unknown Product",
+          brand: p.brands || "Unknown",
+          image: p.image_url || p.image_front_url || p.image_thumb_url || "/placeholder.svg",
+          ingredients: p.ingredients_text || "Not available",
+          categories,
+          packaging,
+          ecoscoreGrade: p.ecoscore_grade || "unknown",
+          carbonEstimate: carbonData.carbonFootprint,
+          category: carbonData.category,
+          confidence: carbonData.confidence,
+          calculation: carbonData.calculation
+        };
+      } else {
+        console.log(`⚠️ OpenFoodFacts returned status ${data.status} for barcode ${barcode}`);
+      }
+    } else {
+      console.error(`🔥 OpenFoodFacts API error status: ${response.status}`);
     }
+  } catch (fetchError) {
+    console.error("🔥 Error fetching product from OpenFoodFacts:", fetchError);
+  }
 
-    const categories = (product.categories_tags || []).map(cat => cat.replace("en:", ""))
-    const packaging = inferPackaging(categories)
-
-    const carbonData = calculateCarbonFootprint(product.product_name, product.brands)
-    const carbonEstimate = carbonData.carbonFootprint
-
+  if (!productData) {
+    console.log(`ℹ️ Falling back to local reference data for barcode: ${barcode}`);
+    let localProduct = null;
     try {
-      await dbConnect()
-
-      const user = await User.findOne({ email: userEmail })
-
-      if (!user) {
-        console.error("❌ No user found with email:", userEmail)
-        return NextResponse.json({ error: "User not found" }, { status: 404 })
-      }
-
-      const isFirstScan = (user.totalScanned ?? 0) === 0
-      const streakCount = user.streakCount ?? 0
-      const totalScans = user.totalScanned ?? 0
-
-      const pointsData = calculateScanPoints
-        ? calculateScanPoints(carbonEstimate, isFirstScan, streakCount, totalScans)
-        : { points: 0, reasons: [], isConfirmed: false }
-
-      const isConfirmed = pointsData.isConfirmed
-      const pointsEarned = pointsData.points
-
-      // ✅ Update points directly in DB
-      const updateFields: any = {
-        $inc: {
-          monthlyCarbon: carbonEstimate,
-          totalScanned: 1,
-          ...(isConfirmed
-            ? { "points.confirmed": pointsEarned }
-            : { "points.unconfirmed": pointsEarned })
-        },
-        $push: {
-          scans: {
-            productName: product.product_name,
-            carbonEstimate: carbonEstimate,
-            category: carbonData.category,
-            confidence: carbonData.confidence,
-            barcode: barcode,
-            date: new Date()
-          }
-        },
-        $set: {
-          updatedAt: new Date()
-        }
-      }
-
-      await User.updateOne({ email: userEmail }, updateFields)
-
-      // ✅ Refetch updated user
-      const updatedUser = await User.findOne({ email: userEmail })
-
-      if (!updatedUser) {
-        return NextResponse.json({ error: "Failed to re-fetch user" }, { status: 500 })
-      }
-
-      const oldLevel = user.level || 1
-      const levelData = calculateLevel ? calculateLevel(updatedUser) : { level: oldLevel }
-      const earnedAchievements = checkAchievements ? checkAchievements(updatedUser) : []
-      const monthlyBonus = calculateMonthlyBonus ? calculateMonthlyBonus(updatedUser) : 0
-      const pointsSummary = getUserPointsSummary(updatedUser)
-
-      // ✅ Sync reward fields
-      updatedUser.level = levelData.level
-      updatedUser.achievements = earnedAchievements
-      updatedUser.confirmedPoints = updatedUser.points?.confirmed || 0
-      updatedUser.unconfirmedPoints = updatedUser.points?.unconfirmed || 0
-      updatedUser.rewardPoints = updatedUser.confirmedPoints + updatedUser.unconfirmedPoints
-      updatedUser.totalPointsEarned = updatedUser.rewardPoints
-
-      await updatedUser.save()
-
-      console.log("✅ Final Points Synced:", {
-        confirmedPoints: updatedUser.confirmedPoints,
-        unconfirmedPoints: updatedUser.unconfirmedPoints,
-        rewardPoints: updatedUser.rewardPoints,
-        totalPointsEarned: updatedUser.totalPointsEarned
-      })
-
-      return NextResponse.json({
-        productName: product.product_name,
-        brand: product.brands || "Unknown",
-        carbonEstimate: carbonEstimate.toFixed(2),
-        category: carbonData.category,
-        confidence: carbonData.confidence,
-        calculation: carbonData.calculation,
-        ingredients: product.ingredients_text || "Not available",
-        packaging,
-        rewards: {
-          pointsEarned,
-          pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
-          reasons: pointsData.reasons,
-          pointsSummary,
-          level: updatedUser.level,
-          leveledUp: levelData.level > oldLevel,
-          newAchievements: earnedAchievements,
-          streakCount: updatedUser.streakCount,
-          monthlyBonus,
-          sustainabilityTier:
-            updatedUser.monthlyCarbon < 10 && updatedUser.totalScanned >= 15 ? 'Platinum' :
-              updatedUser.monthlyCarbon < 20 && updatedUser.totalScanned >= 10 ? 'Gold' :
-                updatedUser.monthlyCarbon < 30 && updatedUser.totalScanned >= 5 ? 'Silver' :
-                  updatedUser.monthlyCarbon < 40 ? 'Bronze' : 'Beginner',
-          pendingConfirmationInfo: (() => {
-            const confirmationData = confirmPendingPoints
-              ? confirmPendingPoints(updatedUser)
-              : { confirmedPoints: 0, confirmedTransactions: [] }
-
-            return confirmationData.confirmedPoints > 0
-              ? {
-                pointsConfirmed: confirmationData.confirmedPoints,
-                transactionsConfirmed: confirmationData.confirmedTransactions.length
-              }
-              : null
-          })()
-        }
-      })
-    } catch (dbError) {
-      console.error("🔥 Failed to update user stats:", dbError)
-      return NextResponse.json({ error: "Database error" }, { status: 500 })
+      const filePath = path.join(process.cwd(), "public", "barcode-data.json");
+      const fileContents = fs.readFileSync(filePath, "utf8");
+      const localBarcodes = JSON.parse(fileContents);
+      localProduct = localBarcodes.find((b: any) => b.barcode === barcode);
+    } catch (fsError) {
+      console.error("🔥 Error reading local barcode database:", fsError);
     }
-  } catch (error) {
-    console.error("🔥 Error in scan API:", error)
-    return NextResponse.json({ error: "Failed to scan product" }, { status: 500 })
+
+    if (localProduct) {
+      const carbonData = calculateCarbonFootprint(localProduct.product, "Unknown");
+      const isRecyclable = localProduct.packaging ? ["glass", "paper", "cardboard", "tetra", "aluminum", "aluminium"].some(m => localProduct.packaging.toLowerCase().includes(m)) : false;
+      const isBiodegradable = localProduct.packaging ? ["paper", "cardboard", "loose"].some(m => localProduct.packaging.toLowerCase().includes(m)) : false;
+
+      productData = {
+        productName: localProduct.product,
+        brand: "Unknown",
+        image: "/placeholder.svg",
+        ingredients: "Not available",
+        categories: [],
+        packaging: {
+          material: localProduct.packaging || "Unknown",
+          recyclable: isRecyclable,
+          biodegradable: isBiodegradable,
+          inferred: false
+        },
+        ecoscoreGrade: "unknown",
+        carbonEstimate: localProduct.co2_emission || carbonData.carbonFootprint,
+        category: carbonData.category,
+        confidence: "medium",
+        calculation: `Local barcode database match. Carbon footprint: ${localProduct.co2_emission} kg CO₂`
+      };
+    } else {
+      const carbonData = calculateCarbonFootprint("Unknown Product", "Unknown");
+      productData = {
+        productName: "Unknown Product",
+        brand: "Unknown",
+        image: "/placeholder.svg",
+        ingredients: "Not available",
+        categories: [],
+        packaging: {
+          material: "Unknown",
+          recyclable: false,
+          biodegradable: false,
+          inferred: true
+        },
+        ecoscoreGrade: "unknown",
+        carbonEstimate: 2.5,
+        category: "Unknown",
+        confidence: "low",
+        calculation: "Default estimate for processed food: 2.5 kg CO₂"
+      };
+    }
+  }
+
+  const carbonEstimate = productData.carbonEstimate;
+
+  try {
+    await dbConnect()
+
+    const user = await User.findOne({ email: userEmail })
+
+    if (!user) {
+      console.error("❌ No user found with email:", userEmail)
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    const isFirstScan = (user.totalScanned ?? 0) === 0
+    const streakCount = user.streakCount ?? 0
+    const totalScans = user.totalScanned ?? 0
+
+    const pointsData = calculateScanPoints
+      ? calculateScanPoints(carbonEstimate, isFirstScan, streakCount, totalScans)
+      : { points: 0, reasons: [], isConfirmed: false }
+
+    const isConfirmed = pointsData.isConfirmed
+    const pointsEarned = pointsData.points
+
+    // ✅ Update points directly in DB
+    const updateFields: any = {
+      $inc: {
+        monthlyCarbon: carbonEstimate,
+        totalScanned: 1,
+        ...(isConfirmed
+          ? { "points.confirmed": pointsEarned }
+          : { "points.unconfirmed": pointsEarned })
+      },
+      $push: {
+        scans: {
+          productName: productData.productName,
+          carbonEstimate: carbonEstimate,
+          category: productData.category,
+          confidence: productData.confidence,
+          barcode: barcode,
+          date: new Date()
+        }
+      },
+      $set: {
+        updatedAt: new Date()
+      }
+    }
+
+    await User.updateOne({ email: userEmail }, updateFields)
+
+    // ✅ Refetch updated user
+    const updatedUser = await User.findOne({ email: userEmail })
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: "Failed to re-fetch user" }, { status: 500 })
+    }
+
+    const oldLevel = user.level || 1
+    const levelData = calculateLevel ? calculateLevel(updatedUser) : { level: oldLevel }
+    const earnedAchievements = checkAchievements ? checkAchievements(updatedUser) : []
+    const monthlyBonus = calculateMonthlyBonus ? calculateMonthlyBonus(updatedUser) : 0
+    const pointsSummary = getUserPointsSummary(updatedUser)
+
+    // ✅ Sync reward fields
+    updatedUser.level = levelData.level
+    updatedUser.achievements = earnedAchievements
+    updatedUser.confirmedPoints = updatedUser.points?.confirmed || 0
+    updatedUser.unconfirmedPoints = updatedUser.points?.unconfirmed || 0
+    updatedUser.rewardPoints = updatedUser.confirmedPoints + updatedUser.unconfirmedPoints
+    updatedUser.totalPointsEarned = updatedUser.rewardPoints
+
+    await updatedUser.save()
+
+    console.log("✅ Final Points Synced:", {
+      confirmedPoints: updatedUser.confirmedPoints,
+      unconfirmedPoints: updatedUser.unconfirmedPoints,
+      rewardPoints: updatedUser.rewardPoints,
+      totalPointsEarned: updatedUser.totalPointsEarned
+    })
+
+    return NextResponse.json({
+      // Normalized shape for frontend consumption
+      name: productData.productName,
+      brand: productData.brand,
+      image: productData.image,
+      ingredients: productData.ingredients,
+      categories: productData.categories,
+      packaging: productData.packaging,
+      ecoscoreGrade: productData.ecoscoreGrade,
+      carbonEstimate: carbonEstimate.toFixed(2),
+
+      // Legacy fields for backward compatibility
+      productName: productData.productName,
+      category: productData.category,
+      confidence: productData.confidence,
+      calculation: productData.calculation,
+      rewards: {
+        pointsEarned,
+        pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
+        reasons: pointsData.reasons,
+        pointsSummary,
+        level: updatedUser.level,
+        leveledUp: levelData.level > oldLevel,
+        newAchievements: earnedAchievements,
+        streakCount: updatedUser.streakCount,
+        monthlyBonus,
+        sustainabilityTier:
+          updatedUser.monthlyCarbon < 10 && updatedUser.totalScanned >= 15 ? 'Platinum' :
+            updatedUser.monthlyCarbon < 20 && updatedUser.totalScanned >= 10 ? 'Gold' :
+              updatedUser.monthlyCarbon < 30 && updatedUser.totalScanned >= 5 ? 'Silver' :
+                updatedUser.monthlyCarbon < 40 ? 'Bronze' : 'Beginner',
+        pendingConfirmationInfo: (() => {
+          const confirmationData = confirmPendingPoints
+            ? confirmPendingPoints(updatedUser)
+            : { confirmedPoints: 0, confirmedTransactions: [] }
+
+          return confirmationData.confirmedPoints > 0
+            ? {
+              pointsConfirmed: confirmationData.confirmedPoints,
+              transactionsConfirmed: confirmationData.confirmedTransactions.length
+            }
+            : null
+        })()
+      }
+    })
+  } catch (dbError) {
+    console.error("🔥 Failed to update user stats:", dbError)
+    return NextResponse.json({ error: "Database error" }, { status: 500 })
   }
 }
+
