@@ -11,7 +11,6 @@ import { Trophy, Medal, Award, TrendingUp, Loader2, Users, Target, BarChart3, St
 interface LeaderboardUser {
   id: string
   name: string
-  email: string
   monthlyCarbon: number
   totalScanned: number
   rank: number
@@ -71,7 +70,7 @@ export default function LeaderboardPage() {
 
         // Find current user's rank and data
         if (user) {
-          const userEntry = data.leaderboard.find(entry => entry.email === user.email)
+          const userEntry = data.leaderboard.find(entry => entry.id === user._id)
           if (userEntry) {
             setCurrentUserRank(userEntry.rank)
             setCurrentUserData(userEntry)
@@ -179,7 +178,7 @@ export default function LeaderboardPage() {
                     <CardHeader className="text-center pb-2">
                       <div className="flex justify-center mb-2">{getRankIcon(userEntry.rank)}</div>
                       <CardTitle className="text-lg text-green-900">
-                        {user && userEntry.email === user.email ? "You" : userEntry.name}
+                        {user && userEntry.id === user._id ? "You" : userEntry.name}
                       </CardTitle>
                       <CardDescription className="text-green-900">
                         {userEntry.totalPointsEarned.toLocaleString()} points
@@ -212,7 +211,7 @@ export default function LeaderboardPage() {
               <CardContent>
                 <div className="space-y-4">
                   {leaderboardData.map((userEntry: LeaderboardUser) => {
-                    const isCurrentUser = user && userEntry.email === user.email
+                    const isCurrentUser = user && userEntry.id === user._id
                     const tierBadge = getLevelTierBadge(userEntry.levelTier)
                     return (
                       <div

@@ -53,7 +53,7 @@ export default function Dashboard() {
 
       if (leaderboardResponse.ok) {
         const leaderboardData = await leaderboardResponse.json()
-        const currentUser = leaderboardData.leaderboard.find((u: any) => u.email === user?.email)
+        const currentUser = leaderboardData.leaderboard.find((u: any) => u.id === user?._id)
 
         let stats: UserStats = {
           monthlyCarbon: currentUser?.monthlyCarbon || 0,

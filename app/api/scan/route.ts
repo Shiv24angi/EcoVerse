@@ -3,6 +3,7 @@ import fs from "fs"
 import path from "path"
 import dbConnect from "@/lib/mongodb"
 import User from "@/models/User"
+import mongoose from "mongoose"
 import { calculateCarbonFootprint } from "@/lib/carbon-calculator"
 import {
   calculateScanPoints,

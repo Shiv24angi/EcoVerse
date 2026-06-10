@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect()
-    const user = await User.findOne({ email }) as any
+    let user = await User.findOne({ email }) as any
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -29,14 +29,96 @@ export async function GET(req: Request) {
     // Calculate current level data
     const levelData = calculateLevel(user.totalPointsEarned || 0)
 
-    // Confirm any pending points and get point summary
+    // --- ATOMIC POINT CONFIRMATION ---
+    // We check for points that have passed the confirmation threshold.
     const confirmationData = confirmPendingPoints(user);
+    
     if (confirmationData.confirmedPoints > 0) {
-      // Update user's confirmed points if any were confirmed
-      user.confirmedPoints = (user.confirmedPoints || 0) + confirmationData.confirmedPoints;
-      user.unconfirmedPoints = Math.max(0, (user.unconfirmedPoints || 0) - confirmationData.confirmedPoints);
-      user.rewardPoints = (user.confirmedPoints || 0) + (user.unconfirmedPoints || 0);
-      await user.save();
+      const now = new Date();
+      const transactionIdsToConfirm = confirmationData.confirmedTransactions.map(t => t._id);
+
+      // We perform an atomic update to move points from unconfirmed to confirmed status.
+      // We use an aggregation-pipeline update to ensure we only increment/decrement 
+      // based on transactions that are currently in 'unconfirmed' status, 
+      // preventing double-counting if a retry occurs.
+      const updatedUser = await User.findOneAndUpdate(
+        { email },
+        [
+          {
+            $set: {
+              // Calculate points from transactions that are actually still unconfirmed
+              matchedPoints: {
+                $sum: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: { $ifNull: ["$rewardTransactions", []] },
+                        as: "t",
+                        cond: {
+                          $and: [
+                            { $in: ["$$t._id", transactionIdsToConfirm] },
+                            { $eq: ["$$t.pointsType", "unconfirmed"] }
+                          ]
+                        }
+                      }
+                    },
+                    as: "mt",
+                    in: { $ifNull: ["$$mt.points", 0] }
+                  }
+                }
+              }
+            }
+          },
+          {
+            $set: {
+              confirmedPoints: {
+                $add: [
+                  { $ifNull: ["$confirmedPoints", 0] },
+                  { $ifNull: ["$matchedPoints", 0] }
+                ]
+              },
+              unconfirmedPoints: {
+                $subtract: [
+                  { $ifNull: ["$unconfirmedPoints", 0] },
+                  { $ifNull: ["$matchedPoints", 0] }
+                ]
+              },
+              rewardTransactions: {
+                $map: {
+                  input: { $ifNull: ["$rewardTransactions", []] },
+                  as: "t",
+                  in: {
+                    $cond: {
+                      if: {
+                        $and: [
+                          { $in: ["$$t._id", transactionIdsToConfirm] },
+                          { $eq: ["$$t.pointsType", "unconfirmed"] }
+                        ]
+                      },
+                      then: {
+                        $mergeObjects: [
+                          "$$t",
+                          { pointsType: "confirmed", confirmedAt: now }
+                        ]
+                      },
+                      else: "$$t"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          { $unset: "matchedPoints" }
+        ],
+        { new: true }
+      );
+
+      // Re-assign local user to the ground-truth updated document from DB.
+      // This ensures all subsequent logic (summaries, achievements) uses 
+      // the most accurate and consistent data.
+      if (updatedUser) {
+        user = updatedUser;
+      }
     }
 
     const pointsSummary = getUserPointsSummary(user);

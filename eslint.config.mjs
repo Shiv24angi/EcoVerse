@@ -1,10 +1,12 @@
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTypescript from "eslint-config-next/typescript";
+import { FlatCompat } from "@eslint/eslintrc";
 import unusedImports from "eslint-plugin-unused-imports";
 
+const compat = new FlatCompat({
+  baseDirectory: import.meta.dirname,
+});
+
 export default [
-  ...nextVitals,
-  ...nextTypescript,
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     plugins: {
       "unused-imports": unusedImports,
