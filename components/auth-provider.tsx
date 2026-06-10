@@ -205,17 +205,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false
       }
     } catch (error) {
-  console.error("🔥 Google sign-in error:", error)
+      console.error("🔥 Google sign-in error:", error)
 
-  toast({
-    title: "Google login failed",
-    description: "Sign-in was interrupted or failed. Please try again.",
-    variant: "destructive"
-  })
+      toast({
+        title: "Google login failed",
+        description: "Sign-in was interrupted or failed. Please try again.",
+        variant: "destructive"
+      })
 
-  return false
-}
-}   
+      return false
+    }
+  }
 
   const logout = () => {
     setUser(null)
