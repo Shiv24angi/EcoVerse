@@ -73,8 +73,8 @@ if (!isMatch) {
       { user: userData },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Signin error:", error);
+  } catch (_error) {
+    console.error("Signin error:", _error);
 
     return NextResponse.json(
       { error: "Internal server error" },

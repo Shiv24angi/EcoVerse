@@ -14,7 +14,19 @@ import {
 } from "@/lib/rewards-system"
 import { inferPackaging } from "@/lib/packaging-inference"
 
-function parsePackaging(product: any): { material: string; recyclable: boolean; biodegradable: boolean; inferred: boolean } {
+interface PackagingProduct {
+  packaging?: string
+  packaging_tags?: string[]
+}
+
+interface LocalBarcode {
+  barcode: string
+  product: string
+  packaging?: string
+  co2_emission?: number
+  image?: string
+}
+function parsePackaging(product: PackagingProduct): { material: string; recyclable: boolean; biodegradable: boolean; inferred: boolean } {
   const material = product.packaging || "Unknown";
   const tags = (product.packaging_tags || []).map((t: string) => t.toLowerCase());
   
@@ -71,7 +83,25 @@ export async function POST(req: Request) {
 
   try {
     console.log(`🔍 Fetching product data for barcode: ${barcode}`);
-    const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+    const controller = new AbortController()
+
+const timeout = setTimeout(() => {
+  controller.abort()
+}, 5000)
+
+const response = await fetch(
+  `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`,
+   {
+    signal: controller.signal,
+    headers: {
+      "User-Agent": "EcoVerse/1.0",
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  }
+)
+
+clearTimeout(timeout)
     
     if (response.ok) {
       const data = await response.json();
@@ -84,7 +114,13 @@ export async function POST(req: Request) {
         productData = {
           productName: p.product_name || "Unknown Product",
           brand: p.brands || "Unknown",
-          image: p.image_url || p.image_front_url || p.image_thumb_url || "/placeholder.svg",
+         image:
+  p.selected_images?.front?.display?.en ||
+  p.selected_images?.front?.display?.fr ||
+  p.image_front_url ||
+  p.image_front_small_url ||
+  p.image_thumb_url ||
+  "/placeholder.svg",
           ingredients: p.ingredients_text || "Not available",
           categories,
           packaging,
@@ -101,30 +137,55 @@ export async function POST(req: Request) {
       console.error(`🔥 OpenFoodFacts API error status: ${response.status}`);
     }
   } catch (fetchError) {
-    console.error("🔥 Error fetching product from OpenFoodFacts:", fetchError);
+    if (
+  fetchError instanceof Error &&
+  fetchError.name === "AbortError"
+) {
+  console.error("⏱ OpenFoodFacts request timed out")
+}
+
+console.error(
+  "🔥 Error fetching product from OpenFoodFacts:",
+  fetchError
+)
   }
 
   if (!productData) {
     console.log(`ℹ️ Falling back to local reference data for barcode: ${barcode}`);
-    let localProduct = null;
+    let localProduct: LocalBarcode | null = null;
     try {
       const filePath = path.join(process.cwd(), "public", "barcode-data.json");
       const fileContents = fs.readFileSync(filePath, "utf8");
       const localBarcodes = JSON.parse(fileContents);
-      localProduct = localBarcodes.find((b: any) => b.barcode === barcode);
+     localProduct = localBarcodes.find(
+  (b: LocalBarcode) => b.barcode === barcode
+);
     } catch (fsError) {
       console.error("🔥 Error reading local barcode database:", fsError);
     }
 
     if (localProduct) {
       const carbonData = calculateCarbonFootprint(localProduct.product, "Unknown");
-      const isRecyclable = localProduct.packaging ? ["glass", "paper", "cardboard", "tetra", "aluminum", "aluminium"].some(m => localProduct.packaging.toLowerCase().includes(m)) : false;
-      const isBiodegradable = localProduct.packaging ? ["paper", "cardboard", "loose"].some(m => localProduct.packaging.toLowerCase().includes(m)) : false;
+      const packagingText = localProduct.packaging?.toLowerCase() || ""
 
+const isRecyclable = [
+  "glass",
+  "paper",
+  "cardboard",
+  "tetra",
+  "aluminum",
+  "aluminium",
+].some((m) => packagingText.includes(m))
+
+const isBiodegradable = [
+  "paper",
+  "cardboard",
+  "loose",
+].some((m) => packagingText.includes(m))
       productData = {
         productName: localProduct.product,
         brand: "Unknown",
-        image: "/placeholder.svg",
+       image: localProduct.image || "/placeholder.svg",
         ingredients: "Not available",
         categories: [],
         packaging: {
@@ -140,25 +201,10 @@ export async function POST(req: Request) {
         calculation: `Local barcode database match. Carbon footprint: ${localProduct.co2_emission} kg CO₂`
       };
     } else {
-      const carbonData = calculateCarbonFootprint("Unknown Product", "Unknown");
-      productData = {
-        productName: "Unknown Product",
-        brand: "Unknown",
-        image: "/placeholder.svg",
-        ingredients: "Not available",
-        categories: [],
-        packaging: {
-          material: "Unknown",
-          recyclable: false,
-          biodegradable: false,
-          inferred: true
-        },
-        ecoscoreGrade: "unknown",
-        carbonEstimate: 2.5,
-        category: "Unknown",
-        confidence: "low",
-        calculation: "Default estimate for processed food: 2.5 kg CO₂"
-      };
+     return NextResponse.json(
+  { error: "Product not found in API or local database" },
+  { status: 404 }
+)
     }
   }
 
@@ -186,7 +232,7 @@ export async function POST(req: Request) {
     const pointsEarned = pointsData.points
 
     // ✅ Update points directly in DB
-    const updateFields: any = {
+    const updateFields: Record<string, unknown> = {
       $inc: {
         monthlyCarbon: carbonEstimate,
         totalScanned: 1,

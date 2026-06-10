@@ -138,5 +138,12 @@
     "co2_emission": 0.9,
     "packaging": "Tetra Pak",
     "transportDistance": "250 km"
+  },
+  {
+    "barcode": "3017620422003",
+    "product": "Nutella",
+    "packaging": "Plastic, Glass",
+    "co2_emission": 7.48,
+    "image": "https://m.media-amazon.com/images/I/71efjydXF6L.jpg"
   }
 ]
