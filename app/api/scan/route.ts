@@ -1,3 +1,5 @@
+import { cookies } from "next/headers"
+import { verifyToken } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import fs from "fs"
 import path from "path"
@@ -55,14 +57,27 @@ function parsePackaging(product: PackagingProduct): { material: string; recyclab
 
 export async function POST(req: Request) {
   const { barcode } = await req.json()
-  const userEmail = req.headers.get("x-user-email")
+  const cookieStore = await cookies()
 
-  if (!userEmail) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    )
-  }
+const token = cookieStore.get("auth_token")?.value
+
+if (!token) {
+  return NextResponse.json(
+    { error: "Unauthorized" },
+    { status: 401 }
+  )
+}
+
+const decoded = await verifyToken(token)
+
+if (!decoded || !decoded.email) {
+  return NextResponse.json(
+    { error: "Invalid token" },
+    { status: 401 }
+  )
+}
+
+const userEmail = decoded.email
 
   if (!barcode) {
     return NextResponse.json({ error: "Barcode missing" }, { status: 400 })
