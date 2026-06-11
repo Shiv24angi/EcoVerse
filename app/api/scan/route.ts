@@ -124,7 +124,13 @@ clearTimeout(timeout)
       if (data.status === 1 && data.product) {
         const p = data.product;
         const categories = (p.categories_tags || []).map((cat: string) => cat.replace("en:", ""));
-        const packaging = p.packaging && p.packaging !== "Unknown" ? parsePackaging(p) : inferPackaging(categories);
+        const hasPackagingData =
+           (p.packaging && p.packaging !== "Unknown") ||
+           (p.packaging_tags?.length ?? 0) > 0
+
+        const packaging = hasPackagingData
+          ? parsePackaging(p)
+          : inferPackaging(categories)
         const carbonData = calculateCarbonFootprint(p.product_name || "", p.brands);
 
         productData = {
@@ -184,6 +190,10 @@ console.error(
       const carbonData = calculateCarbonFootprint(localProduct.product, "Unknown");
       const packagingText = localProduct.packaging?.toLowerCase() || ""
 
+      const resolvedCarbon =
+        localProduct.co2_emission ??
+        carbonData.carbonFootprint
+
 const isRecyclable = [
   "glass",
   "paper",
@@ -211,10 +221,10 @@ const isBiodegradable = [
           inferred: false
         },
         ecoscoreGrade: "unknown",
-        carbonEstimate: localProduct.co2_emission || carbonData.carbonFootprint,
+        carbonEstimate: resolvedCarbon,
         category: carbonData.category,
         confidence: "medium",
-        calculation: `Local barcode database match. Carbon footprint: ${localProduct.co2_emission} kg CO₂`
+        calculation: `Local barcode database match. Carbon footprint: ${resolvedCarbon} kg CO₂`
       };
     } else {
      return NextResponse.json(
@@ -253,8 +263,8 @@ const isBiodegradable = [
         monthlyCarbon: carbonEstimate,
         totalScanned: 1,
         ...(isConfirmed
-          ? { "points.confirmed": pointsEarned }
-          : { "points.unconfirmed": pointsEarned })
+        ? { confirmedPoints: pointsEarned }
+        : { unconfirmedPoints: pointsEarned })
       },
       $push: {
         scans: {
@@ -289,8 +299,11 @@ const isBiodegradable = [
     // ✅ Sync reward fields
     updatedUser.level = levelData.level
     updatedUser.achievements = earnedAchievements
-    updatedUser.confirmedPoints = updatedUser.points?.confirmed || 0
-    updatedUser.unconfirmedPoints = updatedUser.points?.unconfirmed || 0
+    updatedUser.confirmedPoints =
+    updatedUser.confirmedPoints || 0
+
+    updatedUser.unconfirmedPoints =
+    updatedUser.unconfirmedPoints || 0
     updatedUser.rewardPoints = updatedUser.confirmedPoints + updatedUser.unconfirmedPoints
     updatedUser.totalPointsEarned = updatedUser.rewardPoints
 
