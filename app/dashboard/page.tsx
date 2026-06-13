@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
   Card,
@@ -53,61 +53,61 @@ export default function Dashboard() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserStats = async () => {
-      try {
-        // Fetch leaderboard data to get user rank and stats
-        const [leaderboardResponse, rewardsResponse] = await Promise.all([
-          fetch('/api/leaderboard', { cache: 'no-store' }),
-          fetch(`/api/rewards?email=${encodeURIComponent(user?.email || '')}`, {
-            cache: 'no-store',
-          }),
-        ]);
+  const fetchUserStats = useCallback(async () => {
+    try {
+      // Fetch leaderboard data to get user rank and stats
+      const [leaderboardResponse, rewardsResponse] = await Promise.all([
+        fetch('/api/leaderboard', { cache: 'no-store' }),
+        fetch(`/api/rewards?email=${encodeURIComponent(user?.email || '')}`, {
+          cache: 'no-store',
+        }),
+      ]);
 
-        if (leaderboardResponse.ok) {
-          const leaderboardData = await leaderboardResponse.json();
-          const currentUser = leaderboardData.leaderboard.find(
-            (u: LeaderboardUser) => u.id === user?._id
-          );
+      if (leaderboardResponse.ok) {
+        const leaderboardData = await leaderboardResponse.json();
+        const currentUser = leaderboardData.leaderboard.find(
+          (u: LeaderboardUser) => u.id === user?._id
+        );
 
-          const stats: UserStats = {
-            monthlyCarbon: currentUser?.monthlyCarbon || 0,
-            totalScanned: currentUser?.totalScanned || 0,
-            rank: currentUser?.rank || 0,
-            totalUsers: leaderboardData.stats.totalUsers,
-            streakCount: currentUser?.streakCount || 0,
-            rewardPoints: currentUser?.rewardPoints || 0,
-            level: currentUser?.level || 1,
-            achievementCount: currentUser?.achievementCount || 0,
-          };
+        const stats: UserStats = {
+          monthlyCarbon: currentUser?.monthlyCarbon || 0,
+          totalScanned: currentUser?.totalScanned || 0,
+          rank: currentUser?.rank || 0,
+          totalUsers: leaderboardData.stats.totalUsers,
+          streakCount: currentUser?.streakCount || 0,
+          rewardPoints: currentUser?.rewardPoints || 0,
+          level: currentUser?.level || 1,
+          achievementCount: currentUser?.achievementCount || 0,
+        };
 
-          // Add detailed points data from rewards API
-          if (rewardsResponse.ok) {
-            const rewardsData = await rewardsResponse.json();
-            stats.pointsSummary = rewardsData.pointsSummary;
-            stats.level = rewardsData.level;
-            stats.achievementCount = rewardsData.achievements?.length || 0;
-          }
-
-          setUserStats(stats);
+        // Add detailed points data from rewards API
+        if (rewardsResponse.ok) {
+          const rewardsData = await rewardsResponse.json();
+          stats.pointsSummary = rewardsData.pointsSummary;
+          stats.level = rewardsData.level;
+          stats.achievementCount = rewardsData.achievements?.length || 0;
         }
-      } catch (error) {
-        // Gated check to avoid production build console flags
-        if (process.env.NODE_ENV !== 'production') {
-          // eslint-disable-next-line no-console
-          console.error('Failed to fetch user stats:', error);
-        }
-      } finally {
-        setLoading(false);
+
+        setUserStats(stats);
       }
-    };
+    } catch (error) {
+      // Gated check to avoid production build console flags
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch user stats:', error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.email, user?._id]);
 
+  useEffect(() => {
     if (!user) {
       router.push('/auth/signin');
     } else {
       fetchUserStats();
     }
-  }, [user, router]);
+  }, [user, router, fetchUserStats]);
 
   if (!user) {
     return null;
@@ -340,20 +340,20 @@ export default function Dashboard() {
                 {loading
                   ? '...'
                   : userStats &&
-                      userStats.monthlyCarbon < 10 &&
-                      userStats.totalScanned >= 15
-                    ? 'Platinum'
+                    userStats.monthlyCarbon < 10 &&
+                    userStats.totalScanned >= 15
+                  ? 'Platinum'
+                  : userStats &&
+                      userStats.monthlyCarbon < 20 &&
+                      userStats.totalScanned >= 10
+                    ? 'Gold'
                     : userStats &&
-                        userStats.monthlyCarbon < 20 &&
-                        userStats.totalScanned >= 10
-                      ? 'Gold'
-                      : userStats &&
-                          userStats.monthlyCarbon < 30 &&
-                          userStats.totalScanned >= 5
-                        ? 'Silver'
-                        : userStats && userStats.monthlyCarbon < 40
-                          ? 'Bronze'
-                          : 'Beginner'}
+                        userStats.monthlyCarbon < 30 &&
+                        userStats.totalScanned >= 5
+                      ? 'Silver'
+                      : userStats && userStats.monthlyCarbon < 40
+                        ? 'Bronze'
+                        : 'Beginner'}
               </div>
               <p className="text-xs text-gray-500">
                 {userStats &&
