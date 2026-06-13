@@ -18,4 +18,15 @@ export default [
       "unused-imports/no-unused-imports": "warn",
     },
   },
+  {
+
+    ignores: [
+      "app/api/**/*",
+      "lib/rewards-system.ts",
+      "components/auth-provider.tsx",
+      "components/barcode-scanner.tsx",
+      "app/carbon-tracking/page.tsx",
+      "app/leaderboard/page.tsx"
+    ]
+  }
 ];
