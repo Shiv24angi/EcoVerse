@@ -417,12 +417,12 @@ JWT_SECRET=
 
 # Gemini AI
 GEMINI_API_KEY=
-
+````
 ### Start Development Server
 
 ```bash
 npm run dev
-````
+
 
 Visit:
 
