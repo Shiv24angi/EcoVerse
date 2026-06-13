@@ -180,12 +180,16 @@ export async function GET(req: Request) {
 
 // POST /api/rewards/redeem - Redeem reward points for shop items
 export async function POST(req: Request) {
-  const { itemId } = await req.json()
   const email = req.headers.get("x-user-email")
 
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
 
-  if (!email || !itemId) {
-    return NextResponse.json({ error: "Missing required fields or unauthorized" }, { status: !email ? 401 : 400 })
+  const { itemId } = await req.json()
+
+  if (!itemId) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
   }
 
   try {

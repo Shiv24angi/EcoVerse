@@ -56,8 +56,7 @@ function parsePackaging(product: PackagingProduct): { material: string; recyclab
 }
 
 export async function POST(req: Request) {
-  const { barcode } = await req.json()
-  const cookieStore = await cookies()
+  const userEmail = req.headers.get("x-user-email")
 
 const token = cookieStore.get("auth_token")?.value
 
@@ -78,6 +77,8 @@ if (!decoded || !decoded.email) {
 }
 
 const userEmail = decoded.email
+
+  const { barcode } = await req.json()
 
   if (!barcode) {
     return NextResponse.json({ error: "Barcode missing" }, { status: 400 })

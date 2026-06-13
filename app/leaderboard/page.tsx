@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Trophy, Medal, Award, TrendingUp, Loader2, Users, Target, BarChart3, Star, Zap } from "lucide-react"
 
+/**
+ * Represents a user entry in the leaderboard.
+ */
 interface LeaderboardUser {
   id: string
   name: string

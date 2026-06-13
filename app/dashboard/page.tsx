@@ -29,6 +29,18 @@ interface UserStats {
   achievementCount?: number
 }
 
+interface LeaderboardUser {
+  id: string
+  name: string
+  monthlyCarbon: number
+  totalScanned: number
+  rank: number
+  streakCount: number
+  rewardPoints?: number
+  level?: number
+  achievementCount?: number
+}
+
 export default function Dashboard() {
   const { user } = useAuth()
   const router = useRouter()
@@ -53,7 +65,7 @@ export default function Dashboard() {
 
       if (leaderboardResponse.ok) {
         const leaderboardData = await leaderboardResponse.json()
-        const currentUser = leaderboardData.leaderboard.find((u: any) => u.id === user?._id)
+        const currentUser = leaderboardData.leaderboard.find((u: LeaderboardUser) => u.id === user?._id)
 
         let stats: UserStats = {
           monthlyCarbon: currentUser?.monthlyCarbon || 0,

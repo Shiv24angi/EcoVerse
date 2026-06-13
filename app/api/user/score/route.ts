@@ -69,11 +69,12 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const email = req.headers.get("x-user-email")
-  const { productName, carbonEstimate } = await req.json()
 
   if (!email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const { productName, carbonEstimate } = await req.json()
 
   try {
     await dbConnect()

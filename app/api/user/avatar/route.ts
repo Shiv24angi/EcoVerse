@@ -3,15 +3,20 @@ import dbConnect from "@/lib/mongodb"
 import User from "@/models/User"
 
 export async function PUT(req: Request) {
-  try {
-    await dbConnect()
+  const email = req.headers.get("x-user-email")
 
-    const email = req.headers.get("x-user-email")
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  try {
     const { avatarId } = await req.json()
 
-    if (!email || !avatarId) {
-      return NextResponse.json({ error: !email ? "Unauthorized" : "Missing avatarId" }, { status: !email ? 401 : 400 })
+    if (!avatarId) {
+      return NextResponse.json({ error: "Missing avatarId" }, { status: 400 })
     }
+
+    await dbConnect()
 
     const updatedUser = await User.findOneAndUpdate(
       { email },

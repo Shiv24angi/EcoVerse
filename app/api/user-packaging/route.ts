@@ -4,11 +4,12 @@ import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
   const userEmail = req.headers.get("x-user-email")
-  const { barcode, material } = await req.json()
 
   if (!userEmail) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const { barcode, material } = await req.json()
 
   if (!barcode || !material) {
     return NextResponse.json({ error: "Missing data" }, { status: 400 })
