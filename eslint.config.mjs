@@ -19,14 +19,19 @@ export default [
     },
   },
   {
-
+    
     ignores: [
       "app/api/**/*",
       "lib/rewards-system.ts",
+      "lib/mongodb.ts",
       "components/auth-provider.tsx",
       "components/barcode-scanner.tsx",
+      "components/dashboard-layout.tsx",
+      "components/reward-notification.tsx",
       "app/carbon-tracking/page.tsx",
-      "app/leaderboard/page.tsx"
+      "app/leaderboard/page.tsx",
+      "app/rewards/page.tsx",
+      "app/scan/page.tsx"
     ]
   }
 ];
