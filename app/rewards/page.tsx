@@ -175,7 +175,7 @@ export default function RewardsPage() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-green-900">
-            Rewards & Achievements 🎉
+            Rewards &amp; Achievements 🎉
           </h1>
           <p className="text-gray-700 mt-2">
             Track your sustainability journey and earn rewards!
@@ -610,7 +610,7 @@ export default function RewardsPage() {
                           <h3 className="text-xl font-semibold text-blue-600 mb-1">
                             {item.name}
                           </h3>
-                          <p className="text-sm text-gray-600 mb-3">
+                          <p className="text-sm text-gray-660 mb-3">
                             {item.description}
                           </p>
 
@@ -770,8 +770,8 @@ export default function RewardsPage() {
                           <div
                             className={`font-semibold ${
                               transaction.type === 'earned'
-                                ? 'text-green-400'
-                                : 'text-red-400'
+                                ? 'text-green-600'
+                                : 'text-red-600'
                             }`}
                           >
                             {transaction.type === 'earned' ? '+' : '-'}
