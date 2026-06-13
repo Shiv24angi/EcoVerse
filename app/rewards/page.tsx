@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Gift, Star, Trophy, TrendingUp, Calendar, ShoppingCart, Crown, Zap, Shield, BarChart3 } from "lucide-react"
 
 interface RewardsData {
@@ -44,7 +43,6 @@ export default function RewardsPage() {
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [purchasing, setPurchasing] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<any>(null)
 
   useEffect(() => {
     if (!user) {
@@ -82,17 +80,14 @@ export default function RewardsPage() {
           email: "test@example.com",
           itemId
         })
-
       })
 
       const result = await response.json()
 
       if (response.ok) {
-        // Show success message and refresh data
         alert(`${result.purchasedItem.name} purchased successfully!`)
         fetchRewardsData()
       } else {
-        // Handle insufficient confirmed points error with more detail
         if (result.error === "Insufficient confirmed points") {
           alert(`Insufficient confirmed points!\n\nRequired: ${result.required} points\nYou have: ${result.confirmedPoints} confirmed points\nUnconfirmed: ${result.unconfirmedPoints} points\n\n${result.message}`)
         } else {
@@ -209,7 +204,7 @@ export default function RewardsPage() {
                   <div className="mt-2">
                     <div className="flex justify-between text-xs text-gray-600 mb-1">
                       <span>Progress to next level</span>
-                      <span>{rewardsData?.progressToNext.toFixed(0) || 0}%</span>
+                      <span>{rewardsData?.progressToNext ? rewardsData.progressToNext.toFixed(0) : 0}%</span>
                     </div>
                     <Progress value={rewardsData?.progressToNext || 0} className="h-2" />
                   </div>
@@ -297,7 +292,7 @@ export default function RewardsPage() {
                   <CardHeader>
                     <CardTitle className="text-white">Active Features</CardTitle>
                     <CardDescription className="text-gray-400">
-                      Special items and bonuses you've unlocked
+                      Special items and bonuses you&apos;ve unlocked
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -344,7 +339,7 @@ export default function RewardsPage() {
                 <CardHeader>
                   <CardTitle className="text-white">Active Badges</CardTitle>
                   <CardDescription className="text-gray-400">
-                    Badges you've earned and activated
+                    Badges you&apos;ve earned and activated
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -474,7 +469,7 @@ export default function RewardsPage() {
                           {!canAfford && wouldAffordWithUnconfirmed && (
                             <div className="mb-3 p-2 rounded bg-yellow-900/20 border border-yellow-700">
                               <p className="text-xs text-yellow-300">
-                                You'll have enough once unconfirmed points are confirmed (7 days)
+                                You&apos;ll have enough once unconfirmed points are confirmed (7 days)
                               </p>
                             </div>
                           )}
@@ -510,7 +505,7 @@ export default function RewardsPage() {
                 <CardHeader>
                   <CardTitle className="text-blue-900">Your Items</CardTitle>
                   <CardDescription className="text-gray-600">
-                    Items you've purchased from the reward shop
+                    Items you&apos;ve purchased from the reward shop
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

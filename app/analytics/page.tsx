@@ -197,7 +197,7 @@ export default function AnalyticsPage() {
                 <Calendar className="h-5 w-5" />
                 Weekly Progress
               </CardTitle>
-              <CardDescription className="text-teal-700">This month's weekly breakdown</CardDescription>
+              <CardDescription className="text-teal-700">This month&apos;s weekly breakdown</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
