@@ -84,6 +84,7 @@ export default function Dashboard() {
       } catch (error) {
         // Gated check to avoid production build console flags
         if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
           console.error('Failed to fetch user stats:', error)
         }
       } finally {
