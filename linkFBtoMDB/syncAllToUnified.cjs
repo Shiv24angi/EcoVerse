@@ -25,7 +25,7 @@ async function syncUnified() {
 
     // ✅ 1. Sync Firestore users
     const firestoreSnap = await db.collection('users').get();
-    const firestoreUsers = firestoreSnap.docs.map(doc => ({
+    const firestoreUsers = firestoreSnap.docs.map((doc) => ({
       _id: doc.id,
       ...doc.data(),
       source: 'firestore',
@@ -38,7 +38,7 @@ async function syncUnified() {
 
     do {
       const list = await auth.listUsers(1000, nextPageToken);
-      list.users.forEach(userRecord => {
+      list.users.forEach((userRecord) => {
         authUsers.push({
           _id: userRecord.uid,
           email: userRecord.email,
@@ -53,7 +53,7 @@ async function syncUnified() {
     // ✅ 3. Merge both into unified collection
     const bulkOps = [];
 
-    [...firestoreUsers, ...authUsers].forEach(user => {
+    [...firestoreUsers, ...authUsers].forEach((user) => {
       bulkOps.push({
         updateOne: {
           filter: { _id: user._id },
@@ -65,7 +65,9 @@ async function syncUnified() {
 
     if (bulkOps.length > 0) {
       const result = await collection.bulkWrite(bulkOps);
-      console.log(`✅ Synced ${result.upsertedCount + result.modifiedCount} users to '${unifiedCollectionName}'`);
+      console.log(
+        `✅ Synced ${result.upsertedCount + result.modifiedCount} users to '${unifiedCollectionName}'`
+      );
     } else {
       console.log('⚠️ No users to sync.');
     }

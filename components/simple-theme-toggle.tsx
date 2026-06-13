@@ -1,28 +1,28 @@
-"use client"
+'use client';
 
-import { Moon, Sun } from "lucide-react"
-import { useTheme } from "./theme-provider"
-import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from './theme-provider';
+import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 
 export function SimpleThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   const toggleTheme = () => {
-    if (theme === "light") {
-      setTheme("dark")
-    } else if (theme === "dark") {
-      setTheme("light")
+    if (theme === 'light') {
+      setTheme('dark');
+    } else if (theme === 'dark') {
+      setTheme('light');
     } else {
       // If system, toggle to light first
-      setTheme("light")
+      setTheme('light');
     }
-  }
+  };
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -35,7 +35,7 @@ export function SimpleThemeToggle() {
         <Sun className="h-4 w-4" />
         <span className="sr-only">Toggle theme</span>
       </Button>
-    )
+    );
   }
 
   return (
@@ -49,5 +49,5 @@ export function SimpleThemeToggle() {
       <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all duration-500 dark:rotate-0 dark:scale-100" />
       <span className="sr-only">Toggle theme</span>
     </Button>
-  )
+  );
 }

@@ -11,8 +11,9 @@ const db = admin.firestore();
 const mongoURI = process.env.MONGODB_URI;
 const mongoClient = new MongoClient(mongoURI);
 
-const dbNameFromURI = new URL(mongoURI).pathname.replace(/^\/+/, '').split('?')[0];
-
+const dbNameFromURI = new URL(mongoURI).pathname
+  .replace(/^\/+/, '')
+  .split('?')[0];
 
 async function syncAllCollections() {
   try {
@@ -42,9 +43,13 @@ async function syncAllCollections() {
       if (bulkOps.length > 0) {
         const mongoCollection = mongoDB.collection(collectionName);
         const result = await mongoCollection.bulkWrite(bulkOps);
-        console.log(`✅ Synced ${result.upsertedCount + result.modifiedCount} docs to MongoDB → ${collectionName}`);
+        console.log(
+          `✅ Synced ${result.upsertedCount + result.modifiedCount} docs to MongoDB → ${collectionName}`
+        );
       } else {
-        console.log(`⚠️ No documents found in Firestore collection: ${collectionName}`);
+        console.log(
+          `⚠️ No documents found in Firestore collection: ${collectionName}`
+        );
       }
     }
 

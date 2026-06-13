@@ -1,28 +1,31 @@
 // app/api/user/score/route.ts
 
-import { NextResponse } from "next/server"
-import dbConnect from "@/lib/mongodb"
-import User from "@/models/User"
-import { calculateLevel, getSustainabilityTier } from "@/lib/rewards-system"
+import { NextResponse } from 'next/server';
+import dbConnect from '@/lib/mongodb';
+import User from '@/models/User';
+import { calculateLevel, getSustainabilityTier } from '@/lib/rewards-system';
 
 export async function GET(req: Request) {
-  const email = req.headers.get("x-user-email")
+  const email = req.headers.get('x-user-email');
 
   if (!email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    await dbConnect()
-    const user = await User.findOne({ email }).lean() as any
+    await dbConnect();
+    const user = (await User.findOne({ email }).lean()) as any;
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Calculate current level data
     const levelData = calculateLevel(user.totalPointsEarned || 0);
-    const tierData = getSustainabilityTier(user.monthlyCarbon || 0, user.totalScanned || 0);
+    const tierData = getSustainabilityTier(
+      user.monthlyCarbon || 0,
+      user.totalScanned || 0
+    );
 
     return NextResponse.json({
       monthlyCarbon: user.monthlyCarbon || 0,
@@ -30,9 +33,14 @@ export async function GET(req: Request) {
       streakCount: user.streakCount || 0,
       bestStreakCount: user.bestStreakCount || 0,
       scans: user.scans || [],
-      sustainabilityLevel: user.monthlyCarbon < 20 ? 'Excellent' : 
-                          user.monthlyCarbon < 35 ? 'Good' : 
-                          user.monthlyCarbon < 50 ? 'Average' : 'Needs Improvement',
+      sustainabilityLevel:
+        user.monthlyCarbon < 20
+          ? 'Excellent'
+          : user.monthlyCarbon < 35
+            ? 'Good'
+            : user.monthlyCarbon < 50
+              ? 'Average'
+              : 'Needs Improvement',
       // Enhanced rewards data
       rewards: {
         points: user.rewardPoints || 0,
@@ -54,41 +62,47 @@ export async function GET(req: Request) {
           streakProtectors: user.streakProtectors || 0,
           doublePointsDays: user.doublePointsDays || 0,
           hasAdvancedAnalytics: user.hasAdvancedAnalytics || false,
-          customAvatar: user.customAvatar || null
+          customAvatar: user.customAvatar || null,
         },
         // Monthly bonus tracking
         monthlyBonusesEarned: user.monthlyBonusesEarned || 0,
-        lastMonthlyBonusCheck: user.lastMonthlyBonusCheck
-      }
-    })
+        lastMonthlyBonusCheck: user.lastMonthlyBonusCheck,
+      },
+    });
   } catch (error) {
-    console.error("Error fetching user data:", error)
-    return NextResponse.json({ error: "Failed to fetch user data" }, { status: 500 })
+    console.error('Error fetching user data:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch user data' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(req: Request) {
-  const email = req.headers.get("x-user-email")
+  const email = req.headers.get('x-user-email');
 
   if (!email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { productName, carbonEstimate } = await req.json()
+  const { productName, carbonEstimate } = await req.json();
 
   try {
-    await dbConnect()
-    const user = await User.findOne({ email })
+    await dbConnect();
+    const user = await User.findOne({ email });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json({
       newScore: user.monthlyCarbon,
-      totalScanned: user.totalScanned
-    })
+      totalScanned: user.totalScanned,
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update score" }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to update score' },
+      { status: 500 }
+    );
   }
 }

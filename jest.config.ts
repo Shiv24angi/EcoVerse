@@ -19,7 +19,7 @@ const config: Config = {
   modulePathIgnorePatterns: [
     '<rootDir>/firebase-functions-sync-prisma/',
     '<rootDir>/firebase-functions-sync-ts/',
-    '<rootDir>/firebase-functions-sync-ts-backup/'
+    '<rootDir>/firebase-functions-sync-ts-backup/',
   ],
 };
 

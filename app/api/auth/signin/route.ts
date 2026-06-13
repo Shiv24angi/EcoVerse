@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import dbConnect from "@/lib/mongodb";
-import User from "@/models/User";
-import bcrypt from "bcryptjs";
-import { signToken } from "@/lib/auth";
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import dbConnect from '@/lib/mongodb';
+import User from '@/models/User';
+import bcrypt from 'bcryptjs';
+import { signToken } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -14,33 +14,27 @@ export async function POST(req: Request) {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     if (!user.password) {
-    return NextResponse.json(
+      return NextResponse.json(
         {
-            error:
-                "This account uses Google Sign-In. Please continue with Google.",
+          error:
+            'This account uses Google Sign-In. Please continue with Google.',
         },
         { status: 400 }
-    );
-}
+      );
+    }
 
-const isMatch = await bcrypt.compare(
-  password,
-  user.password
-);
+    const isMatch = await bcrypt.compare(password, user.password);
 
-if (!isMatch) {
-  return NextResponse.json(
-    { error: "Invalid credentials" },
-    { status: 401 }
-  );
-}
+    if (!isMatch) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
 
     const userData = {
       _id: user._id,
@@ -49,19 +43,16 @@ if (!isMatch) {
       monthlyCarbon: user.monthlyCarbon || 0,
       totalScanned: user.totalScanned || 0,
       joinedAt:
-        user.createdAt?.toISOString().split("T")[0] ||
-        new Date().toISOString().split("T")[0],
+        user.createdAt?.toISOString().split('T')[0] ||
+        new Date().toISOString().split('T')[0],
     };
 
-    return NextResponse.json(
-      { user: userData },
-      { status: 200 }
-    );
+    return NextResponse.json({ user: userData }, { status: 200 });
   } catch (error) {
-    console.error("Signin error:", error);
+    console.error('Signin error:', error);
 
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

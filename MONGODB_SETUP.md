@@ -16,6 +16,7 @@
 10. Replace `<database>` with `carbontracker`
 
 Your connection string should look like:
+
 ```
 mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/carbontracker?retryWrites=true&w=majority
 ```
@@ -50,6 +51,7 @@ MONGODB_URI=mongodb://localhost:27017/carbontracker
 ## Testing the Connection
 
 After setting up MongoDB, test your connection by running:
+
 ```bash
 cd /home/fusion/Code/GitRepos/ecotracker-frontend
 npm run dev

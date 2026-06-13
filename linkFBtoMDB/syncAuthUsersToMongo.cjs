@@ -17,7 +17,7 @@ async function getAllUsers(nextPageToken) {
   const result = [];
   const listUsers = async (token) => {
     const list = await auth.listUsers(1000, token);
-    list.users.forEach(userRecord => {
+    list.users.forEach((userRecord) => {
       result.push({
         _id: userRecord.uid,
         email: userRecord.email || '',
@@ -40,16 +40,18 @@ async function syncToMongo() {
     const db = mongoClient.db(dbName);
     const collection = db.collection(collectionName);
 
-    const bulkOps = users.map(user => ({
+    const bulkOps = users.map((user) => ({
       updateOne: {
         filter: { _id: user._id },
         update: { $set: user },
         upsert: true,
-      }
+      },
     }));
 
     const result = await collection.bulkWrite(bulkOps);
-    console.log(`✅ Synced ${result.upsertedCount + result.modifiedCount} auth users to MongoDB.`);
+    console.log(
+      `✅ Synced ${result.upsertedCount + result.modifiedCount} auth users to MongoDB.`
+    );
 
     await mongoClient.close();
   } catch (error) {

@@ -14,11 +14,11 @@ The `app` directory contains the main application routing, pages, layouts, and v
 
 Responsibilities include:
 
-* Application routing
-* Page rendering
-* Layout management
-* Navigation flow
-* Feature-specific pages
+- Application routing
+- Page rendering
+- Layout management
+- Navigation flow
+- Feature-specific pages
 
 This directory serves as the primary entry point for the Next.js application.
 
@@ -28,11 +28,11 @@ The `components` directory contains reusable UI components used throughout the a
 
 Examples include:
 
-* Navigation bars
-* Buttons and form controls
-* Custom input fields
-* Scanner interface components
-* Shared UI elements
+- Navigation bars
+- Buttons and form controls
+- Custom input fields
+- Scanner interface components
+- Shared UI elements
 
 Using reusable components helps maintain consistency and reduces code duplication.
 
@@ -46,8 +46,8 @@ The `models` directory contains MongoDB schema and model definitions used by the
 
 Examples include:
 
-* `User.ts`
-* Future product-related models
+- `User.ts`
+- Future product-related models
 
 These models define how data is structured and stored within MongoDB.
 
@@ -57,12 +57,12 @@ The `lib` directory stores shared utilities, helper functions, and configuration
 
 Examples include:
 
-* MongoDB connection helpers
-* Firebase configuration
-* Carbon footprint calculations
-* Packaging analysis utilities
-* Reward system logic
-* General helper functions
+- MongoDB connection helpers
+- Firebase configuration
+- Carbon footprint calculations
+- Packaging analysis utilities
+- Reward system logic
+- General helper functions
 
 Keeping shared logic in one place improves maintainability and reusability.
 
@@ -76,9 +76,9 @@ This directory is used for Firebase synchronization workflows and related build 
 
 **Important Notes**
 
-* May contain compiled JavaScript (`.js`) files
-* May contain source map (`.js.map`) files
-* Generated during build or synchronization processes
+- May contain compiled JavaScript (`.js`) files
+- May contain source map (`.js.map`) files
+- Generated during build or synchronization processes
 
 ⚠️ **Do NOT edit compiled output files directly.**
 
@@ -90,15 +90,15 @@ This directory contains scripts used to synchronize Firebase and MongoDB data.
 
 Examples include:
 
-* User synchronization scripts
-* Firestore migration utilities
-* Database synchronization helpers
+- User synchronization scripts
+- Firestore migration utilities
+- Database synchronization helpers
 
 **Important Notes**
 
-* Some files may be generated or compiled outputs
-* Do not directly edit compiled `.js` or `.js.map` files
-* Update the original source files whenever applicable
+- Some files may be generated or compiled outputs
+- Do not directly edit compiled `.js` or `.js.map` files
+- Update the original source files whenever applicable
 
 ⚠️ **Do NOT edit compiled output files directly.**
 
@@ -108,11 +108,11 @@ Examples include:
 
 EcoVerse is built using:
 
-* **Next.js** – Application framework and routing
-* **TypeScript** – Type-safe development
-* **Tailwind CSS** – Utility-first styling framework
-* **MongoDB** – Database layer
-* **Firebase Auth** – User authentication and identity management
+- **Next.js** – Application framework and routing
+- **TypeScript** – Type-safe development
+- **Tailwind CSS** – Utility-first styling framework
+- **MongoDB** – Database layer
+- **Firebase Auth** – User authentication and identity management
 
 ---
 
@@ -156,13 +156,13 @@ EcoVerse is built using:
 
 ## Notes for Contributors
 
-* Follow the existing project structure when adding new features.
-* Reuse components and utilities whenever possible.
-* Write documentation in clear, beginner-friendly language.
-* Prefer using backticks when referencing folder paths and file names.
-* Do not modify, delete, or refactor existing code unless the issue specifically requires it.
-* Do not edit generated build outputs directly.
-* Keep documentation updated when introducing major architectural changes.
+- Follow the existing project structure when adding new features.
+- Reuse components and utilities whenever possible.
+- Write documentation in clear, beginner-friendly language.
+- Prefer using backticks when referencing folder paths and file names.
+- Do not modify, delete, or refactor existing code unless the issue specifically requires it.
+- Do not edit generated build outputs directly.
+- Keep documentation updated when introducing major architectural changes.
 
 ---
 
