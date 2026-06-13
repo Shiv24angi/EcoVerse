@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { Leaf, Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import GoogleSignInButton from "@/components/google-signin-button"
@@ -136,7 +136,7 @@ export default function SignIn() {
         </form>
 
         <div className="mt-8 text-center text-sm">
-          <span className="text-gray-500 dark:text-gray-400">{"Don't have an account? "}</span>
+          <span className="text-gray-500 dark:text-gray-400">Don&apos;t have an account? </span>
           <Link href="/auth/signup" className="text-green-600 dark:text-green-500 hover:underline font-medium transition-colors">
             Sign up
           </Link>
@@ -144,7 +144,7 @@ export default function SignIn() {
 
         <div className="mt-6 text-center">
           <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:underline transition-colors">
-            ← Back to home
+            &larr; Back to home
           </Link>
         </div>
       </div>

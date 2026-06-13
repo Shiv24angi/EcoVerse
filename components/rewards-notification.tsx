@@ -142,7 +142,7 @@ export default function RewardsNotification({ notification, onDismiss }: Rewards
               onClick={handleDismiss}
               className="text-white hover:bg-white/20 h-6 w-6 p-0"
             >
-              ×
+              &times;
             </Button>
           </div>
         </CardContent>
@@ -156,9 +156,12 @@ export function useRewardsNotification() {
   const [notification, setNotification] = useState<RewardNotification | null>(null)
 
   const showNotification = (notificationData: Omit<RewardNotification, 'id' | 'timestamp'>) => {
+    // Generate a secure, non-mismatching client string representation for key elements
+    const cryptoId = typeof window !== 'undefined' ? window.crypto.randomUUID() : String(Math.random())
+    
     const newNotification: RewardNotification = {
       ...notificationData,
-      id: `${Date.now()}-${Math.random()}`,
+      id: cryptoId,
       timestamp: new Date()
     }
     setNotification(newNotification)

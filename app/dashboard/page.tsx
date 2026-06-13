@@ -115,7 +115,7 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div>
           <h1 className="text-3xl font-bold text-green-900">Welcome back, {user.name}! 👋</h1>
-          <p className="text-gray-400 mt-2">{"Here's your sustainability overview for this month."}</p>
+          <p className="text-gray-400 mt-2">Here&apos;s your sustainability overview for this month.</p>
         </div>
 
         {/* Stats Cards */}
