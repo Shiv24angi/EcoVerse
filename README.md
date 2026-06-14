@@ -399,7 +399,7 @@ You can obtain
 - MongoDB URI from your [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster
 - [Gemini API](https://aistudio.google.com/app/api-keys)
 
-```env
+````env
 # Firebase
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=

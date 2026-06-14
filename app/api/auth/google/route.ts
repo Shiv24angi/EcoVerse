@@ -44,7 +44,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 
-  // Generate the JWT
+  if (!userDoc) {
+    return NextResponse.json(
+      { error: 'User processing failed' },
+      { status: 500 }
+    );
+  }
+
+  // Generate the JWT safely
   const token = await signToken({
     email: userDoc.email,
     userId: userDoc._id.toString(),
@@ -60,7 +67,7 @@ export async function POST(req: Request) {
     path: '/',
   });
 
-  // Map the MongoDB document back to the required frontend shape, ensuring we use raw DB values
+  // Map the MongoDB document back to the required frontend shape using safe fallbacks
   const user = {
     _id: userDoc._id,
     name: userDoc.name,

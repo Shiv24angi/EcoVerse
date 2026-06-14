@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     );
 
     return NextResponse.json({
-      monthlyCarbon: user.monthlyCarbon || 0,
+      monthlyCarbon,
       totalScanned: user.totalScanned || 0,
       streakCount: user.streakCount || 0,
       bestStreakCount: user.bestStreakCount || 0,
@@ -48,13 +48,15 @@ export async function GET(req: Request) {
         level: user.level || 1,
         nextLevelPoints: levelData.nextLevelPoints,
         progressToNext: levelData.progressToNext,
-        recentTransactions: (user.rewardTransactions || []).slice(-10), // Last 10 transactions
+        recentTransactions: (user.rewardTransactions || []).slice(-10),
         achievements: user.achievements || [],
         achievementCount: (user.achievements || []).length,
+
         // Sustainability tier
         tier: tierData.tier,
         tierColor: tierData.color,
         tierDescription: tierData.description,
+
         // Special features
         activeBadges: user.activeBadges || [],
         purchasedItems: user.purchasedItems || [],
@@ -64,6 +66,7 @@ export async function GET(req: Request) {
           hasAdvancedAnalytics: user.hasAdvancedAnalytics || false,
           customAvatar: user.customAvatar || null,
         },
+
         // Monthly bonus tracking
         monthlyBonusesEarned: user.monthlyBonusesEarned || 0,
         lastMonthlyBonusCheck: user.lastMonthlyBonusCheck,

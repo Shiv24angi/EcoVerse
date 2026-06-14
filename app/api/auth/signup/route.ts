@@ -33,9 +33,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const existingUser = await User.findOne({
-      email,
-    });
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       console.warn('⚠️ User already exists:', email);
@@ -53,7 +51,7 @@ export async function POST(req: Request) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    const user = await User.create({
+    const createdUser = await User.create({
       name,
       username: name,
       full_name: name,

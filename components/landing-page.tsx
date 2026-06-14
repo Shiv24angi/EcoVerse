@@ -8,18 +8,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Leaf,
   Scan,
   TrendingDown,
   Trophy,
-  Users,
   BarChart3,
   Zap,
-  Shield,
   Recycle,
   ArrowRight,
-  Star,
-  CheckCircle,
   Globe,
   Target,
   Sparkles,
