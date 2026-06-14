@@ -1,106 +1,139 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { CheckCircle, Clock, Gift, Star, Trophy } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle, Clock, Gift, Star, Trophy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface RewardNotification {
-  id: string
-  type: 'points' | 'achievement' | 'level_up' | 'purchase'
-  message: string
-  points?: number
-  pointsType?: 'confirmed' | 'unconfirmed'
-  icon?: string
-  level?: number
-  timestamp: Date
+  id: string;
+  type: 'points' | 'achievement' | 'level_up' | 'purchase';
+  message: string;
+  points?: number;
+  pointsType?: 'confirmed' | 'unconfirmed';
+  icon?: string;
+  level?: number;
+  timestamp: Date;
 }
 
 interface RewardsNotificationProps {
-  notification: RewardNotification | null
-  onDismiss: () => void
+  notification: RewardNotification | null;
+  onDismiss: () => void;
 }
 
-export default function RewardsNotification({ notification, onDismiss }: RewardsNotificationProps) {
-  const [visible, setVisible] = useState(false)
+export default function RewardsNotification({
+  notification,
+  onDismiss,
+}: RewardsNotificationProps) {
+  const [visible, setVisible] = useState(false);
 
+  // Refs to tracking timeouts and function dependencies safely across re-renders
+  const dismissTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestOnDismiss = useRef(onDismiss);
+
+  // Keep the ref updated with the fresh instance of onDismiss
+  useEffect(() => {
+    latestOnDismiss.current = onDismiss;
+  }, [onDismiss]);
+
+  // Handles smooth dismissal by running animation first, then notifying the parent
+  const handleDismiss = useCallback(() => {
+    setVisible(false);
+
+    if (dismissTimeoutRef.current) {
+      clearTimeout(dismissTimeoutRef.current);
+    }
+
+    dismissTimeoutRef.current = setTimeout(() => {
+      latestOnDismiss.current();
+      dismissTimeoutRef.current = null;
+    }, 300); // Wait for fade out animation
+  }, []);
+
+  // Controls the 5-second auto-dismiss routine cleanly
   useEffect(() => {
     if (notification) {
-      setVisible(true)
-      // Auto-dismiss after 5 seconds
+      setVisible(true);
+
       const timer = setTimeout(() => {
-        handleDismiss()
-      }, 5000)
-      
-      return () => clearTimeout(timer)
+        handleDismiss();
+      }, 5000);
+
+      // Clear all timers on update or unexpected early unmounts
+      return () => {
+        clearTimeout(timer);
+        if (dismissTimeoutRef.current) {
+          clearTimeout(dismissTimeoutRef.current);
+          dismissTimeoutRef.current = null;
+        }
+      };
     }
-  }, [notification])
+  }, [notification, handleDismiss]);
 
-  const handleDismiss = () => {
-    setVisible(false)
-    setTimeout(() => {
-      onDismiss()
-    }, 300) // Wait for fade out animation
-  }
-
-  if (!notification || !visible) return null
+  // Changed guard clause to let the fade-out exit animation play smoothly
+  if (!notification) return null;
 
   const getIcon = () => {
     switch (notification.type) {
       case 'points':
-        return <Gift className="h-5 w-5" />
+        return <Gift className="h-5 w-5" />;
       case 'achievement':
-        return <Trophy className="h-5 w-5" />
+        return <Trophy className="h-5 w-5" />;
       case 'level_up':
-        return <Star className="h-5 w-5" />
+        return <Star className="h-5 w-5" />;
       case 'purchase':
-        return <CheckCircle className="h-5 w-5" />
+        return <CheckCircle className="h-5 w-5" />;
       default:
-        return <Gift className="h-5 w-5" />
+        return <Gift className="h-5 w-5" />;
     }
-  }
+  };
 
   const getColor = () => {
     switch (notification.type) {
       case 'points':
-        return notification.pointsType === 'confirmed' ? 'bg-green-600' : 'bg-yellow-600'
+        return notification.pointsType === 'confirmed'
+          ? 'bg-green-600'
+          : 'bg-yellow-600';
       case 'achievement':
-        return 'bg-purple-600'
+        return 'bg-purple-600';
       case 'level_up':
-        return 'bg-blue-600'
+        return 'bg-blue-600';
       case 'purchase':
-        return 'bg-green-600'
+        return 'bg-green-600';
       default:
-        return 'bg-gray-600'
+        return 'bg-gray-600';
     }
-  }
+  };
 
   return (
-    <div className={`fixed top-4 right-4 z-50 transition-all duration-300 transform ${
-      visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-    }`}>
+    <div
+      className={`fixed top-4 right-4 z-50 transition-all duration-300 transform ${
+        visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}
+    >
       <Card className={`${getColor()} border-0 text-white max-w-sm`}>
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="mt-0.5">
-              {getIcon()}
-            </div>
+            <div className="mt-0.5">{getIcon()}</div>
             <div className="flex-1">
-              <p className="font-medium text-sm">
-                {notification.message}
-              </p>
-              
+              <p className="font-medium text-sm">{notification.message}</p>
+
               {notification.type === 'points' && notification.points && (
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                  <Badge
+                    variant="secondary"
+                    className="bg-white/20 text-white border-0"
+                  >
                     +{notification.points} pts
                   </Badge>
                   {notification.pointsType && (
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className={`border-white/30 text-white ${
-                        notification.pointsType === 'confirmed' ? 'bg-green-500/20' : 'bg-yellow-500/20'
+                        notification.pointsType === 'confirmed'
+                          ? 'bg-green-500/20'
+                          : 'bg-yellow-500/20'
                       }`}
                     >
                       {notification.pointsType === 'confirmed' ? (
@@ -118,24 +151,30 @@ export default function RewardsNotification({ notification, onDismiss }: Rewards
                   )}
                 </div>
               )}
-              
+
               {notification.type === 'level_up' && notification.level && (
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                  <Badge
+                    variant="secondary"
+                    className="bg-white/20 text-white border-0"
+                  >
                     Level {notification.level}
                   </Badge>
                 </div>
               )}
-              
+
               {notification.type === 'achievement' && (
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                  <Badge
+                    variant="secondary"
+                    className="bg-white/20 text-white border-0"
+                  >
                     Achievement Unlocked!
                   </Badge>
                 </div>
               )}
             </div>
-            
+
             <Button
               variant="ghost"
               size="sm"
@@ -148,29 +187,34 @@ export default function RewardsNotification({ notification, onDismiss }: Rewards
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
-// Hook for managing reward notifications
+// Hook for managing reward notifications (Now safely memoized via useCallback)
 export function useRewardsNotification() {
-  const [notification, setNotification] = useState<RewardNotification | null>(null)
+  const [notification, setNotification] = useState<RewardNotification | null>(
+    null
+  );
 
-  const showNotification = (notificationData: Omit<RewardNotification, 'id' | 'timestamp'>) => {
-    const newNotification: RewardNotification = {
-      ...notificationData,
-      id: `${Date.now()}-${Math.random()}`,
-      timestamp: new Date()
-    }
-    setNotification(newNotification)
-  }
+  const showNotification = useCallback(
+    (notificationData: Omit<RewardNotification, 'id' | 'timestamp'>) => {
+      const newNotification: RewardNotification = {
+        ...notificationData,
+        id: `${Date.now()}-${Math.random()}`,
+        timestamp: new Date(),
+      };
+      setNotification(newNotification);
+    },
+    []
+  );
 
-  const dismissNotification = () => {
-    setNotification(null)
-  }
+  const dismissNotification = useCallback(() => {
+    setNotification(null);
+  }, []);
 
   return {
     notification,
     showNotification,
-    dismissNotification
-  }
+    dismissNotification,
+  };
 }

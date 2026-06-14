@@ -1,7 +1,7 @@
 ---
 name: Feature Request
 about: Got an idea to make EcoVerse better? We'd love to hear it!
-title: "[FEAT] "
+title: '[FEAT] '
 labels: enhancement
 assignees: ''
 ---

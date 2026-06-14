@@ -37,13 +37,13 @@ EcoVerse is a sustainability-focused platform that helps users track and improve
 
 Contributions are welcome across:
 
-| Area | Examples |
-|--------|----------|
-| 🐛 Bug Fixes | Authentication, scanning, dashboard issues |
-| ✨ Features | Sustainability metrics, rewards, analytics |
-| 🎨 UI/UX | Accessibility, responsiveness, design improvements |
-| 📖 Documentation | README, setup guides, contribution docs |
-| 🧪 Testing | Unit tests, integration tests |
+| Area             | Examples                                           |
+| ---------------- | -------------------------------------------------- |
+| 🐛 Bug Fixes     | Authentication, scanning, dashboard issues         |
+| ✨ Features      | Sustainability metrics, rewards, analytics         |
+| 🎨 UI/UX         | Accessibility, responsiveness, design improvements |
+| 📖 Documentation | README, setup guides, contribution docs            |
+| 🧪 Testing       | Unit tests, integration tests                      |
 
 ---
 
@@ -195,12 +195,12 @@ Closes #12
 
 Use descriptive branch names:
 
-| Type | Example |
-|--------|---------|
-| Feature | `feat/add-dashboard-metrics` |
-| Bug Fix | `fix/login-redirect` |
+| Type          | Example                          |
+| ------------- | -------------------------------- |
+| Feature       | `feat/add-dashboard-metrics`     |
+| Bug Fix       | `fix/login-redirect`             |
 | Documentation | `docs/update-contributing-guide` |
-| Maintenance | `chore/dependency-updates` |
+| Maintenance   | `chore/dependency-updates`       |
 
 ---
 
@@ -208,15 +208,15 @@ Use descriptive branch names:
 
 We follow Conventional Commits.
 
-| Prefix | Purpose |
-|----------|---------|
-| feat: | New feature |
-| fix: | Bug fix |
-| docs: | Documentation changes |
-| style: | Styling/UI updates |
-| refactor: | Code improvements |
-| test: | Testing-related changes |
-| chore: | Maintenance tasks |
+| Prefix    | Purpose                 |
+| --------- | ----------------------- |
+| feat:     | New feature             |
+| fix:      | Bug fix                 |
+| docs:     | Documentation changes   |
+| style:    | Styling/UI updates      |
+| refactor: | Code improvements       |
+| test:     | Testing-related changes |
+| chore:    | Maintenance tasks       |
 
 Examples:
 

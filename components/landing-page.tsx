@@ -1,39 +1,39 @@
-"use client"
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @typescript-eslint/no-require-imports, react-hooks/exhaustive-deps, @next/next/no-img-element, no-console */
+'use client';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from '@/components/ui/button';
 import {
-  Leaf,
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
   Scan,
   TrendingDown,
   Trophy,
-  Users,
   BarChart3,
   Zap,
-  Shield,
   Recycle,
   ArrowRight,
-  Star,
-  CheckCircle,
   Globe,
   Target,
   Sparkles,
-  Play,
-} from "lucide-react"
-import Link from "next/link"
-import { useState, useEffect } from "react"
-import { ThemeToggle } from "./theme-toggle"
+} from 'lucide-react';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { ThemeToggle } from './theme-toggle';
 
 interface LandingPageProps {
-  onGetStarted?: () => void
+  onGetStarted?: () => void;
 }
 
 export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true)
-  }, [])
+    setIsVisible(true);
+  }, []);
 
   // const stats = [
   //   { number: "15K+", label: "Active Users", icon: Users },
@@ -45,35 +45,41 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
   const features = [
     {
       icon: Scan,
-      title: "Smart Barcode Scanner",
-      description: "AI-powered scanning with instant product recognition and real-time sustainability scoring",
+      title: 'Smart Barcode Scanner',
+      description:
+        'AI-powered scanning with instant product recognition and real-time sustainability scoring',
     },
     {
       icon: TrendingDown,
-      title: "Carbon Tracking",
-      description: "Monitor your environmental impact with detailed analytics and personalized insights",
+      title: 'Carbon Tracking',
+      description:
+        'Monitor your environmental impact with detailed analytics and personalized insights',
     },
     {
       icon: Trophy,
-      title: "Global Leaderboards",
-      description: "Compete with eco-warriors worldwide and unlock exclusive sustainability badges",
+      title: 'Global Leaderboards',
+      description:
+        'Compete with eco-warriors worldwide and unlock exclusive sustainability badges',
     },
     {
       icon: BarChart3,
-      title: "Advanced Analytics",
-      description: "Deep insights into your shopping patterns with predictive recommendations",
+      title: 'Advanced Analytics',
+      description:
+        'Deep insights into your shopping patterns with predictive recommendations',
     },
     {
       icon: Recycle,
-      title: "Recyclability Checker",
-      description: "Check if the product is recyclable or not by assessing the packaging composition",
+      title: 'Recyclability Checker',
+      description:
+        'Check if the product is recyclable or not by assessing the packaging composition',
     },
     {
       icon: Globe,
-      title: "Global Community",
-      description: "Connect with worldwide environmental advocates and share your journey",
+      title: 'Global Community',
+      description:
+        'Connect with worldwide environmental advocates and share your journey',
     },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#fef6f4] via-[#fdf7f5] to-[#f4f4ff] dark:from-[#1f1c2e] dark:via-[#1a1b27] dark:to-[#20242f] overflow-x-hidden transition-colors duration-300 scroll-smooth">
@@ -91,14 +97,18 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Link href="/" className="flex items-center gap-2">
-                  <img src="/logo.png" alt="EcoVerse logo" className="h-10 w-auto" />
+                  <img
+                    src="/logo.png"
+                    alt="EcoVerse logo"
+                    className="h-10 w-auto"
+                  />
                   <span className="text-2xl font-bold text-green-900">
                     EcoVerse
                   </span>
                 </Link>
               </div>
             </div>
-             
+
             <div className="flex items-center gap-4">
               <ThemeToggle />
               <Link href="/auth/signin">
@@ -127,7 +137,9 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 border border-green-200/50 dark:border-green-700/50 mb-8">
               <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-700 dark:text-green-300">Your Actions, Visualized</span>
+              <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                Your Actions, Visualized
+              </span>
             </div>
 
             <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight">
@@ -141,10 +153,11 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
             </h1>
 
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-16 max-w-3xl mx-auto leading-relaxed">
-              Track your carbon footprint, recycle products, discover sustainable products, and compete with a global community of
+              Track your carbon footprint, recycle products, discover
+              sustainable products, and compete with a global community of
               eco-conscious shoppers.
             </p>
-            
+
             {/* Primary CTA */}
             <div className="flex flex-col items-center gap-8 mb-20">
               <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -157,7 +170,9 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
 
                 <div className="flex items-center gap-4">
                   <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
-                  <span className="text-gray-400 dark:text-gray-500 text-sm">or</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-sm">
+                    or
+                  </span>
                   <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
                 </div>
 
@@ -204,7 +219,9 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/50 dark:to-cyan-900/50 border border-blue-200/50 dark:border-blue-700/50 mb-8">
               <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Features</span>
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                Features
+              </span>
             </div>
 
             <h2 className="text-5xl md:text-6xl font-bold mb-8">
@@ -218,7 +235,8 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
             </h2>
 
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Powerful tools designed to make sustainable shopping effortless and rewarding.
+              Powerful tools designed to make sustainable shopping effortless
+              and rewarding.
             </p>
           </div>
 
@@ -299,20 +317,28 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* Footer / Contact Section */}
-      <footer id="contact" className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-white py-20 px-6 scroll-mt-24">
+      <footer
+        id="contact"
+        className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-white py-20 px-6 scroll-mt-24"
+      >
         <div className="container mx-auto max-w-7xl">
           <div className="grid md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-8">
                 <div className="relative">
                   <Link href="/" className="flex items-center gap-2">
-                    <img src="/logo.png" alt="EcoVerse logo" className="h-10 w-auto" />
+                    <img
+                      src="/logo.png"
+                      alt="EcoVerse logo"
+                      className="h-10 w-auto"
+                    />
                   </Link>
                 </div>
                 <span className="text-3xl font-bold">EcoVerse</span>
               </div>
               <p className="text-gray-300 dark:text-gray-400 mb-8 text-lg leading-relaxed max-w-md">
-                Making sustainable shopping accessible to everyone. Join the movement towards a greener future.
+                Making sustainable shopping accessible to everyone. Join the
+                movement towards a greener future.
               </p>
             </div>
 
@@ -320,17 +346,26 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
               <h3 className="font-bold text-white mb-6 text-xl">Product</h3>
               <ul className="space-y-4 text-gray-300 dark:text-gray-400">
                 <li>
-                  <a href="#features" className="hover:text-white transition-colors text-lg">
+                  <a
+                    href="#features"
+                    className="hover:text-white transition-colors text-lg"
+                  >
                     Features
                   </a>
                 </li>
                 <li>
-                  <span className="text-lg opacity-60 cursor-not-allowed transition-colors" aria-disabled="true">
+                  <span
+                    className="text-lg opacity-60 cursor-not-allowed transition-colors"
+                    aria-disabled="true"
+                  >
                     Pricing (Coming Soon)
                   </span>
                 </li>
                 <li>
-                  <span className="text-lg opacity-60 cursor-not-allowed transition-colors" aria-disabled="true">
+                  <span
+                    className="text-lg opacity-60 cursor-not-allowed transition-colors"
+                    aria-disabled="true"
+                  >
                     API (Coming Soon)
                   </span>
                 </li>
@@ -341,17 +376,26 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
               <h3 className="font-bold text-white mb-6 text-xl">Company</h3>
               <ul className="space-y-4 text-gray-300 dark:text-gray-400">
                 <li>
-                  <a href="#about" className="hover:text-white transition-colors text-lg">
+                  <a
+                    href="#about"
+                    className="hover:text-white transition-colors text-lg"
+                  >
                     About
                   </a>
                 </li>
                 <li>
-                  <a href="#contact" className="hover:text-white transition-colors text-lg">
+                  <a
+                    href="#contact"
+                    className="hover:text-white transition-colors text-lg"
+                  >
                     Contact
                   </a>
                 </li>
                 <li>
-                  <span className="text-lg opacity-60 cursor-not-allowed transition-colors" aria-disabled="true">
+                  <span
+                    className="text-lg opacity-60 cursor-not-allowed transition-colors"
+                    aria-disabled="true"
+                  >
                     Blog (Coming Soon)
                   </span>
                 </li>
@@ -365,10 +409,16 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
                 © {new Date().getFullYear()} EcoVerse. All rights reserved.
               </p>
               <div className="flex gap-8 text-gray-400 dark:text-gray-500">
-                <span className="text-lg opacity-60 cursor-not-allowed transition-colors" aria-disabled="true">
+                <span
+                  className="text-lg opacity-60 cursor-not-allowed transition-colors"
+                  aria-disabled="true"
+                >
                   Privacy Policy
                 </span>
-                <span className="text-lg opacity-60 cursor-not-allowed transition-colors" aria-disabled="true">
+                <span
+                  className="text-lg opacity-60 cursor-not-allowed transition-colors"
+                  aria-disabled="true"
+                >
                   Terms of Service
                 </span>
               </div>
@@ -377,5 +427,5 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </footer>
     </div>
-  )
+  );
 }

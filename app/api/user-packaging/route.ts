@@ -1,23 +1,25 @@
 // app/api/user-packaging/route.ts
 
-import { NextResponse } from "next/server"
+import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const userEmail = req.headers.get("x-user-email")
+  const userEmail = req.headers.get('x-user-email');
 
   if (!userEmail) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { barcode, material } = await req.json()
+  const { barcode, material } = await req.json();
 
   if (!barcode || !material) {
-    return NextResponse.json({ error: "Missing data" }, { status: 400 })
+    return NextResponse.json({ error: 'Missing data' }, { status: 400 });
   }
 
-  console.log(`User ${userEmail} reported packaging for ${barcode}: ${material}`)
+  console.log(
+    `User ${userEmail} reported packaging for ${barcode}: ${material}`
+  );
 
   // Optionally: Save to MongoDB here
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true });
 }

@@ -14,8 +14,8 @@ import {
   calculateMonthlyBonus,
   confirmPendingPoints,
   getUserPointsSummary,
-} from "@/lib/rewards-system"
-import { inferPackaging } from "@/lib/packaging-inference"
+} from '@/lib/rewards-system';
+import { inferPackaging } from '@/lib/packaging-inference';
 
 interface PackagingProduct {
   packaging?: string
@@ -56,7 +56,7 @@ function parsePackaging(product: PackagingProduct): { material: string; recyclab
 }
 
 export async function POST(req: Request) {
-  const userEmail = req.headers.get("x-user-email")
+  const userEmail = req.headers.get('x-user-email');
 
 const token = cookieStore.get("auth_token")?.value
 
@@ -78,10 +78,10 @@ if (!decoded || !decoded.email) {
 
 const userEmail = decoded.email
 
-  const { barcode } = await req.json()
+  const { barcode } = await req.json();
 
   if (!barcode) {
-    return NextResponse.json({ error: "Barcode missing" }, { status: 400 })
+    return NextResponse.json({ error: 'Barcode missing' }, { status: 400 });
   }
 
   let productData: {

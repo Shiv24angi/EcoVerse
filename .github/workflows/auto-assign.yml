@@ -5,6 +5,10 @@ on:
     types:
       - created
 
+concurrency:
+  group: auto-assign-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
 jobs:
   assign:
     name: Assign Contributor
@@ -12,11 +16,12 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      # Required to add assignees and create comments on issues
       issues: write
 
     steps:
       - name: Auto Assign
-        uses: actions/github-script@v9
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799fd4e # v7.0.1
         with:
           script: |
             try {

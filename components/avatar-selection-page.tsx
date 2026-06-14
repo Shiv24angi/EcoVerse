@@ -1,41 +1,45 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import Image from "next/image"
-import { useAuth } from "@/components/auth-provider"
-import { AvatarId } from "./ui/avatar"
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import { useAuth } from '@/components/auth-provider';
+import { AvatarId } from './ui/avatar';
 
 const avatarOptions = [
-  { id: "avatar-1", src: "/avatars/av1.jpg" },
-  { id: "avatar-2", src: "/avatars/av2.jpg" },
-  { id: "avatar-3", src: "/avatars/av3.jpg" },
-  { id: "avatar-4", src: "/avatars/av4.jpg" },
-  { id: "avatar-5", src: "/avatars/av5.jpg" },
-  { id: "avatar-6", src: "/avatars/av6.jpg" },
-  { id: "avatar-7", src: "/avatars/av7.jpg" },
-  { id: "avatar-8", src: "/avatars/av8.jpg" },
-]
+  { id: 'avatar-1', src: '/avatars/av1.jpg' },
+  { id: 'avatar-2', src: '/avatars/av2.jpg' },
+  { id: 'avatar-3', src: '/avatars/av3.jpg' },
+  { id: 'avatar-4', src: '/avatars/av4.jpg' },
+  { id: 'avatar-5', src: '/avatars/av5.jpg' },
+  { id: 'avatar-6', src: '/avatars/av6.jpg' },
+  { id: 'avatar-7', src: '/avatars/av7.jpg' },
+  { id: 'avatar-8', src: '/avatars/av8.jpg' },
+];
 
 export default function AvatarSelectionPage() {
-  const [selected, setSelected] = useState<AvatarId | null>(null)
-  const router = useRouter()
+  const [selected, setSelected] = useState<AvatarId | null>(null);
+  const router = useRouter();
 
-const { updateAvatar } = useAuth()
+  const { updateAvatar } = useAuth();
 
-const handleSave = async () => {
-  if (selected) {
-    await updateAvatar(selected)          // ✅ update context + backend
-    router.push("/dashboard") // ✅ redirect to dashboard (soft)
-  }
-}
-  
+  const handleSave = async () => {
+    if (selected) {
+      await updateAvatar(selected); // ✅ update context + backend
+      router.push('/dashboard'); // ✅ redirect to dashboard (soft)
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/20 py-12 px-6 md:px-16">
       <div className="max-w-3xl mx-auto space-y-8">
-        <h1 className="text-4xl font-bold text-center gradient-text-green">Choose Your Avatar</h1>
-        <p className="text-center text-muted-foreground">Customize your EcoVerse identity with a unique avatar!</p>
+        <h1 className="text-4xl font-bold text-center gradient-text-green">
+          Choose Your Avatar
+        </h1>
+        <p className="text-center text-muted-foreground">
+          Customize your EcoVerse identity with a unique avatar!
+        </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 place-items-center">
           {avatarOptions.map(({ id, src }) => (
@@ -44,11 +48,17 @@ const handleSave = async () => {
               onClick={() => setSelected(id as AvatarId)}
               className={`p-2 rounded-xl transition-all border-2 ${
                 selected === id
-                  ? "border-green-500 scale-105 shadow-lg"
-                  : "border-transparent hover:border-green-300"
+                  ? 'border-green-500 scale-105 shadow-lg'
+                  : 'border-transparent hover:border-green-300'
               }`}
             >
-              <Image src={src} alt={`Avatar option ${id}`} width={80} height={80} className="rounded-full" />
+              <Image
+                src={src}
+                alt={`Avatar option ${id}`}
+                width={80}
+                height={80}
+                className="rounded-full"
+              />
             </button>
           ))}
         </div>
@@ -64,5 +74,5 @@ const handleSave = async () => {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,22 +1,26 @@
 # MongoDB Atlas Setup Troubleshooting Guide
 
 ## Current Issue
+
 You're experiencing a `querySrv EREFUSED` error when trying to connect to MongoDB Atlas. This can happen due to several reasons:
 
 ## Possible Causes & Solutions
 
 ### 1. **Network/DNS Issues**
+
 - Your internet connection might be blocking MongoDB Atlas
 - DNS resolution issues with the MongoDB cluster
 - Firewall blocking the connection
 
 ### 2. **MongoDB Atlas Configuration Issues**
+
 - Incorrect connection string
 - IP address not whitelisted
 - Database user credentials incorrect
 - Cluster might be paused or deleted
 
 ### 3. **Environment Variable Issues**
+
 - `.env.local` not being loaded properly
 - Typo in the connection string
 

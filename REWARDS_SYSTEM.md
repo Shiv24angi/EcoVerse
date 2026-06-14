@@ -23,6 +23,7 @@ Users earn points through various activities:
 ### 🌟 Level System
 
 15 levels with increasing point requirements:
+
 - Level 1: 0 points
 - Level 2: 100 points
 - Level 3: 250 points
@@ -44,6 +45,7 @@ Users earn points through various activities:
 17 different achievements to unlock:
 
 #### Scanning Achievements
+
 - **First Steps**: Scan your first product (50 pts)
 - **Getting Started**: Scan 10 products (100 pts)
 - **Scanner Pro**: Scan 50 products (250 pts)
@@ -51,22 +53,26 @@ Users earn points through various activities:
 - **Scan Legend**: Scan 500 products (1,500 pts)
 
 #### Streak Achievements
+
 - **Week Warrior**: 7-day streak (150 pts)
 - **Consistency King**: 30-day streak (1,000 pts)
 - **Streak Master**: 100-day streak (3,000 pts)
 
 #### Sustainability Achievements
+
 - **Carbon Conscious**: Monthly carbon under 30kg (150 pts)
 - **Eco Warrior**: Monthly carbon under 20kg (300 pts)
 - **Zero Waste Hero**: Monthly carbon under 10kg (500 pts)
 - **Low Carbon Specialist**: Scan 25 products <1kg CO2 (400 pts)
 
 #### Level Achievements
+
 - **Rising Star**: Reach Level 5 (500 pts)
 - **Sustainability Champion**: Reach Level 10 (1,000 pts)
 - **Eco Legend**: Reach Level 15 (2,500 pts)
 
 #### Special Achievements
+
 - **Points Millionaire**: Earn 10,000 total points (1,000 pts)
 - **Early Adopter**: One of first 100 users (200 pts)
 
@@ -75,10 +81,12 @@ Users earn points through various activities:
 Users can spend points on various items:
 
 #### Badges (Cosmetic)
+
 - **Eco Hero Badge**: 500 points
 - **Carbon Warrior Badge**: 1,000 points
 
 #### Features (Functional)
+
 - **Custom Avatar**: 300 points
 - **Advanced Analytics**: 750 points
 - **Streak Protector**: 200 points (protects streak for 1 missed day)
@@ -108,17 +116,17 @@ Users are categorized into tiers based on performance:
   achievements: [AchievementSchema],
   level: Number,
   nextLevelPoints: Number,
-  
+
   // Purchased items from reward shop
   purchasedItems: [PurchasedItemSchema],
-  
+
   // Special features
   streakProtectors: Number,
   doublePointsDays: Number,
   hasAdvancedAnalytics: Boolean,
   customAvatar: String,
   activeBadges: [String],
-  
+
   // Monthly bonuses tracking
   lastMonthlyBonusCheck: Date,
   monthlyBonusesEarned: Number,
@@ -128,12 +136,14 @@ Users are categorized into tiers based on performance:
 ## API Endpoints
 
 ### Rewards API
+
 - `GET /api/rewards?email=user@email.com` - Get user's complete rewards data
 - `POST /api/rewards` - Purchase items from reward shop
 - `GET /api/rewards/monthly-check?email=user@email.com` - Check monthly bonus status
 - `POST /api/rewards/monthly-check` - Award monthly bonuses
 
 ### Enhanced Existing APIs
+
 - `GET /api/leaderboard` - Now includes tier data and enhanced rewards info
 - `GET /api/user/score` - Now includes comprehensive rewards data
 - `POST /api/scan` - Enhanced with full rewards calculation
@@ -141,17 +151,20 @@ Users are categorized into tiers based on performance:
 ## User Interface
 
 ### Dashboard Enhancements
+
 - **Rewards Cards**: Display points, level, achievements, and sustainability tier
 - **Color-coded Levels**: Visual progression indicators
 - **Quick Action Buttons**: Direct links to rewards shop and achievements
 
 ### Rewards Page
+
 - **Tabbed Interface**: Overview, Achievements, Shop, History
 - **Functional Shop**: Purchase items with points
 - **Achievement Gallery**: Earned and available achievements
 - **Transaction History**: Complete record of point activities
 
 ### Notifications
+
 - **Reward Notifications**: Real-time feedback for earned points and achievements
 - **Level Up Celebrations**: Special notifications for level progression
 - **Monthly Bonus Alerts**: Notifications for monthly sustainability goals
@@ -159,6 +172,7 @@ Users are categorized into tiers based on performance:
 ## Gamification Strategy
 
 ### Engagement Mechanics
+
 1. **Immediate Feedback**: Points awarded instantly for scans
 2. **Progressive Rewards**: Increasing rewards for consistency
 3. **Social Competition**: Leaderboard with tiers
@@ -166,6 +180,7 @@ Users are categorized into tiers based on performance:
 5. **Practical Benefits**: Functional rewards that enhance app experience
 
 ### Behavioral Incentives
+
 - **Daily Habits**: Streak bonuses encourage regular scanning
 - **Quality Choices**: Bonus points for low-carbon products
 - **Sustained Engagement**: Monthly goals reward long-term commitment
@@ -174,7 +189,9 @@ Users are categorized into tiers based on performance:
 ## Implementation Details
 
 ### Point Calculation Logic
+
 The system uses sophisticated logic to calculate points:
+
 - Base points for all scans
 - Bonus multipliers for low-carbon choices
 - Streak bonuses with diminishing returns
@@ -182,14 +199,18 @@ The system uses sophisticated logic to calculate points:
 - Monthly performance bonuses
 
 ### Achievement Checking
+
 Achievements are checked after each scan:
+
 - Efficient condition evaluation
 - Prevents duplicate awards
 - Automatic point distribution
 - Transaction logging
 
 ### Shop Functionality
+
 The reward shop provides:
+
 - Real-time point balance checking
 - Duplicate purchase prevention
 - Automatic feature activation
@@ -198,6 +219,7 @@ The reward shop provides:
 ## Future Enhancements
 
 ### Planned Features
+
 1. **Social Sharing**: Share achievements on social media
 2. **Referral System**: Earn points for inviting friends
 3. **Seasonal Events**: Special limited-time challenges
@@ -205,6 +227,7 @@ The reward shop provides:
 5. **Carbon Offset Integration**: Use points for real-world impact
 
 ### Potential Expansions
+
 - **Physical Rewards**: Partnership with eco-friendly brands
 - **Charity Donations**: Use points for environmental causes
 - **Local Business Integration**: Discounts at sustainable stores
@@ -213,6 +236,7 @@ The reward shop provides:
 ## Testing & Validation
 
 The rewards system has been thoroughly tested with:
+
 - Point calculation accuracy
 - Achievement trigger conditions
 - Level progression logic

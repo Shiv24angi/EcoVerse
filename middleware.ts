@@ -36,6 +36,6 @@ export const config = {
     '/api/rewards/:path*',
     '/api/user/score/:path*',
     '/api/user/avatar/:path*',
-    '/api/user-packaging/:path*'
+    '/api/user-packaging/:path*',
   ],
 };

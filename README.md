@@ -4,39 +4,38 @@
 
 <img width="800" height="435" alt="EcoVerse Demo" src="./public/demo.gif" />
 
-
 <p align="center">
   EcoVerse helps users understand the environmental impact of products through barcode scanning, carbon footprint analysis, recyclability insights, eco-points, and community driven sustainability challenges.
 </p>
 
 ## Table of Contents
 
-* [Overview](#overview)
-* [Features](#features)
+- [Overview](#overview)
+- [Features](#features)
+  - [Barcode Scanning](#barcode-scanning)
+  - [Carbon Footprint Analysis](#carbon-footprint-analysis)
+  - [Recyclability Insights](#recyclability-insights)
+  - [Rewards System](#rewards-system)
+  - [Community Features](#community-features)
+  - [Analytics Dashboard](#analytics-dashboard)
 
-  * [Barcode Scanning](#barcode-scanning)
-  * [Carbon Footprint Analysis](#carbon-footprint-analysis)
-  * [Recyclability Insights](#recyclability-insights)
-  * [Rewards System](#rewards-system)
-  * [Community Features](#community-features)
-  * [Analytics Dashboard](#analytics-dashboard)
-* [Tech Stack](#tech-stack)
-* [Architecture Overview](#architecture-overview)
+- [Tech Stack](#tech-stack)
+- [Architecture Overview](#architecture-overview)
+  - [Application Flow](#application-flow)
+  - [Core Components](#core-components)
 
-  * [Application Flow](#application-flow)
-  * [Core Components](#core-components)
-* [Project Structure](#project-structure)
-* [Application Routes](#application-routes)
-* [API Endpoints](#api-endpoints)
-* [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Application Routes](#application-routes)
+- [API Endpoints](#api-endpoints)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Clone the Repository](#clone-the-repository)
+  - [Install Dependencies](#install-dependencies)
+  - [Configure Environment Variables](#configure-environment-variables)
+  - [Start Development Server](#start-development-server)
 
-  * [Prerequisites](#prerequisites)
-  * [Clone the Repository](#clone-the-repository)
-  * [Install Dependencies](#install-dependencies)
-  * [Configure Environment Variables](#configure-environment-variables)
-  * [Start Development Server](#start-development-server)
-* [Contributors](#contributors)
-* [License](#license)
+- [Contributors](#contributors)
+- [License](#license)
 
 ## Overview
 
@@ -50,40 +49,40 @@ Built with modern web technologies and AI powered analysis, EcoVerse combines ed
 
 ### Barcode Scanning
 
-* Real-time barcode scanning
-* Product identification
-* Instant sustainability insights
+- Real-time barcode scanning
+- Product identification
+- Instant sustainability insights
 
 ### Carbon Footprint Analysis
 
-* Carbon emission estimation
-* Product impact comparison
-* Sustainability tracking history
+- Carbon emission estimation
+- Product impact comparison
+- Sustainability tracking history
 
 ### Recyclability Insights
 
-* Packaging analysis
-* Recycling recommendations
-* Eco-friendly disposal guidance
+- Packaging analysis
+- Recycling recommendations
+- Eco-friendly disposal guidance
 
 ### Rewards System
 
-* Eco-points for sustainable actions
-* Achievement badges
-* Monthly reward milestones
+- Eco-points for sustainable actions
+- Achievement badges
+- Monthly reward milestones
 
 ### Community Features
 
-* Leaderboards
-* User rankings
-* Sustainability challenges
+- Leaderboards
+- User rankings
+- Sustainability challenges
 
 ### Analytics Dashboard
 
-* Carbon impact trends
-* Scan history
-* Sustainability statistics
-* Progress visualization
+- Carbon impact trends
+- Scan history
+- Sustainability statistics
+- Progress visualization
 
 ---
 
@@ -148,6 +147,7 @@ The Rewards Engine encourages sustainable behavior through points, achievements,
 ---
 
 ## Project Structure
+
 ```text
 EcoVerse/
 │
@@ -346,21 +346,21 @@ For a detailed breakdown of the entire project structure, API routes, database s
 
 ## API Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `/api/auth/google` | Google Authentication |
-| `/api/auth/signin` | User Sign In |
-| `/api/auth/signup` | User Sign Up |
-| `/api/scan` | Product Sustainability Analysis |
-| `/api/user/avatar` | User Avatar Management |
-| `/api/user/score` | Eco Score Management |
-| `/api/user-packaging` | Packaging Preferences |
-| `/api/leaderboard` | Community Rankings |
-| `/api/rewards` | Rewards Management |
-| `/api/rewards/monthly-check` | Monthly Reward Validation |
-| `/api/debug-create-user` | Create Test User |
-| `/api/debug/points` | Debug Points Operations |
-| `/api/test-db` | Database Connection Test |
+| Endpoint                     | Description                     |
+| ---------------------------- | ------------------------------- |
+| `/api/auth/google`           | Google Authentication           |
+| `/api/auth/signin`           | User Sign In                    |
+| `/api/auth/signup`           | User Sign Up                    |
+| `/api/scan`                  | Product Sustainability Analysis |
+| `/api/user/avatar`           | User Avatar Management          |
+| `/api/user/score`            | Eco Score Management            |
+| `/api/user-packaging`        | Packaging Preferences           |
+| `/api/leaderboard`           | Community Rankings              |
+| `/api/rewards`               | Rewards Management              |
+| `/api/rewards/monthly-check` | Monthly Reward Validation       |
+| `/api/debug-create-user`     | Create Test User                |
+| `/api/debug/points`          | Debug Points Operations         |
+| `/api/test-db`               | Database Connection Test        |
 
 ---
 
@@ -370,10 +370,10 @@ For a detailed breakdown of the entire project structure, API routes, database s
 
 > **Note:** EcoVerse requires Node.js 20 or later. Consider adding an `engines` field in `package.json` or a `.nvmrc` file to enforce the version across development environments.
 
-* Node.js 20+
-* npm or pnpm
-* MongoDB Database
-* Firebase Project
+- Node.js 20+
+- npm or pnpm
+- MongoDB Database
+- Firebase Project
 
 ### Clone the Repository
 
@@ -393,12 +393,13 @@ npm install
 
 Create a `.env.local` file.
 
-You can obtain 
+You can obtain
+
 - Firebase credentials from the [Firebase Console](https://console.firebase.google.com/)
 - MongoDB URI from your [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster
 - [Gemini API](https://aistudio.google.com/app/api-keys)
 
-```env
+````env
 # Firebase
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
@@ -421,7 +422,7 @@ GEMINI_API_KEY=
 
 ```bash
 npm run dev
-```
+````
 
 Visit:
 
@@ -430,7 +431,6 @@ http://localhost:3000
 ```
 
 ---
-
 
 ## Contributors
 

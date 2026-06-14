@@ -32,16 +32,12 @@ export interface RewardShopItem {
 // Point confirmation system configuration
 export const POINT_CONFIRMATION = {
   // Points that are immediately confirmed
-  IMMEDIATE_CONFIRMATION: [
-    'first_scan',
-    'achievement',
-    'level_up'
-  ],
+  IMMEDIATE_CONFIRMATION: ['first_scan', 'achievement', 'level_up'],
   // Points that require confirmation (default 7 days)
   CONFIRMATION_DELAY_HOURS: 24 * 7, // 7 days
   // Minimum scans required for auto-confirmation
-  MIN_SCANS_FOR_AUTO_CONFIRMATION: 3
-}
+  MIN_SCANS_FOR_AUTO_CONFIRMATION: 3,
+};
 
 // Points earning rules
 export const POINT_REWARDS = {
@@ -55,15 +51,15 @@ export const POINT_REWARDS = {
   ECO_CHAMPION_GOAL: 1000, // For keeping monthly carbon under 20kg
   LEVEL_UP: 200,
   SOCIAL_SHARE: 20, // Future feature
-  REFERRAL: 100 // Future feature
-}
+  REFERRAL: 100, // Future feature
+};
 
 // Level system - points needed for each level
 export const LEVEL_THRESHOLDS = [
-  0,    // Level 1
-  100,  // Level 2
-  250,  // Level 3
-  500,  // Level 4
+  0, // Level 1
+  100, // Level 2
+  250, // Level 3
+  500, // Level 4
   1000, // Level 5
   2000, // Level 6
   3500, // Level 7
@@ -74,19 +70,20 @@ export const LEVEL_THRESHOLDS = [
   25000, // Level 12
   35000, // Level 13
   50000, // Level 14
-  75000  // Level 15 (Max Level)
-]
+  75000, // Level 15 (Max Level)
+];
 
 // Reward shop items
 export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
   {
     id: 'eco_hero_badge',
     name: 'Eco Hero Badge',
-    description: 'Show your commitment to sustainability with this special badge',
+    description:
+      'Show your commitment to sustainability with this special badge',
     cost: 500,
     icon: '🎖️',
     category: 'badge',
-    available: true
+    available: true,
   },
   {
     id: 'carbon_warrior_badge',
@@ -95,7 +92,7 @@ export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
     cost: 1000,
     icon: '⚔️',
     category: 'badge',
-    available: true
+    available: true,
   },
   {
     id: 'custom_avatar',
@@ -104,7 +101,7 @@ export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
     cost: 300,
     icon: '👤',
     category: 'cosmetic',
-    available: true
+    available: true,
   },
   {
     id: 'advanced_analytics',
@@ -113,7 +110,7 @@ export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
     cost: 750,
     icon: '📊',
     category: 'feature',
-    available: true
+    available: true,
   },
   {
     id: 'streak_protector',
@@ -122,7 +119,7 @@ export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
     cost: 200,
     icon: '🛡️',
     category: 'feature',
-    available: true
+    available: true,
   },
   {
     id: 'double_points',
@@ -131,9 +128,9 @@ export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
     cost: 400,
     icon: '⚡',
     category: 'feature',
-    available: true
-  }
-]
+    available: true,
+  },
+];
 
 // Enhanced Achievement definitions
 export const ACHIEVEMENTS: Achievement[] = [
@@ -143,7 +140,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Scan your first product',
     condition: (user) => user.totalScanned >= 1,
     points: 50,
-    icon: '🎯'
+    icon: '🎯',
   },
   {
     id: 'ten_scans',
@@ -151,7 +148,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Scan 10 products',
     condition: (user) => user.totalScanned >= 10,
     points: 100,
-    icon: '📱'
+    icon: '📱',
   },
   {
     id: 'fifty_scans',
@@ -159,7 +156,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Scan 50 products',
     condition: (user) => user.totalScanned >= 50,
     points: 250,
-    icon: '🏆'
+    icon: '🏆',
   },
   {
     id: 'hundred_scans',
@@ -167,7 +164,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Scan 100 products',
     condition: (user) => user.totalScanned >= 100,
     points: 500,
-    icon: '👑'
+    icon: '👑',
   },
   {
     id: 'five_hundred_scans',
@@ -175,7 +172,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Scan 500 products',
     condition: (user) => user.totalScanned >= 500,
     points: 1500,
-    icon: '🌟'
+    icon: '🌟',
   },
   {
     id: 'week_streak',
@@ -183,7 +180,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Maintain a 7-day scanning streak',
     condition: (user) => user.streakCount >= 7,
     points: 150,
-    icon: '🔥'
+    icon: '🔥',
   },
   {
     id: 'month_streak',
@@ -191,7 +188,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Maintain a 30-day scanning streak',
     condition: (user) => user.streakCount >= 30,
     points: 1000,
-    icon: '👑'
+    icon: '👑',
   },
   {
     id: 'hundred_day_streak',
@@ -199,7 +196,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Maintain a 100-day scanning streak',
     condition: (user) => user.streakCount >= 100,
     points: 3000,
-    icon: '💎'
+    icon: '💎',
   },
   {
     id: 'eco_warrior',
@@ -207,7 +204,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Keep monthly carbon footprint under 20kg',
     condition: (user) => user.monthlyCarbon < 20 && user.totalScanned >= 10,
     points: 300,
-    icon: '🌱'
+    icon: '🌱',
   },
   {
     id: 'carbon_conscious',
@@ -215,7 +212,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Keep monthly carbon footprint under 30kg',
     condition: (user) => user.monthlyCarbon < 30 && user.totalScanned >= 5,
     points: 150,
-    icon: '🌿'
+    icon: '🌿',
   },
   {
     id: 'zero_waste_hero',
@@ -223,18 +220,20 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Keep monthly carbon footprint under 10kg',
     condition: (user) => user.monthlyCarbon < 10 && user.totalScanned >= 15,
     points: 500,
-    icon: '🌍'
+    icon: '🌍',
   },
   {
     id: 'low_carbon_specialist',
     name: 'Low Carbon Specialist',
     description: 'Scan 25 products with less than 1kg CO2',
     condition: (user) => {
-      const lowCarbonScans = (user.scans || []).filter((scan: any) => scan.carbonEstimate < 1).length;
+      const lowCarbonScans = (user.scans || []).filter(
+        (scan: any) => scan.carbonEstimate < 1
+      ).length;
       return lowCarbonScans >= 25;
     },
     points: 400,
-    icon: '♻️'
+    icon: '♻️',
   },
   {
     id: 'level_5',
@@ -242,7 +241,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Reach Level 5',
     condition: (user) => user.level >= 5,
     points: 500,
-    icon: '⭐'
+    icon: '⭐',
   },
   {
     id: 'level_10',
@@ -250,7 +249,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Reach Level 10',
     condition: (user) => user.level >= 10,
     points: 1000,
-    icon: '🏅'
+    icon: '🏅',
   },
   {
     id: 'level_15',
@@ -258,7 +257,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Reach the maximum Level 15',
     condition: (user) => user.level >= 15,
     points: 2500,
-    icon: '🌟'
+    icon: '🌟',
   },
   {
     id: 'points_millionaire',
@@ -266,7 +265,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Earn 10,000 total points',
     condition: (user) => (user.totalPointsEarned || 0) >= 10000,
     points: 1000,
-    icon: '💰'
+    icon: '💰',
   },
   {
     id: 'early_adopter',
@@ -277,12 +276,17 @@ export const ACHIEVEMENTS: Achievement[] = [
       return false; // Placeholder
     },
     points: 200,
-    icon: '🏃'
-  }
-]
+    icon: '🏃',
+  },
+];
 
 // Calculate points for a scan with enhanced logic and confirmation type
-export function calculateScanPoints(carbonEstimate: number, isFirstScan: boolean, streakCount: number, userTotalScans: number = 0): {
+export function calculateScanPoints(
+  carbonEstimate: number,
+  isFirstScan: boolean,
+  streakCount: number,
+  userTotalScans: number = 0
+): {
   points: number;
   reasons: string[];
   isConfirmed: boolean;
@@ -291,8 +295,9 @@ export function calculateScanPoints(carbonEstimate: number, isFirstScan: boolean
   const reasons: string[] = [];
 
   // Determine if points should be immediately confirmed
-  const isConfirmed = isFirstScan || 
-                     userTotalScans >= POINT_CONFIRMATION.MIN_SCANS_FOR_AUTO_CONFIRMATION;
+  const isConfirmed =
+    isFirstScan ||
+    userTotalScans >= POINT_CONFIRMATION.MIN_SCANS_FOR_AUTO_CONFIRMATION;
 
   // Base points for scanning
   if (isFirstScan) {
@@ -306,10 +311,14 @@ export function calculateScanPoints(carbonEstimate: number, isFirstScan: boolean
   // Enhanced carbon footprint bonuses
   if (carbonEstimate < 0.5) {
     points += POINT_REWARDS.VERY_LOW_CARBON_SCAN;
-    reasons.push(`Very low carbon product (<0.5kg): +${POINT_REWARDS.VERY_LOW_CARBON_SCAN} points`);
+    reasons.push(
+      `Very low carbon product (<0.5kg): +${POINT_REWARDS.VERY_LOW_CARBON_SCAN} points`
+    );
   } else if (carbonEstimate < 1.0) {
     points += POINT_REWARDS.LOW_CARBON_SCAN;
-    reasons.push(`Low carbon product (<1kg): +${POINT_REWARDS.LOW_CARBON_SCAN} points`);
+    reasons.push(
+      `Low carbon product (<1kg): +${POINT_REWARDS.LOW_CARBON_SCAN} points`
+    );
   }
 
   // Enhanced streak bonus with diminishing returns cap
@@ -322,7 +331,9 @@ export function calculateScanPoints(carbonEstimate: number, isFirstScan: boolean
   // Milestone bonuses
   if (streakCount === 7) {
     points += POINT_REWARDS.WEEKLY_GOAL;
-    reasons.push(`Weekly milestone bonus: +${POINT_REWARDS.WEEKLY_GOAL} points`);
+    reasons.push(
+      `Weekly milestone bonus: +${POINT_REWARDS.WEEKLY_GOAL} points`
+    );
   }
 
   return { points, reasons, isConfirmed };
@@ -335,7 +346,7 @@ export function calculateLevel(totalPoints: number): {
   progressToNext: number;
 } {
   let level = 1;
-  
+
   for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
     if (totalPoints >= LEVEL_THRESHOLDS[i]) {
       level = i + 1;
@@ -343,16 +354,20 @@ export function calculateLevel(totalPoints: number): {
     }
   }
 
-  const nextLevelPoints = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
+  const nextLevelPoints =
+    LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
   const currentLevelPoints = LEVEL_THRESHOLDS[level - 1] || 0;
-  const progressToNext = level >= LEVEL_THRESHOLDS.length 
-    ? 100 // Max level reached
-    : ((totalPoints - currentLevelPoints) / (nextLevelPoints - currentLevelPoints)) * 100;
+  const progressToNext =
+    level >= LEVEL_THRESHOLDS.length
+      ? 100 // Max level reached
+      : ((totalPoints - currentLevelPoints) /
+          (nextLevelPoints - currentLevelPoints)) *
+        100;
 
   return {
     level,
     nextLevelPoints,
-    progressToNext: Math.min(progressToNext, 100)
+    progressToNext: Math.min(progressToNext, 100),
   };
 }
 
@@ -362,7 +377,10 @@ export function checkAchievements(user: any): Achievement[] {
   const earnedAchievementIds = user.achievements?.map((a: any) => a.id) || [];
 
   for (const achievement of ACHIEVEMENTS) {
-    if (!earnedAchievementIds.includes(achievement.id) && achievement.condition(user)) {
+    if (
+      !earnedAchievementIds.includes(achievement.id) &&
+      achievement.condition(user)
+    ) {
       newAchievements.push(achievement);
     }
   }
@@ -371,23 +389,28 @@ export function checkAchievements(user: any): Achievement[] {
 }
 
 // Calculate monthly goal bonus
-export function calculateMonthlyBonus(user: any): { points: number; reason: string } | null {
+export function calculateMonthlyBonus(
+  user: any
+): { points: number; reason: string } | null {
   if (user.monthlyCarbon < 20 && user.totalScanned >= 10) {
     return {
       points: POINT_REWARDS.ECO_CHAMPION_GOAL,
-      reason: 'Eco Champion - Monthly carbon under 20kg'
+      reason: 'Eco Champion - Monthly carbon under 20kg',
     };
   } else if (user.monthlyCarbon < 30 && user.totalScanned >= 5) {
     return {
       points: POINT_REWARDS.MONTHLY_GOAL,
-      reason: 'Monthly Goal - Carbon under 30kg'
+      reason: 'Monthly Goal - Carbon under 30kg',
     };
   }
   return null;
 }
 
 // Get user's sustainability tier
-export function getSustainabilityTier(monthlyCarbon: number, totalScanned: number): {
+export function getSustainabilityTier(
+  monthlyCarbon: number,
+  totalScanned: number
+): {
   tier: string;
   color: string;
   description: string;
@@ -396,31 +419,31 @@ export function getSustainabilityTier(monthlyCarbon: number, totalScanned: numbe
     return {
       tier: 'Platinum',
       color: 'text-gray-300',
-      description: 'Ultimate eco-warrior'
+      description: 'Ultimate eco-warrior',
     };
   } else if (monthlyCarbon < 20 && totalScanned >= 10) {
     return {
       tier: 'Gold',
       color: 'text-yellow-400',
-      description: 'Exceptional sustainability'
+      description: 'Exceptional sustainability',
     };
   } else if (monthlyCarbon < 30 && totalScanned >= 5) {
     return {
       tier: 'Silver',
       color: 'text-gray-400',
-      description: 'Great progress'
+      description: 'Great progress',
     };
   } else if (monthlyCarbon < 40) {
     return {
       tier: 'Bronze',
       color: 'text-amber-600',
-      description: 'Getting started'
+      description: 'Getting started',
     };
   }
   return {
     tier: 'Beginner',
     color: 'text-gray-500',
-    description: 'Room for improvement'
+    description: 'Room for improvement',
   };
 }
 
@@ -432,18 +455,22 @@ export function confirmPendingPoints(user: any): {
   let confirmedPoints = 0;
   const confirmedTransactions: any[] = [];
   const now = new Date();
-  
+
   if (user.rewardTransactions) {
     for (const transaction of user.rewardTransactions) {
       // Skip if already confirmed or redeemed
-      if (transaction.pointsType === 'confirmed' || transaction.type === 'redeemed') {
+      if (
+        transaction.pointsType === 'confirmed' ||
+        transaction.type === 'redeemed'
+      ) {
         continue;
       }
-      
+
       // Check if enough time has passed for confirmation
       const transactionDate = new Date(transaction.date);
-      const hoursElapsed = (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
-      
+      const hoursElapsed =
+        (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
+
       if (hoursElapsed >= POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS) {
         transaction.pointsType = 'confirmed';
         transaction.confirmedAt = now;
@@ -452,7 +479,7 @@ export function confirmPendingPoints(user: any): {
       }
     }
   }
-  
+
   return { confirmedPoints, confirmedTransactions };
 }
 
@@ -471,18 +498,23 @@ export function getUserPointsSummary(user: any): {
   const confirmed = user.confirmedPoints || 0;
   const unconfirmed = user.unconfirmedPoints || 0;
   const total = confirmed + unconfirmed;
-  
+
   // Calculate points that will be confirmed soon (within 24 hours)
   let pendingConfirmation = 0;
   const now = new Date();
-  
+
   if (user.rewardTransactions) {
     for (const transaction of user.rewardTransactions) {
-      if (transaction.pointsType === 'unconfirmed' && transaction.type === 'earned') {
+      if (
+        transaction.pointsType === 'unconfirmed' &&
+        transaction.type === 'earned'
+      ) {
         const transactionDate = new Date(transaction.date);
-        const hoursElapsed = (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
-        const hoursRemaining = POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS - hoursElapsed;
-        
+        const hoursElapsed =
+          (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
+        const hoursRemaining =
+          POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS - hoursElapsed;
+
         // Count as "pending confirmation" if it will be confirmed within next 24 hours
         if (hoursRemaining > 0 && hoursRemaining <= 24) {
           pendingConfirmation += transaction.points;
@@ -490,6 +522,6 @@ export function getUserPointsSummary(user: any): {
       }
     }
   }
-  
+
   return { confirmed, unconfirmed, total, pendingConfirmation };
 }

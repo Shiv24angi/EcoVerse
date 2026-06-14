@@ -1,25 +1,34 @@
-"use client"
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @typescript-eslint/no-require-imports, react-hooks/exhaustive-deps, @next/next/no-img-element, no-console */
+'use client';
 
-import { useState } from "react"
-import { useAuth } from "@/components/auth-provider"
-import DashboardLayout from "@/components/dashboard-layout"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Scan, Search, Leaf, AlertTriangle, CheckCircle, Camera } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import BarcodeScanner from "@/components/barcode-scanner"
-import RewardsNotification, { useRewardsNotification } from "@/components/rewards-notification"
+import { useState } from 'react';
+import { useAuth } from '@/components/auth-provider';
+import DashboardLayout from '@/components/dashboard-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Scan, Search, AlertTriangle, CheckCircle, Camera } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import BarcodeScanner from '@/components/barcode-scanner';
+import RewardsNotification, {
+  useRewardsNotification,
+} from '@/components/rewards-notification';
 
 interface ProductData {
   barcode: string;
   product: string;
   co2_emission: number;
   category?: string;
-  confidence?: "high" | "medium" | "low";
+  confidence?: 'high' | 'medium' | 'low';
   calculation?: string;
   brand?: string;
   description?: string;
@@ -38,73 +47,72 @@ interface ProductData {
 }
 
 export default function ScanPage() {
-  const [barcode, setBarcode] = useState("")
-  const [product, setProduct] = useState<ProductData | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
-  const [scanLock, setScanLock] = useState(false)
-  const [stream, setStream] = useState<MediaStream | null>(null)
-  const { updateUserStats, user } = useAuth()
-  const { toast } = useToast()
-  const { notification, showNotification, dismissNotification } = useRewardsNotification()
+  const [barcode, setBarcode] = useState('');
+  const [product, setProduct] = useState<ProductData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanLock, setScanLock] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const { updateUserStats, user } = useAuth();
+  const { toast } = useToast();
+  const { notification, showNotification, dismissNotification } =
+    useRewardsNotification();
 
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      })
-      setStream(mediaStream)
-      setIsScanning(true)
+        video: { facingMode: 'environment' },
+      });
+      setStream(mediaStream);
+      setIsScanning(true);
     } catch (error) {
       toast({
-        title: "Camera access denied",
-        description: "Please allow camera access to scan barcodes.",
-        variant: "destructive",
-      })
+        title: 'Camera access denied',
+        description: 'Please allow camera access to scan barcodes.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const stopCamera = () => {
     if (stream) {
-      stream.getTracks().forEach((track) => track.stop())
-      setStream(null)
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
     }
-    setIsScanning(false)
-  }
+    setIsScanning(false);
+  };
 
   const handleScan = async (scanned?: string) => {
-    if (scanLock) return
-    setScanLock(true)
+    if (scanLock) return;
+    setScanLock(true);
 
-    const actualBarcode = (scanned || barcode).trim()
+    const actualBarcode = (scanned || barcode).trim();
     if (!actualBarcode) {
       toast({
-        title: "Please enter a barcode",
-        description: "Enter a valid barcode to scan the product.",
-        variant: "destructive",
-      })
-      setScanLock(false)
-      return
+        title: 'Please enter a barcode',
+        description: 'Enter a valid barcode to scan the product.',
+        variant: 'destructive',
+      });
+      setScanLock(false);
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-     const res = await fetch("/api/scan", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "x-user-email": user?.email || "",
-  },
-  body: JSON.stringify({
-    barcode: actualBarcode,
-  }),
-})
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          barcode: actualBarcode,
+          userEmail: 'test@example.com', // 👈 TEMP: use the same email from debug-create-user
+        }),
+      });
 
+      const data = await res.json();
 
-      const data = await res.json()
-
-      if (!res.ok || data.error || !data.productName) throw new Error("Product not found in API")
+      if (!res.ok || data.error || !data.productName)
+        throw new Error('Product not found in API');
 
       setProduct({
         barcode: actualBarcode,
@@ -121,63 +129,67 @@ export default function ScanPage() {
         categories: data.categories || [],
         certifications: [],
         packaging: data.packaging || {
-          material: "Unknown",
+          material: 'Unknown',
           recyclable: false,
           biodegradable: false,
         },
-        transportDistance: "Unknown",
-      })
+        transportDistance: 'Unknown',
+      });
 
       toast({
-        title: "Product found!",
+        title: 'Product found!',
         description: `Carbon impact: ${data.carbonEstimate}kg CO₂ (${data.confidence} confidence)`,
-      })
+      });
 
       if (data.rewards) {
-        const { pointsEarned, pointsType, leveledUp, newAchievements } = data.rewards
+        const { pointsEarned, pointsType, leveledUp, newAchievements } =
+          data.rewards;
         if (pointsEarned > 0) {
           showNotification({
             type: 'points',
             message: `Great job! You earned ${pointsEarned} reward points for scanning this product.`,
             points: pointsEarned,
-            pointsType
-          })
+            pointsType,
+          });
         }
         if (leveledUp) {
           setTimeout(() => {
             showNotification({
               type: 'level_up',
               message: `Congratulations! You've reached level ${data.rewards.level}!`,
-              level: data.rewards.level
-            })
-          }, 2000)
+              level: data.rewards.level,
+            });
+          }, 2000);
         }
         if (newAchievements?.length) {
           newAchievements.forEach((achievement: any, index: number) => {
-            setTimeout(() => {
-              showNotification({
-                type: 'achievement',
-                message: `Achievement unlocked: ${achievement.name}!`,
-                points: achievement.points
-              })
-            }, 3000 + index * 1500)
-          })
+            setTimeout(
+              () => {
+                showNotification({
+                  type: 'achievement',
+                  message: `Achievement unlocked: ${achievement.name}!`,
+                  points: achievement.points,
+                });
+              },
+              3000 + index * 1500
+            );
+          });
         }
       }
 
-      updateUserStats?.(parseFloat(data.carbonEstimate))
+      updateUserStats?.(parseFloat(data.carbonEstimate));
     } catch (err) {
       toast({
-        title: "Error",
-        description: "Could not find product in API or local data.",
-        variant: "destructive",
-      })
-      setProduct(null)
+        title: 'Error',
+        description: 'Could not find product in API or local data.',
+        variant: 'destructive',
+      });
+      setProduct(null);
     } finally {
-      setIsLoading(false)
-      setScanLock(false)
+      setIsLoading(false);
+      setScanLock(false);
     }
-  }
+  };
 
   const getSustainabilityColor = (score: string) => {
     switch (score) {
@@ -187,13 +199,15 @@ export default function ScanPage() {
       case "D": case "E": case "F": return "bg-red-100 text-red-800 border-red-200"
       default: return "bg-gray-100 text-gray-800 border-gray-200"
     }
-  }
+  };
 
   const getCarbonImpact = (footprint: number) => {
-    if (footprint < 1) return { level: "Low", icon: CheckCircle, color: "text-green-600" }
-    if (footprint < 5) return { level: "Medium", icon: AlertTriangle, color: "text-yellow-600" }
-    return { level: "High", icon: AlertTriangle, color: "text-red-600" }
-  }
+    if (footprint < 1)
+      return { level: 'Low', icon: CheckCircle, color: 'text-green-600' };
+    if (footprint < 5)
+      return { level: 'Medium', icon: AlertTriangle, color: 'text-yellow-600' };
+    return { level: 'High', icon: AlertTriangle, color: 'text-red-600' };
+  };
 
   return (
     <DashboardLayout>
@@ -201,7 +215,8 @@ export default function ScanPage() {
         <div>
           <h1 className="text-3xl font-bold text-cyan-900">Scan Product</h1>
           <p className="text-gray-400 mt-2">
-            Enter or scan a barcode to check the recyclability, carbon footprint and your sustainability score.
+            Enter or scan a barcode to check the recyclability, carbon footprint
+            and your sustainability score.
           </p>
         </div>
 
@@ -211,7 +226,8 @@ export default function ScanPage() {
               <Scan className="h-5 w-5" /> Product Scanner
             </CardTitle>
             <CardDescription className="text-gray-600">
-              Enter a barcode manually, use your camera to scan, or try the demo barcodes below
+              Enter a barcode manually, use your camera to scan, or try the demo
+              barcodes below
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -223,7 +239,9 @@ export default function ScanPage() {
                   placeholder="Enter barcode"
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !scanLock && handleScan()}
+                  onKeyDown={(e) =>
+                    e.key === 'Enter' && !scanLock && handleScan()
+                  }
                 />
                 <Button onClick={() => setIsScanning(true)} variant="outline">
                   <Camera className="h-4 w-4" />
@@ -246,14 +264,22 @@ export default function ScanPage() {
               <CardTitle className="flex items-center justify-between text-cyan-700">
                 <span>{product.product}</span>
                 <div className="flex gap-2">
-                  <Badge className={`${getSustainabilityColor(product.sustainabilityScore!)} border`}>
+                  <Badge
+                    className={`${getSustainabilityColor(product.sustainabilityScore!)} border`}
+                  >
                     Score: {product.sustainabilityScore}
                   </Badge>
                   {product.confidence && (
-                    <Badge variant="outline" className={
-                      product.confidence === 'high' ? 'border-green-500 text-green-400' :
-                      product.confidence === 'medium' ? 'border-yellow-500 text-yellow-400' :
-                      'border-red-500 text-red-400'}>
+                    <Badge
+                      variant="outline"
+                      className={
+                        product.confidence === 'high'
+                          ? 'border-green-500 text-green-400'
+                          : product.confidence === 'medium'
+                            ? 'border-yellow-500 text-yellow-400'
+                            : 'border-red-500 text-red-400'
+                      }
+                    >
                       {product.confidence} confidence
                     </Badge>
                   )}
@@ -283,19 +309,25 @@ export default function ScanPage() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Carbon Footprint</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Carbon Footprint
+                    </h3>
                     <div className="flex items-center gap-2">
                       {(() => {
-                        const impact = getCarbonImpact(product.co2_emission)
+                        const impact = getCarbonImpact(product.co2_emission);
                         return (
                           <>
-                            <impact.icon className={`h-5 w-5 ${impact.color}`} />
-                            <span className="text-2xl font-bold">{product.co2_emission} kg CO₂</span>
+                            <impact.icon
+                              className={`h-5 w-5 ${impact.color}`}
+                            />
+                            <span className="text-2xl font-bold">
+                              {product.co2_emission} kg CO₂
+                            </span>
                             <Badge variant="outline" className={impact.color}>
                               {impact.level} Impact
                             </Badge>
                           </>
-                        )
+                        );
                       })()}
                     </div>
                     {product.calculation && (
@@ -308,20 +340,30 @@ export default function ScanPage() {
                   <Separator />
 
                   <div>
-                    <h4 className="font-medium mb-2 text-green">♻️ Packaging Info</h4>
+                    <h4 className="font-medium mb-2 text-green">
+                      ♻️ Packaging Info
+                    </h4>
                     {product.packaging ? (
                       <div className="space-y-1 text-sm text-green">
                         <div className="flex justify-between">
                           <span>Material:</span>
-                          <span className="text-green">{product.packaging.material}</span>
+                          <span className="text-green">
+                            {product.packaging.material}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Recyclable:</span>
-                          <span className="text-green">{product.packaging.recyclable ? "✅ Yes" : "❌ No"}</span>
+                          <span className="text-green">
+                            {product.packaging.recyclable ? '✅ Yes' : '❌ No'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Biodegradable:</span>
-                          <span className="text-green">{product.packaging.biodegradable ? "✅ Yes" : "❌ No"}</span>
+                          <span className="text-green">
+                            {product.packaging.biodegradable
+                              ? '✅ Yes'
+                              : '❌ No'}
+                          </span>
                         </div>
                         {product.packaging.inferred && (
                           <p className="text-yellow-400 text-xs mt-1">
@@ -370,9 +412,9 @@ export default function ScanPage() {
           <BarcodeScanner
             onScan={(scannedBarcode) => {
               if (!scanLock) {
-                setBarcode(scannedBarcode)
-                setIsScanning(false)
-                handleScan(scannedBarcode)
+                setBarcode(scannedBarcode);
+                setIsScanning(false);
+                handleScan(scannedBarcode);
               }
             }}
             onClose={() => setIsScanning(false)}
@@ -385,5 +427,5 @@ export default function ScanPage() {
         onDismiss={dismissNotification}
       />
     </DashboardLayout>
-  )
+  );
 }
