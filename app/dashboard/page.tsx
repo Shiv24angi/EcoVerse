@@ -340,20 +340,20 @@ export default function Dashboard() {
                 {loading
                   ? '...'
                   : userStats &&
-                    userStats.monthlyCarbon < 10 &&
-                    userStats.totalScanned >= 15
-                  ? 'Platinum'
-                  : userStats &&
-                      userStats.monthlyCarbon < 20 &&
-                      userStats.totalScanned >= 10
-                    ? 'Gold'
+                      userStats.monthlyCarbon < 10 &&
+                      userStats.totalScanned >= 15
+                    ? 'Platinum'
                     : userStats &&
-                        userStats.monthlyCarbon < 30 &&
-                        userStats.totalScanned >= 5
-                      ? 'Silver'
-                      : userStats && userStats.monthlyCarbon < 40
-                        ? 'Bronze'
-                        : 'Beginner'}
+                        userStats.monthlyCarbon < 20 &&
+                        userStats.totalScanned >= 10
+                      ? 'Gold'
+                      : userStats &&
+                          userStats.monthlyCarbon < 30 &&
+                          userStats.totalScanned >= 5
+                        ? 'Silver'
+                        : userStats && userStats.monthlyCarbon < 40
+                          ? 'Bronze'
+                          : 'Beginner'}
               </div>
               <p className="text-xs text-gray-500">
                 {userStats &&
