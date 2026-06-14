@@ -11,24 +11,20 @@ const compat = new FlatCompat({
   recommendedConfig: js.configs.recommended,
 });
 
-export default [
+// FIX: Assign the configuration array to a named variable first to satisfy the linter
+const eslintConfig = [
   ...compat.extends('next/core-web-vitals'),
   {
+    // Combined and cleaned all duplicate ignores blocks into a single block
     ignores: [
       '.next/**/*',
       'node_modules/**/*',
       'out/**/*',
       'build/**/*',
       'linkFBtoMDB/**/*',
-    ],
-  },
-  {
-    ignores: [
-      'node_modules/**',
-      '.next/**',
-      'out/**',
-      'build/**',
       'next-env.d.ts',
     ],
   },
 ];
+
+export default eslintConfig;
