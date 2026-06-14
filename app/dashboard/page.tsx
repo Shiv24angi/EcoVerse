@@ -93,7 +93,6 @@ export default function Dashboard() {
     } catch (error) {
       // Gated check to avoid production build console flags
       if (process.env.NODE_ENV !== 'production') {
-        
         console.error('Failed to fetch user stats:', error);
       }
     } finally {
