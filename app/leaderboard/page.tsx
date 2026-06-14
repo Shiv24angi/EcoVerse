@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
@@ -25,9 +25,6 @@ import {
   Zap,
 } from 'lucide-react';
 
-/**
- * Represents a user entry in the leaderboard.
- */
 interface LeaderboardUser {
   id: string;
   name: string;
@@ -77,11 +74,7 @@ export default function LeaderboardPage() {
   const [currentUserData, setCurrentUserData] =
     useState<LeaderboardUser | null>(null);
 
-  useEffect(() => {
-    fetchLeaderboardData();
-  }, []);
-
-  const fetchLeaderboardData = async () => {
+  const fetchLeaderboardData = useCallback(async () => {
     try {
       const response = await fetch('/api/leaderboard');
       if (response.ok) {
@@ -89,7 +82,6 @@ export default function LeaderboardPage() {
         setLeaderboardData(data.leaderboard);
         setStats(data.stats);
 
-        // Find current user's rank and data
         if (user) {
           const userEntry = data.leaderboard.find(
             (entry) => entry.id === user._id
@@ -105,7 +97,11 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchLeaderboardData();
+  }, [fetchLeaderboardData]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -187,7 +183,6 @@ export default function LeaderboardPage() {
           </div>
         ) : (
           <>
-            {/* Current User Stats */}
             {currentUserData && (
               <Card className="border-none shadow-md bg-gradient-to-r from-purple-500/20 to-blue-700/20">
                 <CardHeader>
@@ -233,7 +228,6 @@ export default function LeaderboardPage() {
               </Card>
             )}
 
-            {/* Top 3 Podium */}
             {leaderboardData.length >= 3 && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 {leaderboardData
@@ -275,7 +269,6 @@ export default function LeaderboardPage() {
               </div>
             )}
 
-            {/* Full Leaderboard */}
             <Card className="bg-green-100 border-none shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-800">
@@ -354,7 +347,6 @@ export default function LeaderboardPage() {
               </CardContent>
             </Card>
 
-            {/* Stats Summary */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader className="pb-2">

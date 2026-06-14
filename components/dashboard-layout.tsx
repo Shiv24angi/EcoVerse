@@ -1,11 +1,10 @@
-// DashboardLayout.tsx
 'use client';
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  Leaf,
   Home,
   Scan,
   Trophy,
@@ -48,15 +47,19 @@ export default function DashboardLayout({
 
   if (!user) return null;
 
-  console.log('Rendered avatar:', user.avatarId);
-
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
       <header className="bg-secondary border-b border-border px-6 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="EcoVerse logo" className="h-10 w-auto" />
+            <Image
+              src="/logo.png"
+              alt="EcoVerse logo"
+              width={40}
+              height={40}
+              className="h-10 w-auto object-contain"
+              priority
+            />
             <span className="font-serif text-xl font-bold text-green-900">
               EcoVerse
             </span>
@@ -98,7 +101,6 @@ export default function DashboardLayout({
       </header>
 
       <div className="flex min-h-screen">
-        {/* Sidebar */}
         <aside
           className={cn(
             'transition-all duration-300 ease-in-out h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border overflow-hidden',
@@ -142,7 +144,6 @@ export default function DashboardLayout({
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
     </div>

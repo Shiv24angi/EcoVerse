@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -30,22 +30,20 @@ export default function BarcodeScanner({
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
-  const codeReader = new BrowserMultiFormatReader();
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
-  useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, [facingMode]);
+  if (!codeReaderRef.current) {
+    codeReaderRef.current = new BrowserMultiFormatReader();
+  }
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      simulateScan();
-    }, 3000);
-
-    return () => clearInterval(interval);
+  const stopCamera = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+    }
   }, [stream]);
 
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     try {
       const constraints = {
         video: {
@@ -63,21 +61,54 @@ export default function BarcodeScanner({
         videoRef.current.srcObject = mediaStream;
         videoRef.current.play();
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Camera access denied',
         description: 'Please allow camera access to scan barcodes.',
         variant: 'destructive',
       });
     }
-  };
+  }, [facingMode, toast]);
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
+  const simulateScan = useCallback(async () => {
+    if (videoRef.current && codeReaderRef.current) {
+      try {
+        const result = await codeReaderRef.current.decodeOnceFromVideoElement(
+          videoRef.current
+        );
+        if (result && result.getText()) {
+          const barcode = result.getText();
+          onScan(barcode);
+        }
+      } catch (error) {
+        if ((error as any)?.name !== 'NotFoundException') {
+          toast({
+            title: 'Scanning failed',
+            description: (error as Error).message,
+            variant: 'destructive',
+          });
+        }
+      }
     }
-  };
+  }, [onScan, toast]);
+
+  useEffect(() => {
+    startCamera();
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facingMode]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      simulateScan();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [stream, simulateScan]);
 
   const toggleFlash = async () => {
     if (stream) {
@@ -90,7 +121,7 @@ export default function BarcodeScanner({
             advanced: [{ torch: !isFlashOn } as any],
           });
           setIsFlashOn(!isFlashOn);
-        } catch (error) {
+        } catch {
           toast({
             title: 'Flash not available',
             description: "Your device doesn't support camera flash.",
@@ -105,36 +136,10 @@ export default function BarcodeScanner({
     setFacingMode(facingMode === 'user' ? 'environment' : 'user');
   };
 
-  const handleScan = (barcode: string) => {
-    onScan(barcode);
-  };
-
-  const simulateScan = async () => {
-    if (videoRef.current) {
-      try {
-        const result = await codeReader.decodeOnceFromVideoElement(
-          videoRef.current
-        );
-        if (result && result.getText()) {
-          const barcode = result.getText();
-          handleScan(barcode);
-        }
-      } catch (error) {
-        if ((error as any)?.name !== 'NotFoundException') {
-          toast({
-            title: 'Scanning failed',
-            description: (error as Error).message,
-            variant: 'destructive',
-          });
-        }
-      }
-    }
-  };
-
   const enterBarcodeManually = () => {
     const input = prompt('Enter barcode manually:');
     if (input && input.trim()) {
-      handleScan(input.trim());
+      onScan(input.trim());
     }
   };
 

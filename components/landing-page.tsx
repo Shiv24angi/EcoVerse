@@ -18,9 +18,9 @@ import {
   Globe,
   Target,
   Sparkles,
-  Play,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { ThemeToggle } from './theme-toggle';
 
@@ -29,18 +29,11 @@ interface LandingPageProps {
 }
 
 export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  // const stats = [
-  //   { number: "15K+", label: "Active Users", icon: Users },
-  //   { number: "2.3M", label: "Products Scanned", icon: Scan },
-  //   { number: "850T", label: "CO₂ Saved", icon: Leaf },
-  //   { number: "94%", label: "User Satisfaction", icon: Star },
-  // ]
 
   const features = [
     {
@@ -83,24 +76,24 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#fef6f4] via-[#fdf7f5] to-[#f4f4ff] dark:from-[#1f1c2e] dark:via-[#1a1b27] dark:to-[#20242f] overflow-x-hidden transition-colors duration-300 scroll-smooth">
-      {/* Animated Pastel Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-pink-200/30 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-1/2 -left-40 w-96 h-96 bg-sky-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl animate-pulse delay-2000"></div>
       </div>
 
-      {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-green-600/70 border-b border-white/20 shadow-sm transition-colors duration-300">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Link href="/" className="flex items-center gap-2">
-                  <img
+                  <Image
                     src="/logo.png"
                     alt="EcoVerse logo"
-                    className="h-10 w-auto"
+                    width={40}
+                    height={40}
+                    className="h-10 w-auto object-contain"
                   />
                   <span className="text-2xl font-bold text-green-900">
                     EcoVerse
@@ -131,7 +124,6 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </header>
 
-      {/* Hero / About Section */}
       <section id="about" className="relative py-32 px-6 scroll-mt-24">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-20">
@@ -158,7 +150,6 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
               eco-conscious shoppers.
             </p>
 
-            {/* Primary CTA */}
             <div className="flex flex-col items-center gap-8 mb-20">
               <div className="flex flex-col sm:flex-row gap-4 items-center">
                 <div className="relative group">
@@ -187,33 +178,10 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
                 </Link>
               </div>
             </div>
-
-            {/* Stats */}
-            {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat, index) => (
-                <div key={index} className="group">
-                  <div className="relative p-8 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 dark:from-gray-700/40 to-transparent rounded-2xl"></div>
-                    <div className="relative">
-                      <div className="flex justify-center mb-4">
-                        <div className="p-3 rounded-xl bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 group-hover:from-green-200 group-hover:to-emerald-200 dark:group-hover:from-green-800/60 dark:group-hover:to-emerald-800/60 transition-colors">
-                          <stat.icon className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                      </div>
-                      <div className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-                        {stat.number}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">{stat.label}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div> */}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
       <section id="features" className="relative py-32 px-6 scroll-mt-24">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-20">
@@ -266,7 +234,6 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="relative py-32 px-6 bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 dark:from-green-700 dark:via-emerald-700 dark:to-green-800 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent"></div>
@@ -316,7 +283,6 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
-      {/* Footer / Contact Section */}
       <footer
         id="contact"
         className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-white py-20 px-6 scroll-mt-24"
@@ -327,10 +293,12 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
               <div className="flex items-center gap-3 mb-8">
                 <div className="relative">
                   <Link href="/" className="flex items-center gap-2">
-                    <img
+                    <Image
                       src="/logo.png"
                       alt="EcoVerse logo"
-                      className="h-10 w-auto"
+                      width={40}
+                      height={40}
+                      className="h-10 w-auto object-contain"
                     />
                   </Link>
                 </div>
