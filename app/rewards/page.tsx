@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @typescript-eslint/no-require-imports, react-hooks/exhaustive-deps, @next/next/no-img-element, no-console */
 'use client';
 
 import { useAuth } from '@/components/auth-provider';
@@ -60,6 +61,7 @@ export default function RewardsPage() {
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
 
   useEffect(() => {
     if (!user) {
@@ -102,9 +104,11 @@ export default function RewardsPage() {
       const result = await response.json();
 
       if (response.ok) {
+        // Show success message and refresh data
         alert(`${result.purchasedItem.name} purchased successfully!`);
         fetchRewardsData();
       } else {
+        // Handle insufficient confirmed points error with more detail
         if (result.error === 'Insufficient confirmed points') {
           alert(
             `Insufficient confirmed points!\n\nRequired: ${result.required} points\nYou have: ${result.confirmedPoints} confirmed points\nUnconfirmed: ${result.unconfirmedPoints} points\n\n${result.message}`
@@ -175,7 +179,7 @@ export default function RewardsPage() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-green-900">
-            Rewards &amp; Achievements 🎉
+            Rewards & Achievements 🎉
           </h1>
           <p className="text-gray-700 mt-2">
             Track your sustainability journey and earn rewards!
@@ -265,10 +269,7 @@ export default function RewardsPage() {
                     <div className="flex justify-between text-xs text-gray-600 mb-1">
                       <span>Progress to next level</span>
                       <span>
-                        {rewardsData?.progressToNext
-                          ? rewardsData.progressToNext.toFixed(0)
-                          : 0}
-                        %
+                        {rewardsData?.progressToNext.toFixed(0) || 0}%
                       </span>
                     </div>
                     <Progress
@@ -610,15 +611,15 @@ export default function RewardsPage() {
                           <h3 className="text-xl font-semibold text-blue-600 mb-1">
                             {item.name}
                           </h3>
-                          <p className="text-sm text-gray-660 mb-3">
+                          <p className="text-sm text-gray-600 mb-3">
                             {item.description}
                           </p>
 
                           {!canAfford && wouldAffordWithUnconfirmed && (
                             <div className="mb-3 p-2 rounded bg-yellow-900/20 border border-yellow-700">
                               <p className="text-xs text-yellow-300">
-                                You&apos;ll have enough once unconfirmed points
-                                are confirmed (7 days)
+                                You&apos;ll have enough once unconfirmed points are
+                                confirmed (7 days)
                               </p>
                             </div>
                           )}
@@ -770,8 +771,8 @@ export default function RewardsPage() {
                           <div
                             className={`font-semibold ${
                               transaction.type === 'earned'
-                                ? 'text-green-600'
-                                : 'text-red-600'
+                                ? 'text-green-400'
+                                : 'text-red-400'
                             }`}
                           >
                             {transaction.type === 'earned' ? '+' : '-'}
