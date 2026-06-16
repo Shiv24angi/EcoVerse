@@ -317,6 +317,9 @@ EcoVerse/
 ├── package.json                           # Dependencies & npm scripts
 │
 ├── README.md                              # Project overview & setup guide
+├── Dockerfile                             # Multi-stage production build definition
+├── docker-compose.yml                     # Container orchestration config
+├── .dockerignore                          # Files to exclude from Docker build
 ├── CONTRIBUTING.md                        # Contributor guide (GitHub standard)
 ├── Contribution.md                        # Enhanced contributor guide (GSSoC)
 ├── CODE_OF_CONDUCT.md                     # Community code of conduct
@@ -428,6 +431,23 @@ Visit:
 
 ```text
 http://localhost:3000
+```
+
+## Docker Deployment
+
+For a production-like environment, you can use Docker to build and run the application in an isolated container.
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+
+### Build and Start with Docker
+
+1. Ensure your `.env.local` is configured in the root directory.
+2. Build and start the container:
+
+```bash
+docker compose up -d --build
 ```
 
 ---
