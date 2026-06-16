@@ -1,0 +1,12 @@
+services:
+  ecoverse-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ecoverse-web:latest
+    container_name: ecoverse-web-prod
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    restart: unless-stopped
