@@ -33,6 +33,7 @@
   - [Install Dependencies](#install-dependencies)
   - [Configure Environment Variables](#configure-environment-variables)
   - [Start Development Server](#start-development-server)
+  - [Docker Deployment](#docker-deployment)
 
 - [Contributors](#contributors)
 - [License](#license)
@@ -449,6 +450,27 @@ For a production-like environment, you can use Docker to build and run the appli
 ```bash
 docker compose up -d --build
 ```
+Once the container is running, access the application in your browser by visiting:
+```bash
+http://localhost:3000
+```
+
+### Managing the Container
+
+- **Stop the container:**
+  ```bash
+  docker compose down
+  ```
+- **View container logs:**
+
+  ```Bash
+  docker compose logs -f ecoverse-web-prod
+  ```
+- **Check container status:**
+
+  ```Bash
+  docker ps
+  ```
 
 ---
 
