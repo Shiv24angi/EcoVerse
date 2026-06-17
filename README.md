@@ -451,14 +451,14 @@ For a production-like environment, you can use Docker to build and run the appli
 docker compose up -d --build
 ```
 Once the container is running, access the application in your browser by visiting:
-```bash
+```text
 http://localhost:3000
 ```
 
 ### Managing the Container
 
 - **Stop the container:**
-  ```bash
+  ```text
   docker compose down
   ```
 - **View container logs:**
