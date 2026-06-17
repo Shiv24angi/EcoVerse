@@ -450,6 +450,7 @@ For a production-like environment, you can use Docker to build and run the appli
 ```bash
 docker compose up -d --build
 ```
+
 Once the container is running, access the application in your browser by visiting:
 ```text
 http://localhost:3000
@@ -461,11 +462,13 @@ http://localhost:3000
   ```text
   docker compose down
   ```
+
 - **View container logs:**
 
   ```Bash
   docker compose logs -f web
   ```
+  
 - **Check container status:**
 
   ```Bash
