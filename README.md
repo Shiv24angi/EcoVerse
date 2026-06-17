@@ -464,7 +464,7 @@ http://localhost:3000
 - **View container logs:**
 
   ```Bash
-  docker compose logs -f ecoverse-web-prod
+  docker compose logs -f web
   ```
 - **Check container status:**
 

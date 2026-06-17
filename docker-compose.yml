@@ -9,8 +9,11 @@ services:
       - "3000:3000"
     env_file:
       - .env.local
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/carbontracker}
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     restart: unless-stopped
 
   mongo:
@@ -21,6 +24,12 @@ services:
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
 
 volumes:
   mongo_data:
