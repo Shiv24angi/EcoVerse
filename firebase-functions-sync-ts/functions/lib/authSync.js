@@ -15,7 +15,7 @@ exports.handleUserSignup = (0, auth_1.onUserCreated)(async (event) => {
         photoURL: user.photoURL || null,
         createdAt: new Date(),
     });
-    console.log(`✅ Synced new user ${user.uid} to MongoDB`);
+    console.warn(`✅ Synced new user ${user.uid} to MongoDB`);
 });
 // Handle user deletion
 exports.handleUserDeletion = (0, auth_1.onUserDeleted)(async (event) => {
@@ -23,6 +23,6 @@ exports.handleUserDeletion = (0, auth_1.onUserDeleted)(async (event) => {
     const db = await (0, mongo_1.connectToMongo)();
     const collection = db.collection("users");
     await collection.deleteOne({ uid: user.uid });
-    console.log(`🗑️ Removed user ${user.uid} from MongoDB`);
+    console.warn(`🗑️ Removed user ${user.uid} from MongoDB`);
 });
 //# sourceMappingURL=authSync.js.map

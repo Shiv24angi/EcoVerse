@@ -4,7 +4,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  condition: (user: any) => boolean;
+  condition: (user: unknown) => boolean;
   points: number;
   icon: string;
 }
@@ -228,7 +228,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Scan 25 products with less than 1kg CO2',
     condition: (user) => {
       const lowCarbonScans = (user.scans || []).filter(
-        (scan: any) => scan.carbonEstimate < 1
+        (scan: unknown) => scan.carbonEstimate < 1
       ).length;
       return lowCarbonScans >= 25;
     },
@@ -372,9 +372,10 @@ export function calculateLevel(totalPoints: number): {
 }
 
 // Check for new achievements
-export function checkAchievements(user: any): Achievement[] {
+export function checkAchievements(user: unknown): Achievement[] {
   const newAchievements: Achievement[] = [];
-  const earnedAchievementIds = user.achievements?.map((a: any) => a.id) || [];
+  const earnedAchievementIds =
+    user.achievements?.map((a: unknown) => a.id) || [];
 
   for (const achievement of ACHIEVEMENTS) {
     if (
@@ -390,7 +391,7 @@ export function checkAchievements(user: any): Achievement[] {
 
 // Calculate monthly goal bonus
 export function calculateMonthlyBonus(
-  user: any
+  user: unknown
 ): { points: number; reason: string } | null {
   if (user.monthlyCarbon < 20 && user.totalScanned >= 10) {
     return {
@@ -448,12 +449,12 @@ export function getSustainabilityTier(
 }
 
 // Confirm pending points that meet the confirmation criteria
-export function confirmPendingPoints(user: any): {
+export function confirmPendingPoints(user: unknown): {
   confirmedPoints: number;
-  confirmedTransactions: any[];
+  confirmedTransactions: unknown[];
 } {
   let confirmedPoints = 0;
-  const confirmedTransactions: any[] = [];
+  const confirmedTransactions: unknown[] = [];
   const now = new Date();
 
   if (user.rewardTransactions) {
@@ -489,7 +490,7 @@ export function shouldConfirmImmediately(reason: string): boolean {
 }
 
 // Get user's point summary
-export function getUserPointsSummary(user: any): {
+export function getUserPointsSummary(user: unknown): {
   confirmed: number;
   unconfirmed: number;
   total: number;

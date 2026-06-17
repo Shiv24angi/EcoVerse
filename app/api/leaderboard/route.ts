@@ -16,7 +16,7 @@ export async function GET() {
       .lean();
 
     // Calculate rank changes (simulate for now - you'd need historical data for real changes)
-    const leaderboardData = users.map((user: any, index) => {
+    const leaderboardData = users.map((user: unknown, index) => {
       // Simple change calculation based on user activity and points
       let change = 'same';
       const totalPoints = user.totalPointsEarned || 0;
@@ -58,7 +58,7 @@ export async function GET() {
         achievementCount: (user.achievements || []).length,
         levelTier,
         activeBadges: user.activeBadges || [],
-        hasAdvancedFeatures: (user.purchasedItems || []).some((item: any) =>
+        hasAdvancedFeatures: (user.purchasedItems || []).some((item: unknown) =>
           ['advanced_analytics', 'streak_protector', 'double_points'].includes(
             item.itemId
           )

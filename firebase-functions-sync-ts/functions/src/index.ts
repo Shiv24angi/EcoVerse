@@ -22,7 +22,7 @@ export const handleUserSignup = onUserCreated(async (event) => {
     createdAt: new Date(),
   });
 
-  console.log(`✅ Synced new user ${user.uid}`);
+  console.warn(`✅ Synced new user ${user.uid}`);
 });
 
 // AUTH: onDelete
@@ -32,7 +32,7 @@ export const handleUserDeletion = onUserDeleted(async (event) => {
   const users = db.collection("users");
 
   await users.deleteOne({ uid: user.uid });
-  console.log(`🗑️ Deleted user ${user.uid}`);
+  console.warn(`🗑️ Deleted user ${user.uid}`);
 });
 
 // FIRESTORE: onCreate
@@ -53,7 +53,7 @@ export const syncLeaderboardCreate = onDocumentCreated(leaderboardPath, async (e
     ...data,
   });
 
-  console.log(`📥 Firestore → MongoDB: Created ${docId}`);
+  console.warn(`📥 Firestore → MongoDB: Created ${docId}`);
 });
 
 // FIRESTORE: onUpdate
@@ -71,7 +71,7 @@ export const syncLeaderboardUpdate = onDocumentUpdated(leaderboardPath, async (e
 
   await mongo.updateOne({ firebaseId: docId }, { $set: newData });
 
-  console.log(`🔁 Firestore → MongoDB: Updated ${docId}`);
+  console.warn(`🔁 Firestore → MongoDB: Updated ${docId}`);
 });
 
 // FIRESTORE: onDelete
@@ -83,5 +83,5 @@ export const syncLeaderboardDelete = onDocumentDeleted(leaderboardPath, async (e
 
   await mongo.deleteOne({ firebaseId: docId });
 
-  console.log(`❌ Firestore → MongoDB: Deleted ${docId}`);
+  console.warn(`❌ Firestore → MongoDB: Deleted ${docId}`);
 });

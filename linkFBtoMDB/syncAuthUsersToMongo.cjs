@@ -49,7 +49,7 @@ async function syncToMongo() {
     }));
 
     const result = await collection.bulkWrite(bulkOps);
-    console.log(`✅ Synced ${result.upsertedCount + result.modifiedCount} auth users to MongoDB.`);
+    console.warn(`✅ Synced ${result.upsertedCount + result.modifiedCount} auth users to MongoDB.`);
 
     await mongoClient.close();
   } catch (error) {

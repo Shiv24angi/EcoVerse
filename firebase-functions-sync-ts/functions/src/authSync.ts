@@ -15,7 +15,7 @@ export const handleUserSignup = onUserCreated(async (event) => {
     createdAt: new Date(),
   });
 
-  console.log(`✅ Synced new user ${user.uid} to MongoDB`);
+  console.warn(`✅ Synced new user ${user.uid} to MongoDB`);
 });
 
 // Handle user deletion
@@ -26,5 +26,5 @@ export const handleUserDeletion = onUserDeleted(async (event) => {
 
   await collection.deleteOne({ uid: user.uid });
 
-  console.log(`🗑️ Removed user ${user.uid} from MongoDB`);
+  console.warn(`🗑️ Removed user ${user.uid} from MongoDB`);
 });

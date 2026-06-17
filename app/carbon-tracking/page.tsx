@@ -84,7 +84,7 @@ export default function CarbonTrackingPage() {
 
   // Group scans by date for better display
   const scansByDate = userData.scans.reduce(
-    (acc: { [date: string]: any[] }, scan) => {
+    (acc: { [date: string]: unknown[] }, scan) => {
       const dateKey = new Date(scan.date).toDateString();
       if (!acc[dateKey]) acc[dateKey] = [];
       acc[dateKey].push(scan);

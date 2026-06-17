@@ -126,7 +126,7 @@ export async function GET(req: Request) {
 
     // Get available achievements (not yet earned)
     const earnedAchievementIds = (user.achievements || []).map(
-      (a: any) => a.id
+      (a: unknown) => a.id
     );
     const availableAchievements = ACHIEVEMENTS.filter(
       (achievement) => !earnedAchievementIds.includes(achievement.id)
@@ -134,7 +134,7 @@ export async function GET(req: Request) {
 
     // Get purchased item IDs
     const purchasedItemIds = (user.purchasedItems || []).map(
-      (item: any) => item.itemId
+      (item: unknown) => item.itemId
     );
 
     // Filter available shop items (not yet purchased)
@@ -232,7 +232,7 @@ export async function POST(req: Request) {
 
     // Check if user already purchased this item
     const alreadyPurchased = user.purchasedItems?.some(
-      (item: any) => item.itemId === itemId
+      (item: unknown) => item.itemId === itemId
     );
     if (alreadyPurchased) {
       return NextResponse.json(
@@ -259,7 +259,7 @@ export async function POST(req: Request) {
 
     // Step 2: Atomic Update to prevent TOCTOU race conditions (Double Spending)
     // Build the dynamic update object based on item effects
-    const updateQuery: any = {
+    const updateQuery: unknown = {
       $inc: {
         confirmedPoints: -shopItem.cost,
         rewardPoints: -shopItem.cost,

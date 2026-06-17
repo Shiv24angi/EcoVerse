@@ -1,5 +1,5 @@
 // DashboardLayout.tsx
-/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @typescript-eslint/no-require-imports, react-hooks/exhaustive-deps, @next/next/no-img-element, no-console */
+/* eslint-disable no-console */
 'use client';
 
 import { useState } from 'react';
@@ -49,7 +49,7 @@ export default function DashboardLayout({
 
   if (!user) return null;
 
-  console.log('Rendered avatar:', user.avatarId);
+  console.warn('Rendered avatar:', user.avatarId);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -57,7 +57,13 @@ export default function DashboardLayout({
       <header className="bg-secondary border-b border-border px-6 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="EcoVerse logo" width={40} height={40} className="h-10 w-auto" />
+            <Image
+              src="/logo.png"
+              alt="EcoVerse logo"
+              width={40}
+              height={40}
+              className="h-10 w-auto"
+            />
             <span className="font-serif text-xl font-bold text-green-900">
               EcoVerse
             </span>

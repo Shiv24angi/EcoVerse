@@ -33,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        run: npm run lint
+        run: npm run lint -- --max-warnings 120
 
       - name: Run Prettier format check
         run: npm run format:check

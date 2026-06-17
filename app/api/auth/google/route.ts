@@ -6,7 +6,7 @@ import { signToken } from '@/lib/auth';
 
 export async function POST(req: Request) {
   // FIX: Guard body parsing inside a try...catch to intercept malformed request payloads gracefully
-  let body: any;
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  let userDoc: any = null;
+  let userDoc: unknown = null;
   try {
     await dbConnect();
     userDoc = await User.findOneAndUpdate(
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     );
   } catch (err) {
     // FIX: Suppress linting rule for tracking low-level operational failures
-    /* eslint-disable-next-line no-console */
+
     console.error('Failed to upsert user in google route:', err);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }

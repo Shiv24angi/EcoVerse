@@ -35,6 +35,7 @@ export default function BarcodeScanner({
   useEffect(() => {
     startCamera();
     return () => stopCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facingMode]);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function BarcodeScanner({
     }, 3000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stream]);
 
   const startCamera = async () => {

@@ -40,11 +40,11 @@ interface RewardsData {
   level: number;
   nextLevelPoints: number;
   progressToNext: number;
-  transactions: any[];
-  achievements: any[];
-  availableAchievements: any[];
-  purchasedItems: any[];
-  availableShopItems: any[];
+  transactions: unknown[];
+  achievements: unknown[];
+  availableAchievements: unknown[];
+  purchasedItems: unknown[];
+  availableShopItems: unknown[];
   activeBadges: string[];
   specialFeatures: {
     streakProtectors: number;
@@ -60,7 +60,7 @@ export default function RewardsPage() {
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<unknown>(null);
 
   useEffect(() => {
     if (!user) {

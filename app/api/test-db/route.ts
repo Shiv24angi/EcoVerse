@@ -3,7 +3,7 @@ import dbConnect from '@/lib/mongodb';
 
 export async function GET() {
   try {
-    console.log('🔍 Testing MongoDB connection...');
+    console.warn('🔍 Testing MongoDB connection...');
 
     // Test environment variable
     const mongoUri = process.env.MONGODB_URI;
@@ -17,14 +17,14 @@ export async function GET() {
       );
     }
 
-    console.log('✅ MONGODB_URI found:', mongoUri.substring(0, 20) + '...');
+    console.warn('✅ MONGODB_URI found:', mongoUri.substring(0, 20) + '...');
 
     // Test database connection
     const mongoose = await dbConnect();
 
-    console.log('✅ MongoDB connection successful!');
-    console.log('Connection state:', mongoose.connection.readyState);
-    console.log('Database name:', mongoose.connection.db?.databaseName);
+    console.warn('✅ MongoDB connection successful!');
+    console.warn('Connection state:', mongoose.connection.readyState);
+    console.warn('Database name:', mongoose.connection.db?.databaseName);
 
     return NextResponse.json({
       status: 'success',
@@ -33,10 +33,10 @@ export async function GET() {
       readyState: mongoose.connection.readyState,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ MongoDB connection test failed:', error);
 
-    const errorInfo: any = {
+    const errorInfo: unknown = {
       status: 'failed',
       error: error.message,
       code: error.code,

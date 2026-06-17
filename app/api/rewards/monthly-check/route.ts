@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { calculateMonthlyBonus, POINT_REWARDS } from '@/lib/rewards-system';
+import { calculateMonthlyBonus } from '@/lib/rewards-system';
 
 // POST /api/rewards/monthly-check - Check and award monthly bonuses
 export async function POST(req: Request) {

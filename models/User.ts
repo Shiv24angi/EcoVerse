@@ -120,7 +120,7 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
-// Cast to Model<any> to collapse the union type produced by the ternary.
+// Cast to Model<unknown> to collapse the union type produced by the ternary.
 // Without this, TypeScript raises TS2349 ("not callable") on every
 // .findOne() / .create() / .find() call across all API routes.
 const User = mongoose.models.User || mongoose.model('User', UserSchema);

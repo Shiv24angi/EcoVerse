@@ -17,7 +17,7 @@ exports.handleUserSignup = (0, auth_1.onUserCreated)(async (event) => {
         photoURL: user.photoURL || null,
         createdAt: new Date(),
     });
-    console.log(`✅ Synced new user ${user.uid}`);
+    console.warn(`✅ Synced new user ${user.uid}`);
 });
 // AUTH: onDelete
 exports.handleUserDeletion = (0, auth_1.onUserDeleted)(async (event) => {
@@ -25,7 +25,7 @@ exports.handleUserDeletion = (0, auth_1.onUserDeleted)(async (event) => {
     const db = await (0, mongo_1.connectToMongo)();
     const users = db.collection("users");
     await users.deleteOne({ uid: user.uid });
-    console.log(`🗑️ Deleted user ${user.uid}`);
+    console.warn(`🗑️ Deleted user ${user.uid}`);
 });
 // FIRESTORE: onCreate
 exports.syncLeaderboardCreate = (0, firestore_1.onDocumentCreated)(leaderboardPath, async (event) => {
@@ -41,7 +41,7 @@ exports.syncLeaderboardCreate = (0, firestore_1.onDocumentCreated)(leaderboardPa
         firebaseId: docId,
         ...data,
     });
-    console.log(`📥 Firestore → MongoDB: Created ${docId}`);
+    console.warn(`📥 Firestore → MongoDB: Created ${docId}`);
 });
 // FIRESTORE: onUpdate
 exports.syncLeaderboardUpdate = (0, firestore_1.onDocumentUpdated)(leaderboardPath, async (event) => {
@@ -54,7 +54,7 @@ exports.syncLeaderboardUpdate = (0, firestore_1.onDocumentUpdated)(leaderboardPa
     const db = await (0, mongo_1.connectToMongo)();
     const mongo = db.collection("leaderboard");
     await mongo.updateOne({ firebaseId: docId }, { $set: newData });
-    console.log(`🔁 Firestore → MongoDB: Updated ${docId}`);
+    console.warn(`🔁 Firestore → MongoDB: Updated ${docId}`);
 });
 // FIRESTORE: onDelete
 exports.syncLeaderboardDelete = (0, firestore_1.onDocumentDeleted)(leaderboardPath, async (event) => {
@@ -62,6 +62,6 @@ exports.syncLeaderboardDelete = (0, firestore_1.onDocumentDeleted)(leaderboardPa
     const db = await (0, mongo_1.connectToMongo)();
     const mongo = db.collection("leaderboard");
     await mongo.deleteOne({ firebaseId: docId });
-    console.log(`❌ Firestore → MongoDB: Deleted ${docId}`);
+    console.warn(`❌ Firestore → MongoDB: Deleted ${docId}`);
 });
 //# sourceMappingURL=index.js.map

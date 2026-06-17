@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @typescript-eslint/no-require-imports, react-hooks/exhaustive-deps, @next/next/no-img-element, no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState } from 'react';
@@ -158,7 +158,7 @@ export default function ScanPage() {
           }, 2000);
         }
         if (newAchievements?.length) {
-          newAchievements.forEach((achievement: any, index: number) => {
+          newAchievements.forEach((achievement: unknown, index: number) => {
             setTimeout(
               () => {
                 showNotification({

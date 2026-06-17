@@ -40,14 +40,14 @@ export async function GET(req: Request) {
 
     const transactions = user.rewardTransactions || [];
     const confirmedTransactions = transactions.filter(
-      (t: any) => t.pointsType === 'confirmed'
+      (t: unknown) => t.pointsType === 'confirmed'
     );
     const unconfirmedTransactions = transactions.filter(
-      (t: any) => t.pointsType === 'unconfirmed'
+      (t: unknown) => t.pointsType === 'unconfirmed'
     );
 
     const now = new Date();
-    const transactionDetails = transactions.map((t: any) => {
+    const transactionDetails = transactions.map((t: unknown) => {
       const transactionDate = new Date(t.date);
       const hoursElapsed =
         (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
@@ -90,18 +90,17 @@ export async function GET(req: Request) {
           (user.confirmedPoints || 0) + (user.unconfirmedPoints || 0),
         legacyPointsMatch: pointsSummary.total === (user.rewardPoints || 0),
         confirmedPointsSum: confirmedTransactions.reduce(
-          (sum: number, t: any) =>
+          (sum: number, t: unknown) =>
             sum + (t.type === 'earned' ? t.points : -t.points),
           0
         ),
         unconfirmedPointsSum: unconfirmedTransactions.reduce(
-          (sum: number, t: any) => sum + t.points,
+          (sum: number, t: unknown) => sum + t.points,
           0
         ),
       },
     });
   } catch (error) {
-    /* eslint-disable-next-line no-console */
     console.error('Error debugging points:', error);
     return NextResponse.json(
       { error: 'Failed to debug points' },
@@ -157,7 +156,7 @@ export async function POST(req: Request) {
       user.rewardPoints = user.confirmedPoints;
 
       if (user.rewardTransactions) {
-        user.rewardTransactions.forEach((t: any) => {
+        user.rewardTransactions.forEach((t: unknown) => {
           if (t.pointsType === 'unconfirmed') {
             t.pointsType = 'confirmed';
             t.confirmedAt = new Date();
@@ -200,7 +199,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    /* eslint-disable-next-line no-console */
     console.error('Error in debug action:', error);
     return NextResponse.json(
       { error: 'Failed to perform debug action' },
