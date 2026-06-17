@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -30,22 +30,11 @@ export default function BarcodeScanner({
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
-  const codeReader = new BrowserMultiFormatReader();
+  // Use useMemo so the ZXing reader instance is preserved across renders
+  const codeReader = useMemo(() => new BrowserMultiFormatReader(), []);
 
-  useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, [facingMode]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      simulateScan();
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [stream]);
-
-  const startCamera = async () => {
+  // Stabilize startCamera with useCallback to prevent infinite hook triggers
+  const startCamera = useCallback(async () => {
     try {
       const constraints = {
         video: {
@@ -63,26 +52,73 @@ export default function BarcodeScanner({
         videoRef.current.srcObject = mediaStream;
         videoRef.current.play();
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Camera access denied',
         description: 'Please allow camera access to scan barcodes.',
         variant: 'destructive',
       });
     }
-  };
+  }, [facingMode, toast]);
 
-  const stopCamera = () => {
+  // Stabilize stopCamera to cleanly drop stream allocations
+  const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
-  };
+  }, [stream]);
+
+  // Handle live decoding from current viewport
+  const simulateScan = useCallback(async () => {
+    if (videoRef.current) {
+      try {
+        const result = await codeReader.decodeOnceFromVideoElement(
+          videoRef.current
+        );
+        if (result && result.getText()) {
+          const barcode = result.getText();
+          onScan(barcode);
+        }
+      } catch (error) {
+        if ((error as Error)?.name !== 'NotFoundException') {
+          toast({
+            title: 'Scanning failed',
+            description: (error as Error).message,
+            variant: 'destructive',
+          });
+        }
+      }
+    }
+  }, [codeReader, onScan, toast]);
+
+  // Hook 1: Safely controls camera instance lifespan
+  useEffect(() => {
+    startCamera();
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facingMode]); 
+  // We explicitly run only when facingMode toggles, ignoring active stream updates
+
+  // Hook 2: Handles interval automation loop
+  useEffect(() => {
+    const interval = setInterval(() => {
+      simulateScan();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [simulateScan]);
 
   const toggleFlash = async () => {
     if (stream) {
       const track = stream.getVideoTracks()[0];
-      const capabilities = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+      const capabilities = track.getCapabilities() as MediaTrackCapabilities & {
+        torch?: boolean;
+      };
 
       if (capabilities.torch) {
         try {
@@ -90,7 +126,7 @@ export default function BarcodeScanner({
             advanced: [{ torch: !isFlashOn } as MediaTrackConstraintSet],
           });
           setIsFlashOn(!isFlashOn);
-        } catch (error) {
+        } catch {
           toast({
             title: 'Flash not available',
             description: "Your device doesn't support camera flash.",
@@ -105,42 +141,16 @@ export default function BarcodeScanner({
     setFacingMode(facingMode === 'user' ? 'environment' : 'user');
   };
 
-  const handleScan = (barcode: string) => {
-    onScan(barcode);
-  };
-
-  const simulateScan = async () => {
-    if (videoRef.current) {
-      try {
-        const result = await codeReader.decodeOnceFromVideoElement(
-          videoRef.current
-        );
-        if (result && result.getText()) {
-          const barcode = result.getText();
-          handleScan(barcode);
-        }
-      } catch (error) {
-        if ((error as Error)?.name !== 'NotFoundException') {
-          toast({
-            title: 'Scanning failed',
-            description: (error as Error).message,
-            variant: 'destructive',
-          });
-        }
-      }
-    }
-  };
-
   const enterBarcodeManually = () => {
     const input = prompt('Enter barcode manually:');
     if (input && input.trim()) {
-      handleScan(input.trim());
+      onScan(input.trim());
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
-      <Card className="w-full max-w-md mx-4 dark-card border-gray-700">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90">
+      <Card className="dark-card mx-4 w-full max-w-md border-gray-700">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -158,25 +168,25 @@ export default function BarcodeScanner({
           <div className="relative">
             <video
               ref={videoRef}
-              className="w-full h-64 bg-black rounded-lg object-cover"
+              className="h-64 w-full rounded-lg bg-black object-cover"
               autoPlay
               playsInline
               muted
             />
 
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-48 h-24 border-2 border-green-400 rounded-lg">
-                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-green-400 rounded-tl-lg"></div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-green-400 rounded-tr-lg"></div>
-                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-2 border-l-2 border-green-400 rounded-bl-lg"></div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-2 border-r-2 border-green-400 rounded-br-lg"></div>
+              <div className="relative h-24 w-48 rounded-lg border-2 border-green-400">
+                <div className="absolute -left-1 -top-1 h-6 w-6 rounded-tl-lg border-l-2 border-t-2 border-green-400"></div>
+                <div className="absolute -right-1 -top-1 h-6 w-6 rounded-tr-lg border-r-2 border-t-2 border-green-400"></div>
+                <div className="absolute -bottom-1 -left-1 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-green-400"></div>
+                <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-green-400"></div>
                 <div className="absolute inset-0 overflow-hidden rounded-lg">
-                  <div className="absolute w-full h-0.5 bg-green-400 animate-pulse"></div>
+                  <div className="absolute h-0.5 w-full animate-pulse bg-green-400"></div>
                 </div>
               </div>
             </div>
 
-            <div className="absolute top-2 right-2 flex gap-2">
+            <div className="absolute right-2 top-2 flex gap-2">
               <Button
                 variant="secondary"
                 size="sm"
@@ -196,7 +206,7 @@ export default function BarcodeScanner({
             </div>
           </div>
 
-          <div className="text-center space-y-4">
+          <div className="space-y-4 text-center">
             <p className="text-sm text-gray-400">
               Align the barcode within the green frame and it will be scanned
               automatically
