@@ -5,7 +5,15 @@ import {
   getUserPointsSummary,
   confirmPendingPoints,
   POINT_CONFIRMATION,
+  type RewardTransaction,
 } from '@/lib/rewards-system';
+
+interface TransactionDetail extends RewardTransaction {
+  hoursElapsed: string;
+  hoursRemaining: string;
+  daysRemaining: string;
+  isEligibleForConfirmation: boolean;
+}
 
 // GET /api/debug/points?email=user@email.com - Debug point system for a user
 export async function GET(req: Request) {
@@ -29,7 +37,7 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
-    const user = (await User.findOne({ email })) as any;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -38,16 +46,16 @@ export async function GET(req: Request) {
     const pointsSummary = getUserPointsSummary(user);
     const confirmationData = confirmPendingPoints(user);
 
-    const transactions = user.rewardTransactions || [];
+    const transactions: RewardTransaction[] = user.rewardTransactions || [];
     const confirmedTransactions = transactions.filter(
-      (t: any) => t.pointsType === 'confirmed'
+      (t: RewardTransaction) => t.pointsType === 'confirmed'
     );
     const unconfirmedTransactions = transactions.filter(
-      (t: any) => t.pointsType === 'unconfirmed'
+      (t: RewardTransaction) => t.pointsType === 'unconfirmed'
     );
 
     const now = new Date();
-    const transactionDetails = transactions.map((t: any) => {
+    const transactionDetails: TransactionDetail[] = transactions.map((t: RewardTransaction) => {
       const transactionDate = new Date(t.date);
       const hoursElapsed =
         (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
@@ -90,12 +98,12 @@ export async function GET(req: Request) {
           (user.confirmedPoints || 0) + (user.unconfirmedPoints || 0),
         legacyPointsMatch: pointsSummary.total === (user.rewardPoints || 0),
         confirmedPointsSum: confirmedTransactions.reduce(
-          (sum: number, t: any) =>
+          (sum: number, t: RewardTransaction) =>
             sum + (t.type === 'earned' ? t.points : -t.points),
           0
         ),
         unconfirmedPointsSum: unconfirmedTransactions.reduce(
-          (sum: number, t: any) => sum + t.points,
+          (sum: number, t: RewardTransaction) => sum + t.points,
           0
         ),
       },
@@ -144,7 +152,7 @@ export async function POST(req: Request) {
 
   try {
     await dbConnect();
-    const user = (await User.findOne({ email })) as any;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -157,7 +165,7 @@ export async function POST(req: Request) {
       user.rewardPoints = user.confirmedPoints;
 
       if (user.rewardTransactions) {
-        user.rewardTransactions.forEach((t: any) => {
+        user.rewardTransactions.forEach((t: RewardTransaction) => {
           if (t.pointsType === 'unconfirmed') {
             t.pointsType = 'confirmed';
             t.confirmedAt = new Date();

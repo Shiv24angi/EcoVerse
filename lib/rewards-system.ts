@@ -1,12 +1,20 @@
 // Rewards System Configuration and Logic
 
-export interface Achievement {
+export interface UserScan {
+  productName: string;
+  carbonEstimate: number;
+  category: string;
+  confidence: string;
+  barcode: string;
+  date: Date;
+}
+
+export interface UserAchievement {
   id: string;
   name: string;
   description: string;
-  condition: (user: any) => boolean;
+  earnedAt: Date;
   points: number;
-  icon: string;
 }
 
 export interface RewardTransaction {
@@ -17,6 +25,29 @@ export interface RewardTransaction {
   description: string;
   date: Date;
   confirmedAt?: Date;
+  _id?: unknown;
+}
+
+export interface UserData {
+  totalScanned: number;
+  streakCount: number;
+  monthlyCarbon: number;
+  level: number;
+  totalPointsEarned?: number;
+  scans?: UserScan[];
+  achievements?: UserAchievement[];
+  rewardTransactions?: RewardTransaction[];
+  confirmedPoints?: number;
+  unconfirmedPoints?: number;
+}
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  condition: (user: UserData) => boolean;
+  points: number;
+  icon: string;
 }
 
 export interface RewardShopItem {
@@ -228,7 +259,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Scan 25 products with less than 1kg CO2',
     condition: (user) => {
       const lowCarbonScans = (user.scans || []).filter(
-        (scan: any) => scan.carbonEstimate < 1
+        (scan: UserScan) => scan.carbonEstimate < 1
       ).length;
       return lowCarbonScans >= 25;
     },
@@ -271,7 +302,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'early_adopter',
     name: 'Early Adopter',
     description: 'One of the first 100 users to join',
-    condition: (user) => {
+    condition: (_user) => {
       // This would need to be determined based on user registration order
       return false; // Placeholder
     },
@@ -372,9 +403,9 @@ export function calculateLevel(totalPoints: number): {
 }
 
 // Check for new achievements
-export function checkAchievements(user: any): Achievement[] {
+export function checkAchievements(user: UserData): Achievement[] {
   const newAchievements: Achievement[] = [];
-  const earnedAchievementIds = user.achievements?.map((a: any) => a.id) || [];
+  const earnedAchievementIds = user.achievements?.map((a: UserAchievement) => a.id) || [];
 
   for (const achievement of ACHIEVEMENTS) {
     if (
@@ -390,7 +421,7 @@ export function checkAchievements(user: any): Achievement[] {
 
 // Calculate monthly goal bonus
 export function calculateMonthlyBonus(
-  user: any
+  user: UserData
 ): { points: number; reason: string } | null {
   if (user.monthlyCarbon < 20 && user.totalScanned >= 10) {
     return {
@@ -448,12 +479,12 @@ export function getSustainabilityTier(
 }
 
 // Confirm pending points that meet the confirmation criteria
-export function confirmPendingPoints(user: any): {
+export function confirmPendingPoints(user: UserData): {
   confirmedPoints: number;
-  confirmedTransactions: any[];
+  confirmedTransactions: RewardTransaction[];
 } {
   let confirmedPoints = 0;
-  const confirmedTransactions: any[] = [];
+  const confirmedTransactions: RewardTransaction[] = [];
   const now = new Date();
 
   if (user.rewardTransactions) {
@@ -489,7 +520,7 @@ export function shouldConfirmImmediately(reason: string): boolean {
 }
 
 // Get user's point summary
-export function getUserPointsSummary(user: any): {
+export function getUserPointsSummary(user: UserData): {
   confirmed: number;
   unconfirmed: number;
   total: number;

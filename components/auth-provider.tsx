@@ -22,7 +22,7 @@ interface User {
   email: string;
   name: string;
   avatarId?: AvatarId;
-  avatarCustomization?: any;
+  avatarCustomization?: Record<string, unknown>;
   monthlyCarbon: number;
   totalScanned: number;
   joinedAt: string;
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user);
       localStorage.setItem('ecoverse-user', JSON.stringify(data.user));
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err.code === 'auth/email-already-in-use') {
         console.error('⚠️ Email already in use');
         toast({

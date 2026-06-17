@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
-    const user = (await User.findOne({ email }).lean()) as any;
+    const user = await User.findOne({ email }).lean();
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

@@ -4,9 +4,15 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { signToken } from '@/lib/auth';
 
+interface GoogleAuthBody {
+  name: string;
+  email: string;
+  firebaseUid: string;
+}
+
 export async function POST(req: Request) {
   // FIX: Guard body parsing inside a try...catch to intercept malformed request payloads gracefully
-  let body: any;
+  let body: GoogleAuthBody;
   try {
     body = await req.json();
   } catch {
@@ -22,7 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  let userDoc: any = null;
+  let userDoc: Record<string, unknown> | null = null;
   try {
     await dbConnect();
     userDoc = await User.findOneAndUpdate(
@@ -61,8 +67,8 @@ export async function POST(req: Request) {
 
   // Generate the JWT safely
   const token = await signToken({
-    email: userDoc.email,
-    userId: userDoc._id.toString(),
+    email: userDoc.email as string,
+    userId: (userDoc._id as { toString(): string }).toString(),
   });
 
   // Set the token securely as an HttpOnly cookie
@@ -78,14 +84,14 @@ export async function POST(req: Request) {
   // Map the MongoDB document back to the required frontend shape using safe fallbacks
   const user = {
     _id: userDoc._id,
-    name: userDoc.name || '',
-    email: userDoc.email || '',
+    name: (userDoc.name as string) || '',
+    email: (userDoc.email as string) || '',
     joinedAt: userDoc.createdAt
-      ? new Date(userDoc.createdAt).toISOString().split('T')[0]
-      : userDoc.joinedAt || '',
-    monthlyCarbon: userDoc.monthlyCarbon || 0,
-    totalScanned: userDoc.totalScanned || 0,
-    avatarId: userDoc.avatarId || 'avatar-1',
+      ? new Date(userDoc.createdAt as string).toISOString().split('T')[0]
+      : (userDoc.joinedAt as string) || '',
+    monthlyCarbon: (userDoc.monthlyCarbon as number) || 0,
+    totalScanned: (userDoc.totalScanned as number) || 0,
+    avatarId: (userDoc.avatarId as string) || 'avatar-1',
     avatarCustomization: userDoc.avatarCustomization || {},
   };
 

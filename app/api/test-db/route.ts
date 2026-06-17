@@ -33,21 +33,22 @@ export async function GET() {
       readyState: mongoose.connection.readyState,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ MongoDB connection test failed:', error);
 
-    const errorInfo: any = {
+    const err = error as Record<string, unknown>;
+    const errorInfo: Record<string, unknown> = {
       status: 'failed',
-      error: error.message,
-      code: error.code,
-      errno: error.errno,
-      syscall: error.syscall,
-      hostname: error.hostname,
+      error: err.message,
+      code: err.code,
+      errno: err.errno,
+      syscall: err.syscall,
+      hostname: err.hostname,
       timestamp: new Date().toISOString(),
     };
 
     // Provide specific guidance based on error type
-    if (error.code === 'EREFUSED') {
+    if (err.code === 'EREFUSED') {
       errorInfo.message =
         'Connection refused - check network/firewall settings';
       errorInfo.suggestions = [
@@ -56,14 +57,14 @@ export async function GET() {
         'Try connecting from a different network',
         'Check if MongoDB Atlas cluster is running',
       ];
-    } else if (error.code === 'ENOTFOUND') {
+    } else if (err.code === 'ENOTFOUND') {
       errorInfo.message = 'DNS resolution failed - check hostname';
       errorInfo.suggestions = [
         'Verify the cluster hostname in your connection string',
         'Check your DNS settings',
         'Try using a different DNS server (8.8.8.8)',
       ];
-    } else if (error.message.includes('authentication')) {
+    } else if (typeof err.message === 'string' && err.message.includes('authentication')) {
       errorInfo.message = 'Authentication failed - check credentials';
       errorInfo.suggestions = [
         'Verify your username and password',

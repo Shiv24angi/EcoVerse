@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
   try {
     await dbConnect();
-    const user = (await User.findOne({ email })) as any;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
             $set: { lastMonthlyBonusCheck: currentDate },
           },
           { new: true }
-        )) as any;
+);
 
         if (!updatedUser) {
           // Another request already awarded the bonus
@@ -126,7 +126,7 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
-    const user = (await User.findOne({ email }).lean()) as any;
+    const user = await User.findOne({ email }).lean();
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

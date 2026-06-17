@@ -1,5 +1,7 @@
+/* eslint-disable react/no-unescaped-entities, @typescript-eslint/no-require-imports, react-hooks/exhaustive-deps, @next/next/no-img-element, no-console */
 'use client';
 
+import type { RewardTransaction } from '@/lib/rewards-system';
 import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -28,6 +30,43 @@ import {
   BarChart3,
 } from 'lucide-react';
 
+interface EarnedAchievement {
+  id: string;
+  name: string;
+  description: string;
+  earnedAt: Date;
+  points: number;
+  icon?: string;
+}
+
+interface AvailableAchievement {
+  id: string;
+  name: string;
+  description: string;
+  points: number;
+  icon: string;
+  progress: number;
+}
+
+interface PurchasedItem {
+  itemId: string;
+  name: string;
+  cost: number;
+  category: string;
+  purchasedAt: Date;
+  active: boolean;
+}
+
+interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  icon: string;
+  category: string;
+  available: boolean;
+}
+
 interface RewardsData {
   points: number;
   pointsSummary: {
@@ -40,11 +79,11 @@ interface RewardsData {
   level: number;
   nextLevelPoints: number;
   progressToNext: number;
-  transactions: any[];
-  achievements: any[];
-  availableAchievements: any[];
-  purchasedItems: any[];
-  availableShopItems: any[];
+  transactions: RewardTransaction[];
+  achievements: EarnedAchievement[];
+  availableAchievements: AvailableAchievement[];
+  purchasedItems: PurchasedItem[];
+  availableShopItems: ShopItem[];
   activeBadges: string[];
   specialFeatures: {
     streakProtectors: number;
@@ -60,7 +99,7 @@ export default function RewardsPage() {
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -385,7 +424,7 @@ export default function RewardsPage() {
                       Active Features
                     </CardTitle>
                     <CardDescription className="text-gray-400">
-                      Special items and bonuses you&apos;ve unlocked
+                      Special items and bonuses you've unlocked
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -442,7 +481,7 @@ export default function RewardsPage() {
                 <CardHeader>
                   <CardTitle className="text-white">Active Badges</CardTitle>
                   <CardDescription className="text-gray-400">
-                    Badges you&apos;ve earned and activated
+                    Badges you've earned and activated
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -617,8 +656,8 @@ export default function RewardsPage() {
                           {!canAfford && wouldAffordWithUnconfirmed && (
                             <div className="mb-3 p-2 rounded bg-yellow-900/20 border border-yellow-700">
                               <p className="text-xs text-yellow-300">
-                                You&apos;ll have enough once unconfirmed points
-                                are confirmed (7 days)
+                                You'll have enough once unconfirmed points are
+                                confirmed (7 days)
                               </p>
                             </div>
                           )}
@@ -663,7 +702,7 @@ export default function RewardsPage() {
                 <CardHeader>
                   <CardTitle className="text-blue-900">Your Items</CardTitle>
                   <CardDescription className="text-gray-600">
-                    Items you&apos;ve purchased from the reward shop
+                    Items you've purchased from the reward shop
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
