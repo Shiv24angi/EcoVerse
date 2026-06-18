@@ -15,7 +15,7 @@ services:
     image: ecoverse-web:latest
     container_name: ecoverse-web-prod
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
       - .env.local
     environment:
@@ -29,12 +29,13 @@ services:
     image: mongo:7
     container_name: ecoverse-mongo
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test:
+        ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 6

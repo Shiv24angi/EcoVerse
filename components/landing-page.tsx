@@ -98,7 +98,13 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Link href="/" className="flex items-center gap-2">
-                  <Image src="/logo.png" alt="EcoVerse logo" width={40} height={40} className="h-10 w-auto" />
+                  <Image
+                    src="/logo.png"
+                    alt="EcoVerse logo"
+                    width={40}
+                    height={40}
+                    className="h-10 w-auto"
+                  />
                   <span className="text-2xl font-bold text-green-900">
                     EcoVerse
                   </span>
@@ -324,7 +330,13 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
               <div className="flex items-center gap-3 mb-8">
                 <div className="relative">
                   <Link href="/" className="flex items-center gap-2">
-                    <Image src="/logo.png" alt="EcoVerse logo" width={40} height={40} className="h-10 w-auto" />
+                    <Image
+                      src="/logo.png"
+                      alt="EcoVerse logo"
+                      width={40}
+                      height={40}
+                      className="h-10 w-auto"
+                    />
                   </Link>
                 </div>
                 <span className="text-3xl font-bold">EcoVerse</span>

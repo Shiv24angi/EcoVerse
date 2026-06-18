@@ -57,7 +57,13 @@ export default function DashboardLayout({
       <header className="bg-secondary border-b border-border px-6 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="EcoVerse logo" width={40} height={40} className="h-10 w-auto" />
+            <Image
+              src="/logo.png"
+              alt="EcoVerse logo"
+              width={40}
+              height={40}
+              className="h-10 w-auto"
+            />
             <span className="font-serif text-xl font-bold text-green-900">
               EcoVerse
             </span>

@@ -452,6 +452,7 @@ docker compose up -d --build
 ```
 
 Once the container is running, access the application in your browser by visiting:
+
 ```text
 http://localhost:3000
 ```
@@ -459,6 +460,7 @@ http://localhost:3000
 ### Managing the Container
 
 - **Stop the container:**
+
   ```text
   docker compose down
   ```
@@ -468,7 +470,7 @@ http://localhost:3000
   ```Bash
   docker compose logs -f web
   ```
-  
+
 - **Check container status:**
 
   ```Bash
