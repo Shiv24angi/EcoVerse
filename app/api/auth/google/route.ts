@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
+import mongoose from 'mongoose';
+import User, { type IUser } from '@/models/User';
 import { signToken } from '@/lib/auth';
+
+type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
+
+interface GoogleAuthRequestBody {
+  name?: string;
+  email?: string;
+  firebaseUid?: string;
+}
 
 export async function POST(req: Request) {
   // FIX: Guard body parsing inside a try...catch to intercept malformed request payloads gracefully
-  let body: any;
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
@@ -16,22 +25,40 @@ export async function POST(req: Request) {
     );
   }
 
-  const { name, email, firebaseUid } = body;
+  if (typeof body !== 'object' || body === null) {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
-  if (!name || !email || !firebaseUid) {
+  const { name, email, firebaseUid } = body as GoogleAuthRequestBody;
+
+  if (
+    typeof name !== 'string' ||
+    typeof email !== 'string' ||
+    typeof firebaseUid !== 'string' ||
+    !name.trim() ||
+    !email.trim() ||
+    !firebaseUid.trim()
+  ) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  let userDoc: any = null;
+  const trimmedName = name.trim();
+  const trimmedEmail = email.trim();
+  const trimmedFirebaseUid = firebaseUid.trim();
+
+  let userDoc: LeanUser | null = null;
   try {
     await dbConnect();
     userDoc = await User.findOneAndUpdate(
-      { email },
+      { email: trimmedEmail },
       {
         $setOnInsert: {
-          email,
-          name,
-          firebaseUid,
+          email: trimmedEmail,
+          name: trimmedName,
+          firebaseUid: trimmedFirebaseUid,
           authProvider: 'google',
           avatarId: 'avatar-1',
           monthlyCarbon: 0,

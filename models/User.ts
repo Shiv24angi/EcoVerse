@@ -1,4 +1,84 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
+
+export interface IScan {
+  productName: string;
+  carbonEstimate: number;
+  category: string;
+  confidence: 'high' | 'medium' | 'low';
+  barcode: string;
+  date: Date;
+}
+
+export interface IRewardTransaction {
+  _id?: mongoose.Types.ObjectId;
+  type: 'earned' | 'redeemed';
+  points: number;
+  pointsType: 'confirmed' | 'unconfirmed';
+  reason: string;
+  description: string;
+  date: Date;
+  confirmedAt?: Date | null;
+}
+
+export interface IAchievement {
+  id: string;
+  name: string;
+  description: string;
+  earnedAt: Date;
+  points: number;
+}
+
+export interface IPurchasedItem {
+  itemId: string;
+  name: string;
+  cost: number;
+  category: 'badge' | 'feature' | 'cosmetic';
+  purchasedAt: Date;
+  active: boolean;
+}
+
+export interface IUser extends Document {
+  name: string;
+  username: string | null;
+  full_name: string | null;
+  email: string;
+  password: string | null;
+  monthlyCarbon: number;
+  totalScanned: number;
+  joinedAt: string;
+  authProvider: 'email' | 'google';
+  firebaseUid?: string;
+  // Scan tracking
+  scans: IScan[];
+  lastScanDate: Date | null;
+  streakCount: number;
+  bestStreakCount: number;
+  // Rewards system - Enhanced with dual point system
+  rewardPoints: number;
+  confirmedPoints: number;
+  unconfirmedPoints: number;
+  totalPointsEarned: number;
+  rewardTransactions: IRewardTransaction[];
+  achievements: IAchievement[];
+  level: number;
+  nextLevelPoints: number;
+  // Purchased items from reward shop
+  purchasedItems: IPurchasedItem[];
+  // Special features
+  streakProtectors: number;
+  doublePointsDays: number;
+  hasAdvancedAnalytics: boolean;
+  customAvatar: string | null;
+  activeBadges: string[];
+  // Monthly bonuses tracking
+  lastMonthlyBonusCheck: Date | null;
+  monthlyBonusesEarned: number;
+  // Avatar selection and customization foundation (Issue #33)
+  avatarId: string;
+  avatarCustomization: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const ScanSchema = new mongoose.Schema({
   productName: { type: String, required: true },
@@ -120,9 +200,11 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
-// Cast to Model<any> to collapse the union type produced by the ternary.
+// Cast to Model<IUser> to collapse the union type produced by the ternary.
 // Without this, TypeScript raises TS2349 ("not callable") on every
 // .findOne() / .create() / .find() call across all API routes.
-const User = mongoose.models.User || mongoose.model('User', UserSchema);
+const User: Model<IUser> =
+  (mongoose.models.User as Model<IUser>) ||
+  mongoose.model<IUser>('User', UserSchema);
 
 export default User;

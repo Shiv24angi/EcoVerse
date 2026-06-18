@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @typescript-eslint/no-require-imports, react-hooks/exhaustive-deps, @next/next/no-img-element, no-console */
 'use client';
 
 import {
@@ -13,6 +12,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 import { auth, googleProvider } from '@/lib/firebase';
 import { toast } from '@/components/ui/use-toast'; // ✅ Import toast
 import type { AvatarId } from './ui/avatar';
@@ -22,7 +22,7 @@ interface User {
   email: string;
   name: string;
   avatarId?: AvatarId;
-  avatarCustomization?: any;
+  avatarCustomization?: Record<string, unknown>;
   monthlyCarbon: number;
   totalScanned: number;
   joinedAt: string;
@@ -48,8 +48,6 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-
-  console.log('Context avatar:', user?.avatarId);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('ecoverse-user');
@@ -95,12 +93,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      console.log('✅ Signup successful:', data.user);
       setUser(data.user);
       localStorage.setItem('ecoverse-user', JSON.stringify(data.user));
       return true;
-    } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
+    } catch (err) {
+      if (
+        err instanceof FirebaseError &&
+        err.code === 'auth/email-already-in-use'
+      ) {
         console.error('⚠️ Email already in use');
         toast({
           title: 'Email already registered',
@@ -212,7 +212,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateAvatar = async (avatarId: AvatarId) => {
     if (user) {
-      console.log('Avatar saved:', avatarId);
       const updatedUser = {
         ...user,
         avatarId,

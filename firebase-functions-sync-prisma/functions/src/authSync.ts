@@ -11,10 +11,10 @@ export const handleUserSignup = functions.auth.user().onCreate(async (user) => {
     },
   });
 
-  console.log(`✅ Synced new user ${user.uid} to PostgreSQL`);
+  console.warn(`✅ Synced new user ${user.uid} to PostgreSQL`);
 });
 
 export const handleUserDeletion = functions.auth.user().onDelete(async (user) => {
   await prisma.user.delete({ where: { uid: user.uid } });
-  console.log(`🗑️ Removed user ${user.uid} from PostgreSQL`);
+  console.warn(`🗑️ Removed user ${user.uid} from PostgreSQL`);
 });

@@ -51,7 +51,7 @@ exports.syncLeaderboardCreate = functions.firestore
             score: data.score,
         },
     });
-    console.log(`📥 Firestore → PostgreSQL: Created ${context.params.docId}`);
+    console.warn(`📥 Firestore → PostgreSQL: Created ${context.params.docId}`);
 });
 exports.syncLeaderboardUpdate = functions.firestore
     .document(path)
@@ -64,7 +64,7 @@ exports.syncLeaderboardUpdate = functions.firestore
             score: newData.score,
         },
     });
-    console.log(`🔁 Updated ${context.params.docId}`);
+    console.warn(`🔁 Updated ${context.params.docId}`);
 });
 exports.syncLeaderboardDelete = functions.firestore
     .document(path)
@@ -72,5 +72,5 @@ exports.syncLeaderboardDelete = functions.firestore
     await prisma_1.default.leaderboard.delete({
         where: { firebaseId: context.params.docId },
     });
-    console.log(`❌ Deleted ${context.params.docId}`);
+    console.warn(`❌ Deleted ${context.params.docId}`);
 });

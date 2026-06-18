@@ -69,7 +69,7 @@ export default function SignUp() {
 
     try {
       const success = await signup(name, email, password);
-      console.log('Signup success status: ', success);
+      console.warn('Signup success status: ', success);
 
       if (success) {
         toast({

@@ -3,7 +3,7 @@ import dbConnect from '@/lib/mongodb';
 
 export async function GET() {
   try {
-    console.log('🔍 Testing MongoDB connection...');
+    console.warn('🔍 Testing MongoDB connection...');
 
     // Test environment variable
     const mongoUri = process.env.MONGODB_URI;
@@ -17,14 +17,14 @@ export async function GET() {
       );
     }
 
-    console.log('✅ MONGODB_URI found:', mongoUri.substring(0, 20) + '...');
+    console.warn('✅ MONGODB_URI found');
 
     // Test database connection
     const mongoose = await dbConnect();
 
-    console.log('✅ MongoDB connection successful!');
-    console.log('Connection state:', mongoose.connection.readyState);
-    console.log('Database name:', mongoose.connection.db?.databaseName);
+    console.warn('✅ MongoDB connection successful!');
+    console.warn('Connection state:', mongoose.connection.readyState);
+    console.warn('Database name:', mongoose.connection.db?.databaseName);
 
     return NextResponse.json({
       status: 'success',
@@ -33,21 +33,38 @@ export async function GET() {
       readyState: mongoose.connection.readyState,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ MongoDB connection test failed:', error);
 
-    const errorInfo: any = {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const nodeError =
+      error instanceof Error
+        ? (error as NodeJS.ErrnoException & { hostname?: string })
+        : undefined;
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    const errorInfo: {
+      status: string;
+      error: string;
+      code?: string;
+      errno?: number;
+      syscall?: string;
+      hostname?: string;
+      timestamp: string;
+      message?: string;
+      suggestions?: string[];
+    } = {
       status: 'failed',
-      error: error.message,
-      code: error.code,
-      errno: error.errno,
-      syscall: error.syscall,
-      hostname: error.hostname,
+      error: message,
+      code: isDev ? nodeError?.code : undefined,
+      errno: isDev ? nodeError?.errno : undefined,
+      syscall: isDev ? nodeError?.syscall : undefined,
+      hostname: isDev ? nodeError?.hostname : undefined,
       timestamp: new Date().toISOString(),
     };
 
     // Provide specific guidance based on error type
-    if (error.code === 'EREFUSED') {
+    if (nodeError?.code === 'EREFUSED') {
       errorInfo.message =
         'Connection refused - check network/firewall settings';
       errorInfo.suggestions = [
@@ -56,14 +73,14 @@ export async function GET() {
         'Try connecting from a different network',
         'Check if MongoDB Atlas cluster is running',
       ];
-    } else if (error.code === 'ENOTFOUND') {
+    } else if (nodeError?.code === 'ENOTFOUND') {
       errorInfo.message = 'DNS resolution failed - check hostname';
       errorInfo.suggestions = [
         'Verify the cluster hostname in your connection string',
         'Check your DNS settings',
         'Try using a different DNS server (8.8.8.8)',
       ];
-    } else if (error.message.includes('authentication')) {
+    } else if (message.includes('authentication')) {
       errorInfo.message = 'Authentication failed - check credentials';
       errorInfo.suggestions = [
         'Verify your username and password',

@@ -11,7 +11,7 @@ let dbInstance: Db | null = null;
 export async function connectToMongo(): Promise<Db> {
   if (dbInstance) return dbInstance;
 
-  console.log("🔌 Connecting to MongoDB...");
+  console.warn("🔌 Connecting to MongoDB...");
   const client = new MongoClient(uri, {
     serverSelectionTimeoutMS: 5000,
   });
@@ -19,7 +19,7 @@ export async function connectToMongo(): Promise<Db> {
   try {
     await client.connect();
     dbInstance = client.db(dbName);
-    console.log(`✅ MongoDB connected to: ${dbName}`);
+    console.warn(`✅ MongoDB connected to: ${dbName}`);
     return dbInstance;
   } catch (error) {
     console.error("❌ MongoDB connection failed:", error);

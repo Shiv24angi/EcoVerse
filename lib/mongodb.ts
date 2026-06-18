@@ -38,12 +38,12 @@ async function dbConnect(): Promise<Mongoose> {
       retryWrites: true,
     };
 
-    console.log('🔄 Attempting to connect to MongoDB Atlas...');
+    console.warn('🔄 Attempting to connect to MongoDB Atlas...');
 
     try {
       cached!.promise = mongoose.connect(MONGODB_URI, opts);
       cached!.conn = await cached!.promise;
-      console.log('✅ MongoDB connected successfully!');
+      console.warn('✅ MongoDB connected successfully!');
       return cached!.conn;
     } catch (error) {
       console.error('❌ MongoDB connection failed:', error);

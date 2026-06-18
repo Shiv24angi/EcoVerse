@@ -40,9 +40,7 @@ export default function CarbonTrackingPage() {
       if (!user?.email) return;
 
       try {
-        const res = await fetch(
-          `/api/user/score?email=${encodeURIComponent(user.email)}`
-        );
+        const res = await fetch('/api/user/score');
         if (res.ok) {
           const data = await res.json();
           setUserData(data);
@@ -84,7 +82,7 @@ export default function CarbonTrackingPage() {
 
   // Group scans by date for better display
   const scansByDate = userData.scans.reduce(
-    (acc: { [date: string]: any[] }, scan) => {
+    (acc: { [date: string]: UserData['scans'] }, scan) => {
       const dateKey = new Date(scan.date).toDateString();
       if (!acc[dateKey]) acc[dateKey] = [];
       acc[dateKey].push(scan);

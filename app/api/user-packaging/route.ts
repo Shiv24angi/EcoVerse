@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing data' }, { status: 400 });
   }
 
-  console.log(
+  console.warn(
     `User ${userEmail} reported packaging for ${barcode}: ${material}`
   );
 

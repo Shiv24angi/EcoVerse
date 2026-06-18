@@ -51,7 +51,7 @@ exports.handleUserSignup = functions
         photoURL: user.photoURL || null,
         createdAt: new Date(),
     });
-    console.log(`✅ Synced new user ${user.uid} to MongoDB`);
+    console.warn(`✅ Synced new user ${user.uid} to MongoDB`);
 });
 // ✅ AUTH SYNC: User Deletion
 exports.handleUserDeletion = functions
@@ -62,7 +62,7 @@ exports.handleUserDeletion = functions
     const db = await (0, mongo_1.connectToMongo)();
     const collection = db.collection("users");
     await collection.deleteOne({ uid: user.uid });
-    console.log(`🗑️ Removed user ${user.uid} from MongoDB`);
+    console.warn(`🗑️ Removed user ${user.uid} from MongoDB`);
 });
 // ✅ FIRESTORE SYNC: Create
 exports.syncLeaderboardCreate = functions
@@ -78,7 +78,7 @@ exports.syncLeaderboardCreate = functions
         firebaseId: docId,
         ...data,
     });
-    console.log(`📥 Firestore → MongoDB: Created ${docId}`);
+    console.warn(`📥 Firestore → MongoDB: Created ${docId}`);
 });
 // ✅ FIRESTORE SYNC: Update
 exports.syncLeaderboardUpdate = functions
@@ -91,7 +91,7 @@ exports.syncLeaderboardUpdate = functions
     const db = await (0, mongo_1.connectToMongo)();
     const mongo = db.collection("leaderboard");
     await mongo.updateOne({ firebaseId: docId }, { $set: newData });
-    console.log(`🔁 Firestore → MongoDB: Updated ${docId}`);
+    console.warn(`🔁 Firestore → MongoDB: Updated ${docId}`);
 });
 // ✅ FIRESTORE SYNC: Delete
 exports.syncLeaderboardDelete = functions
@@ -103,6 +103,6 @@ exports.syncLeaderboardDelete = functions
     const db = await (0, mongo_1.connectToMongo)();
     const mongo = db.collection("leaderboard");
     await mongo.deleteOne({ firebaseId: docId });
-    console.log(`❌ Firestore → MongoDB: Deleted ${docId}`);
+    console.warn(`❌ Firestore → MongoDB: Deleted ${docId}`);
 });
 //# sourceMappingURL=index.js.map

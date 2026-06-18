@@ -46,7 +46,22 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
     );
   }
 );
-
 Avatar.displayName = 'Avatar';
 
-export { Avatar };
+// FIX: Add a dummy AvatarFallback component to satisfy the leaderboard page import
+const AvatarFallback = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      'flex h-full w-full items-center justify-center rounded-full bg-muted text-muted-foreground',
+      className
+    )}
+    {...props}
+  />
+));
+AvatarFallback.displayName = 'AvatarFallback';
+
+export { Avatar, AvatarFallback };

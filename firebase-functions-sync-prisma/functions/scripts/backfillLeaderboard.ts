@@ -35,7 +35,7 @@ async function backfillLeaderboard() {
         },
       });
 
-      console.log(`✅ Synced: ${doc.id}`);
+      console.warn(`✅ Synced: ${doc.id}`);
     }
 
     await prisma.$disconnect();

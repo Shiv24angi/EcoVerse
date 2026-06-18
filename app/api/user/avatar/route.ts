@@ -28,7 +28,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    console.log('User from DB:', updatedUser?.avatarId);
+    console.warn('User from DB:', updatedUser?.avatarId);
 
     return NextResponse.json(
       { success: true, user: updatedUser },

@@ -1,5 +1,5 @@
 // DashboardLayout.tsx
-/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @typescript-eslint/no-require-imports, react-hooks/exhaustive-deps, @next/next/no-img-element, no-console */
+/* eslint-disable no-console */
 'use client';
 
 import { useState } from 'react';
@@ -49,7 +49,7 @@ export default function DashboardLayout({
 
   if (!user) return null;
 
-  console.log('Rendered avatar:', user.avatarId);
+  console.warn('Rendered avatar:', user.avatarId);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

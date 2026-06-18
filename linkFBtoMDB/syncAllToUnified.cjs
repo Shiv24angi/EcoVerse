@@ -65,9 +65,9 @@ async function syncUnified() {
 
     if (bulkOps.length > 0) {
       const result = await collection.bulkWrite(bulkOps);
-      console.log(`✅ Synced ${result.upsertedCount + result.modifiedCount} users to '${unifiedCollectionName}'`);
+      console.warn(`✅ Synced ${result.upsertedCount + result.modifiedCount} users to '${unifiedCollectionName}'`);
     } else {
-      console.log('⚠️ No users to sync.');
+      console.warn('⚠️ No users to sync.');
     }
 
     await mongoClient.close();

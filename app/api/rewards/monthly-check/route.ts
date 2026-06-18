@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
-import { calculateMonthlyBonus, POINT_REWARDS } from '@/lib/rewards-system';
+import mongoose from 'mongoose';
+import User, { type IUser } from '@/models/User';
+import { calculateMonthlyBonus } from '@/lib/rewards-system';
+
+type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
 
 // POST /api/rewards/monthly-check - Check and award monthly bonuses
 export async function POST(req: Request) {
@@ -13,7 +16,7 @@ export async function POST(req: Request) {
 
   try {
     await dbConnect();
-    const user = (await User.findOne({ email })) as any;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
         // Atomically award monthly bonus to prevent race conditions
         const bonusMonth = currentDate.getMonth();
         const bonusYear = currentDate.getFullYear();
-        const updatedUser = (await User.findOneAndUpdate(
+        const updatedUser = await User.findOneAndUpdate(
           {
             _id: user._id,
             $or: [
@@ -77,7 +80,7 @@ export async function POST(req: Request) {
             $set: { lastMonthlyBonusCheck: currentDate },
           },
           { new: true }
-        )) as any;
+        );
 
         if (!updatedUser) {
           // Another request already awarded the bonus
@@ -126,7 +129,7 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
-    const user = (await User.findOne({ email }).lean()) as any;
+    const user = (await User.findOne({ email }).lean()) as LeanUser | null;
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

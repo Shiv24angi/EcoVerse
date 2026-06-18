@@ -42,14 +42,14 @@ async function syncAllCollections() {
       if (bulkOps.length > 0) {
         const mongoCollection = mongoDB.collection(collectionName);
         const result = await mongoCollection.bulkWrite(bulkOps);
-        console.log(`✅ Synced ${result.upsertedCount + result.modifiedCount} docs to MongoDB → ${collectionName}`);
+        console.warn(`✅ Synced ${result.upsertedCount + result.modifiedCount} docs to MongoDB → ${collectionName}`);
       } else {
-        console.log(`⚠️ No documents found in Firestore collection: ${collectionName}`);
+        console.warn(`⚠️ No documents found in Firestore collection: ${collectionName}`);
       }
     }
 
     await mongoClient.close();
-    console.log('✅ All collections synced successfully!');
+    console.warn('✅ All collections synced successfully!');
   } catch (err) {
     console.error('❌ Error syncing collections:', err);
   }

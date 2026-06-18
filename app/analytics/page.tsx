@@ -259,7 +259,7 @@ export default function AnalyticsPage() {
                 Weekly Progress
               </CardTitle>
               <CardDescription className="text-teal-700">
-                This month's weekly breakdown
+                This month&apos;s weekly breakdown
               </CardDescription>
             </CardHeader>
             <CardContent>

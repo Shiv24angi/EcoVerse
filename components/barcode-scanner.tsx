@@ -13,6 +13,14 @@ import { Camera, X, Flashlight, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 
+interface TorchCapabilities extends MediaTrackCapabilities {
+  torch?: boolean;
+}
+
+interface TorchConstraintSet extends MediaTrackConstraintSet {
+  torch?: boolean;
+}
+
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
   onClose: () => void;
@@ -82,12 +90,12 @@ export default function BarcodeScanner({
   const toggleFlash = async () => {
     if (stream) {
       const track = stream.getVideoTracks()[0];
-      const capabilities = track.getCapabilities() as any;
+      const capabilities = track.getCapabilities() as TorchCapabilities;
 
       if (capabilities.torch) {
         try {
           await track.applyConstraints({
-            advanced: [{ torch: !isFlashOn } as any],
+            advanced: [{ torch: !isFlashOn } as TorchConstraintSet],
           });
           setIsFlashOn(!isFlashOn);
         } catch (error) {
@@ -120,10 +128,11 @@ export default function BarcodeScanner({
           handleScan(barcode);
         }
       } catch (error) {
-        if ((error as any)?.name !== 'NotFoundException') {
+        if (!(error instanceof Error) || error.name !== 'NotFoundException') {
           toast({
             title: 'Scanning failed',
-            description: (error as Error).message,
+            description:
+              error instanceof Error ? error.message : 'Unknown error',
             variant: 'destructive',
           });
         }

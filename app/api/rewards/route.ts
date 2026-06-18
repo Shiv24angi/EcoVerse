@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
-    let user = (await User.findOne({ email })) as any;
+    let user = await User.findOne({ email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -125,16 +125,14 @@ export async function GET(req: Request) {
     const pointsSummary = getUserPointsSummary(user);
 
     // Get available achievements (not yet earned)
-    const earnedAchievementIds = (user.achievements || []).map(
-      (a: any) => a.id
-    );
+    const earnedAchievementIds = (user.achievements || []).map((a) => a.id);
     const availableAchievements = ACHIEVEMENTS.filter(
       (achievement) => !earnedAchievementIds.includes(achievement.id)
     );
 
     // Get purchased item IDs
     const purchasedItemIds = (user.purchasedItems || []).map(
-      (item: any) => item.itemId
+      (item) => item.itemId
     );
 
     // Filter available shop items (not yet purchased)
@@ -210,7 +208,7 @@ export async function POST(req: Request) {
     await dbConnect();
 
     // Step 1: Initial read for validation (gives specific error messages to frontend)
-    const user = (await User.findOne({ email })) as any;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -232,7 +230,7 @@ export async function POST(req: Request) {
 
     // Check if user already purchased this item
     const alreadyPurchased = user.purchasedItems?.some(
-      (item: any) => item.itemId === itemId
+      (item) => item.itemId === itemId
     );
     if (alreadyPurchased) {
       return NextResponse.json(
@@ -259,7 +257,38 @@ export async function POST(req: Request) {
 
     // Step 2: Atomic Update to prevent TOCTOU race conditions (Double Spending)
     // Build the dynamic update object based on item effects
-    const updateQuery: any = {
+    interface RedeemUpdateQuery {
+      $inc: {
+        confirmedPoints: number;
+        rewardPoints: number;
+        streakProtectors?: number;
+        doublePointsDays?: number;
+      };
+      $push: {
+        purchasedItems: {
+          itemId: string;
+          name: string;
+          cost: number;
+          category: 'badge' | 'feature' | 'cosmetic';
+          purchasedAt: Date;
+          active: boolean;
+        };
+        rewardTransactions: {
+          type: 'redeemed';
+          points: number;
+          pointsType: 'confirmed';
+          reason: string;
+          description: string;
+          date: Date;
+        };
+        activeBadges?: string;
+      };
+      $set?: {
+        hasAdvancedAnalytics: boolean;
+      };
+    }
+
+    const updateQuery: RedeemUpdateQuery = {
       $inc: {
         confirmedPoints: -shopItem.cost,
         rewardPoints: -shopItem.cost,

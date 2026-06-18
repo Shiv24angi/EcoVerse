@@ -21,7 +21,7 @@ export const syncLeaderboardCreate = onDocumentCreated(collectionPath, async (ev
     ...data,
   });
 
-  console.log(`📥 Firestore → MongoDB: Created ${docId}`);
+  console.warn(`📥 Firestore → MongoDB: Created ${docId}`);
 });
 
 // Firestore → MongoDB: Update
@@ -39,7 +39,7 @@ export const syncLeaderboardUpdate = onDocumentUpdated(collectionPath, async (ev
 
   await mongo.updateOne({ firebaseId: docId }, { $set: newData });
 
-  console.log(`🔁 Firestore → MongoDB: Updated ${docId}`);
+  console.warn(`🔁 Firestore → MongoDB: Updated ${docId}`);
 });
 
 // Firestore → MongoDB: Delete
@@ -51,5 +51,5 @@ export const syncLeaderboardDelete = onDocumentDeleted(collectionPath, async (ev
 
   await mongo.deleteOne({ firebaseId: docId });
 
-  console.log(`❌ Firestore → MongoDB: Deleted ${docId}`);
+  console.warn(`❌ Firestore → MongoDB: Deleted ${docId}`);
 });
