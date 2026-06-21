@@ -57,7 +57,7 @@
     "firebase": "^11.10.0",
     "html5-qrcode": "^2.3.8",
     "input-otp": "1.4.1",
-    "jose": "^6.2.3",
+    "jose": "^5.9.6",
     "lucide-react": "^0.454.0",
     "mongoose": "^8.16.1",
     "next": "^15.3.4",
