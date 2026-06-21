@@ -300,6 +300,90 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
+// Calculates the next streak state for a scan happening "now", given the
+// user's last scan date and current streak. Pure function — no DB access —
+// so the route layer can compute the values to persist atomically.
+//
+// Rules:
+// - Same calendar day as the last scan: streak unchanged (no double-counting
+//   multiple scans in one day).
+// - Exactly one calendar day after the last scan: streak continues, +1.
+// - More than one day gap: if the user has a streak protector available, it
+//   is consumed to bridge the gap and the streak continues, +1. Otherwise
+//   the streak resets to 1 (today's scan starts a new streak).
+// - No previous scan at all: streak starts at 1.
+export function calculateStreakUpdate(
+  lastScanDate: Date | null,
+  currentStreak: number,
+  bestStreak: number,
+  streakProtectors: number,
+  now: Date = new Date()
+): {
+  streakCount: number;
+  bestStreakCount: number;
+  streakProtectorsUsed: number;
+  streakBroken: boolean;
+} {
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+  const today = startOfDay(now);
+
+  if (!lastScanDate) {
+    return {
+      streakCount: 1,
+      bestStreakCount: Math.max(bestStreak, 1),
+      streakProtectorsUsed: 0,
+      streakBroken: false,
+    };
+  }
+
+  const lastDay = startOfDay(lastScanDate);
+  const dayGap = Math.round((today - lastDay) / (1000 * 60 * 60 * 24));
+
+  if (dayGap === 0) {
+    // Already scanned today — streak unchanged.
+    return {
+      streakCount: currentStreak,
+      bestStreakCount: bestStreak,
+      streakProtectorsUsed: 0,
+      streakBroken: false,
+    };
+  }
+
+  if (dayGap === 1) {
+    const newStreak = currentStreak + 1;
+    return {
+      streakCount: newStreak,
+      bestStreakCount: Math.max(bestStreak, newStreak),
+      streakProtectorsUsed: 0,
+      streakBroken: false,
+    };
+  }
+
+  // Gap of more than one day: try to bridge it with a streak protector.
+  // One protector covers exactly one missed day, regardless of gap size,
+  // matching the shop item's description ("protect your streak for one
+  // missed day").
+  if (dayGap === 2 && streakProtectors > 0) {
+    const newStreak = currentStreak + 1;
+    return {
+      streakCount: newStreak,
+      bestStreakCount: Math.max(bestStreak, newStreak),
+      streakProtectorsUsed: 1,
+      streakBroken: false,
+    };
+  }
+
+  // Streak broken — today's scan starts a fresh streak.
+  return {
+    streakCount: 1,
+    bestStreakCount: bestStreak,
+    streakProtectorsUsed: 0,
+    streakBroken: currentStreak > 0,
+  };
+}
+
 export function calculateScanPoints(
   carbonEstimate: number,
   isFirstScan: boolean,

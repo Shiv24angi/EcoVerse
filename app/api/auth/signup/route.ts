@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
+feat / unified - session - jwt;
+import { signToken } from '@/lib/auth';
+
 import { setAuthCookie } from '@/lib/auth';
+main;
 
 export async function POST(req: Request) {
   try {
@@ -73,6 +78,20 @@ export async function POST(req: Request) {
     // inject x-user-email on subsequent requests, matching the behavior
     // already implemented for Google Sign-In.
     await setAuthCookie(createdUser.email, createdUser._id.toString());
+
+    const token = await signToken({
+      email: user.email,
+      userId: user._id.toString(),
+    });
+
+    const cookieStore = await cookies();
+    cookieStore.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    });
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
