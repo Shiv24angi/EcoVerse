@@ -32,9 +32,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Clear Next.js cache
+        run: rm -rf .next
+
       - name: Build Next.js application
         env:
-          NEXT_PUBLIC_FIREBASE_API_KEY: placeholder
+          NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyDummyKeyForBuilds123456789012345
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: placeholder.firebaseapp.com
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: placeholder
           NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: placeholder.appspot.com
@@ -43,3 +46,7 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: G-PLACEHOLDER
           MONGODB_URI: mongodb://localhost:27017/placeholder
         run: npm run build
+
+      - name: Debug compiled output
+        if: failure()
+        run: node -e "const fs=require('fs');const f=fs.readFileSync('.next/server/app/api/auth/signup/route.js','utf8');console.log(f.substring(6650,6770));"
