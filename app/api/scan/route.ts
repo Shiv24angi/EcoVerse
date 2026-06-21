@@ -11,6 +11,7 @@ import {
   calculateMonthlyBonus,
   confirmPendingPoints,
   getUserPointsSummary,
+  calculateStreakUpdate,
 } from '@/lib/rewards-system';
 import { inferPackaging } from '@/lib/packaging-inference';
 
@@ -71,8 +72,15 @@ export async function POST(req: Request) {
       }
 
       const isFirstScan = (user.totalScanned ?? 0) === 0;
-      const streakCount = user.streakCount ?? 0;
       const totalScans = user.totalScanned ?? 0;
+
+      const streakUpdate = calculateStreakUpdate(
+        user.lastScanDate,
+        user.streakCount ?? 0,
+        user.bestStreakCount ?? 0,
+        user.streakProtectors ?? 0
+      );
+      const streakCount = streakUpdate.streakCount;
 
       const pointsData = calculateScanPoints
         ? calculateScanPoints(
@@ -85,6 +93,8 @@ export async function POST(req: Request) {
 
       const isConfirmed = pointsData.isConfirmed;
       const pointsEarned = pointsData.points;
+
+      const scanTimestamp = new Date();
 
       // --- ATOMIC DATABASE UPDATE ---
       // We perform the atomic increment to update points and scans first.
@@ -99,6 +109,12 @@ export async function POST(req: Request) {
             totalPointsEarned: pointsEarned,
             confirmedPoints: isConfirmed ? pointsEarned : 0,
             unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
+            streakProtectors: -streakUpdate.streakProtectorsUsed,
+          },
+          $set: {
+            streakCount: streakUpdate.streakCount,
+            bestStreakCount: streakUpdate.bestStreakCount,
+            lastScanDate: scanTimestamp,
           },
           $push: {
             scans: {
@@ -107,7 +123,7 @@ export async function POST(req: Request) {
               category: carbonData.category,
               confidence: carbonData.confidence,
               barcode: barcode,
-              date: new Date(),
+              date: scanTimestamp,
             },
             rewardTransactions: {
               _id: new mongoose.Types.ObjectId(),
@@ -117,7 +133,7 @@ export async function POST(req: Request) {
               reason: 'scan',
               description: `Scanned ${product.product_name}`,
               barcode: barcode,
-              date: new Date(),
+              date: scanTimestamp,
             },
           },
         },
@@ -188,6 +204,9 @@ export async function POST(req: Request) {
           leveledUp: updatedUser.level > oldLevel,
           newAchievements: earnedAchievements,
           streakCount: updatedUser.streakCount,
+          bestStreakCount: updatedUser.bestStreakCount,
+          streakProtectorUsed: streakUpdate.streakProtectorsUsed > 0,
+          streakBroken: streakUpdate.streakBroken,
           monthlyBonus,
           sustainabilityTier:
             updatedUser.monthlyCarbon < 10 && updatedUser.totalScanned >= 15

@@ -7,6 +7,7 @@ import {
   confirmPendingPoints,
   shouldConfirmImmediately,
   getUserPointsSummary,
+  calculateStreakUpdate,
   POINT_REWARDS,
   POINT_CONFIRMATION,
   UserPointsData,
@@ -105,8 +106,9 @@ describe('Rewards System', () => {
             id: 'first_scan',
             name: 'First Steps',
             description: '',
-            earnedAt: new Date(),
+            condition: () => true,
             points: 50,
+            icon: '',
           },
         ],
       };
@@ -264,6 +266,78 @@ describe('Rewards System', () => {
       expect(summary.unconfirmed).toBe(200);
       expect(summary.total).toBe(700);
       expect(summary.pendingConfirmation).toBe(100); // Because it will be confirmed within 24 hours
+    });
+  });
+
+  describe('calculateStreakUpdate', () => {
+    const day = (offset: number) => {
+      const base = new Date(2024, 0, 10, 12, 0, 0); // Jan 10, 2024, noon
+      base.setDate(base.getDate() + offset);
+      return base;
+    };
+
+    it('should start a streak at 1 if there is no previous scan', () => {
+      const result = calculateStreakUpdate(null, 0, 0, 0, day(0));
+      expect(result.streakCount).toBe(1);
+      expect(result.bestStreakCount).toBe(1);
+      expect(result.streakProtectorsUsed).toBe(0);
+      expect(result.streakBroken).toBe(false);
+    });
+
+    it('should not change the streak for a second scan on the same day', () => {
+      const result = calculateStreakUpdate(day(0), 3, 5, 0, day(0));
+      expect(result.streakCount).toBe(3);
+      expect(result.bestStreakCount).toBe(5);
+      expect(result.streakProtectorsUsed).toBe(0);
+    });
+
+    it('should treat a late-night scan followed by an early-morning scan as consecutive days', () => {
+      const lastScan = new Date(2024, 0, 10, 23, 30, 0); // 11:30 PM
+      const now = new Date(2024, 0, 11, 0, 30, 0); // 12:30 AM next day
+      const result = calculateStreakUpdate(lastScan, 3, 5, 0, now);
+      expect(result.streakCount).toBe(4);
+    });
+
+    it('should increment the streak for a scan on the consecutive day', () => {
+      const result = calculateStreakUpdate(day(0), 3, 5, 0, day(1));
+      expect(result.streakCount).toBe(4);
+      expect(result.bestStreakCount).toBe(5);
+      expect(result.streakBroken).toBe(false);
+    });
+
+    it('should update bestStreakCount when the new streak exceeds it', () => {
+      const result = calculateStreakUpdate(day(0), 5, 5, 0, day(1));
+      expect(result.streakCount).toBe(6);
+      expect(result.bestStreakCount).toBe(6);
+    });
+
+    it('should reset the streak to 1 after a missed day with no protector', () => {
+      const result = calculateStreakUpdate(day(0), 10, 12, 0, day(2));
+      expect(result.streakCount).toBe(1);
+      expect(result.bestStreakCount).toBe(12);
+      expect(result.streakProtectorsUsed).toBe(0);
+      expect(result.streakBroken).toBe(true);
+    });
+
+    it('should consume a streak protector to bridge exactly one missed day', () => {
+      const result = calculateStreakUpdate(day(0), 10, 12, 2, day(2));
+      expect(result.streakCount).toBe(11);
+      expect(result.bestStreakCount).toBe(12);
+      expect(result.streakProtectorsUsed).toBe(1);
+      expect(result.streakBroken).toBe(false);
+    });
+
+    it('should not use a protector to bridge a gap of more than one missed day', () => {
+      const result = calculateStreakUpdate(day(0), 10, 12, 2, day(4));
+      expect(result.streakCount).toBe(1);
+      expect(result.streakProtectorsUsed).toBe(0);
+      expect(result.streakBroken).toBe(true);
+    });
+
+    it('should not break a streak of 0 (new user with no streak yet)', () => {
+      const result = calculateStreakUpdate(day(0), 0, 0, 0, day(3));
+      expect(result.streakCount).toBe(1);
+      expect(result.streakBroken).toBe(false);
     });
   });
 });
