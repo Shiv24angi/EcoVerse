@@ -430,6 +430,32 @@ Visit:
 http://localhost:3000
 ```
 
+### Docker Deployment
+
+To spin up the application in an isolated container without configuring local Node versions or databases:
+
+1. **Initialize Environment Variables:**
+   Copy the template file to set up your local environment.
+
+   ```text
+   cp .env.example .env
+   ```
+
+   Note: Open the newly created .env file and populate it with your actual Firebase and Gemini credentials. The Docker Compose setup includes a local MongoDB container that automatically initializes with the Mongo credentials you provide in .env. You do not need to manually provision a MongoDB Atlas cluster for local development.
+
+2. Build and Start the Container:
+
+   ```Bash
+   docker compose up -d --build
+   ```
+
+3. Access the Application:
+   Open your browser and navigate to:
+
+   ```Plaintext
+   http://localhost:3000
+   ```
+
 ---
 
 ## Contributors

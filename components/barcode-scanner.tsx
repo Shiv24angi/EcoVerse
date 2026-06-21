@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -30,30 +30,28 @@ export default function BarcodeScanner({
   onScan,
   onClose,
 }: BarcodeScannerProps) {
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [isFlashOn, setIsFlashOn] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>(
     'environment'
   );
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isScanningRef = useRef(false);
   const { toast } = useToast();
 
-  const codeReader = new BrowserMultiFormatReader();
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  if (!codeReaderRef.current) {
+    codeReaderRef.current = new BrowserMultiFormatReader();
+  }
 
-  useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, [facingMode]);
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      simulateScan();
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [stream]);
-
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     try {
       const constraints = {
         video: {
@@ -65,7 +63,7 @@ export default function BarcodeScanner({
 
       const mediaStream =
         await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(mediaStream);
+      streamRef.current = mediaStream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -78,18 +76,60 @@ export default function BarcodeScanner({
         variant: 'destructive',
       });
     }
-  };
+  }, [facingMode, toast]);
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
+  const handleScan = useCallback(
+    (barcode: string) => {
+      onScan(barcode);
+    },
+    [onScan]
+  );
+
+  const simulateScan = useCallback(async () => {
+    if (isScanningRef.current) return;
+    if (!videoRef.current || !streamRef.current || !codeReaderRef.current)
+      return;
+
+    isScanningRef.current = true;
+    try {
+      const result = await codeReaderRef.current.decodeOnceFromVideoElement(
+        videoRef.current
+      );
+      if (result && result.getText()) {
+        const barcode = result.getText();
+        handleScan(barcode);
+      }
+    } catch (error) {
+      if (!(error instanceof Error) || error.name !== 'NotFoundException') {
+        toast({
+          title: 'Scanning failed',
+          description: error instanceof Error ? error.message : 'Unknown error',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      isScanningRef.current = false;
     }
-  };
+  }, [handleScan, toast]);
+
+  // Hook 1: Handles camera initialization lifecycle
+  useEffect(() => {
+    startCamera();
+    return () => stopCamera();
+  }, [startCamera, stopCamera]);
+
+  // Hook 2: Handles the scanning interval orchestration
+  useEffect(() => {
+    const interval = setInterval(() => {
+      simulateScan();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [simulateScan]);
 
   const toggleFlash = async () => {
-    if (stream) {
-      const track = stream.getVideoTracks()[0];
+    if (streamRef.current) {
+      const track = streamRef.current.getVideoTracks()[0];
       const capabilities = track.getCapabilities() as TorchCapabilities;
 
       if (capabilities.torch) {
@@ -110,34 +150,7 @@ export default function BarcodeScanner({
   };
 
   const switchCamera = () => {
-    setFacingMode(facingMode === 'user' ? 'environment' : 'user');
-  };
-
-  const handleScan = (barcode: string) => {
-    onScan(barcode);
-  };
-
-  const simulateScan = async () => {
-    if (videoRef.current) {
-      try {
-        const result = await codeReader.decodeOnceFromVideoElement(
-          videoRef.current
-        );
-        if (result && result.getText()) {
-          const barcode = result.getText();
-          handleScan(barcode);
-        }
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'NotFoundException') {
-          toast({
-            title: 'Scanning failed',
-            description:
-              error instanceof Error ? error.message : 'Unknown error',
-            variant: 'destructive',
-          });
-        }
-      }
-    }
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
   };
 
   const enterBarcodeManually = () => {

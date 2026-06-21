@@ -156,7 +156,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'first_scan',
     name: 'First Steps',
     description: 'Scan your first product',
-    condition: (user) => (user.totalScanned ?? 0) >= 1,
+    condition: (user) => user.totalScanned >= 1,
     points: 50,
     icon: '🎯',
   },
@@ -164,7 +164,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'ten_scans',
     name: 'Getting Started',
     description: 'Scan 10 products',
-    condition: (user) => (user.totalScanned ?? 0) >= 10,
+    condition: (user) => user.totalScanned >= 10,
     points: 100,
     icon: '📱',
   },
@@ -172,7 +172,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'fifty_scans',
     name: 'Scanner Pro',
     description: 'Scan 50 products',
-    condition: (user) => (user.totalScanned ?? 0) >= 50,
+    condition: (user) => user.totalScanned >= 50,
     points: 250,
     icon: '🏆',
   },
@@ -180,7 +180,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'hundred_scans',
     name: 'Scan Master',
     description: 'Scan 100 products',
-    condition: (user) => (user.totalScanned ?? 0) >= 100,
+    condition: (user) => user.totalScanned >= 100,
     points: 500,
     icon: '👑',
   },
@@ -188,7 +188,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'five_hundred_scans',
     name: 'Scan Legend',
     description: 'Scan 500 products',
-    condition: (user) => (user.totalScanned ?? 0) >= 500,
+    condition: (user) => user.totalScanned >= 500,
     points: 1500,
     icon: '🌟',
   },
@@ -196,7 +196,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'week_streak',
     name: 'Week Warrior',
     description: 'Maintain a 7-day scanning streak',
-    condition: (user) => (user.streakCount ?? 0) >= 7,
+    condition: (user) => user.streakCount >= 7,
     points: 150,
     icon: '🔥',
   },
@@ -204,7 +204,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'month_streak',
     name: 'Consistency King',
     description: 'Maintain a 30-day scanning streak',
-    condition: (user) => (user.streakCount ?? 0) >= 30,
+    condition: (user) => user.streakCount >= 30,
     points: 1000,
     icon: '👑',
   },
@@ -212,7 +212,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'hundred_day_streak',
     name: 'Streak Master',
     description: 'Maintain a 100-day scanning streak',
-    condition: (user) => (user.streakCount ?? 0) >= 100,
+    condition: (user) => user.streakCount >= 100,
     points: 3000,
     icon: '💎',
   },
@@ -220,8 +220,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'eco_warrior',
     name: 'Eco Warrior',
     description: 'Keep monthly carbon footprint under 20kg',
-    condition: (user) =>
-      (user.monthlyCarbon ?? 0) < 20 && (user.totalScanned ?? 0) >= 10,
+    condition: (user) => user.monthlyCarbon < 20 && user.totalScanned >= 10,
     points: 300,
     icon: '🌱',
   },
@@ -229,8 +228,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'carbon_conscious',
     name: 'Carbon Conscious',
     description: 'Keep monthly carbon footprint under 30kg',
-    condition: (user) =>
-      (user.monthlyCarbon ?? 0) < 30 && (user.totalScanned ?? 0) >= 5,
+    condition: (user) => user.monthlyCarbon < 30 && user.totalScanned >= 5,
     points: 150,
     icon: '🌿',
   },
@@ -238,8 +236,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'zero_waste_hero',
     name: 'Zero Waste Hero',
     description: 'Keep monthly carbon footprint under 10kg',
-    condition: (user) =>
-      (user.monthlyCarbon ?? 0) < 10 && (user.totalScanned ?? 0) >= 15,
+    condition: (user) => user.monthlyCarbon < 10 && user.totalScanned >= 15,
     points: 500,
     icon: '🌍',
   },
@@ -260,7 +257,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'level_5',
     name: 'Rising Star',
     description: 'Reach Level 5',
-    condition: (user) => (user.level ?? 0) >= 5,
+    condition: (user) => user.level >= 5,
     points: 500,
     icon: '⭐',
   },
@@ -268,7 +265,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'level_10',
     name: 'Sustainability Champion',
     description: 'Reach Level 10',
-    condition: (user) => (user.level ?? 0) >= 10,
+    condition: (user) => user.level >= 10,
     points: 1000,
     icon: '🏅',
   },
@@ -276,7 +273,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'level_15',
     name: 'Eco Legend',
     description: 'Reach the maximum Level 15',
-    condition: (user) => (user.level ?? 0) >= 15,
+    condition: (user) => user.level >= 15,
     points: 2500,
     icon: '🌟',
   },
@@ -403,12 +400,12 @@ export function checkAchievements(user: RewardUser): Achievement[] {
 export function calculateMonthlyBonus(
   user: RewardUser
 ): { points: number; reason: string } | null {
-  if ((user.monthlyCarbon ?? 0) < 20 && (user.totalScanned ?? 0) >= 10) {
+  if (user.monthlyCarbon < 20 && user.totalScanned >= 10) {
     return {
       points: POINT_REWARDS.ECO_CHAMPION_GOAL,
       reason: 'Eco Champion - Monthly carbon under 20kg',
     };
-  } else if ((user.monthlyCarbon ?? 0) < 30 && (user.totalScanned ?? 0) >= 5) {
+  } else if (user.monthlyCarbon < 30 && user.totalScanned >= 5) {
     return {
       points: POINT_REWARDS.MONTHLY_GOAL,
       reason: 'Monthly Goal - Carbon under 30kg',
@@ -459,10 +456,10 @@ export function getSustainabilityTier(
 
 export function confirmPendingPoints(user: RewardUser): {
   confirmedPoints: number;
-  confirmedTransactions: IRewardTransaction[];
+  confirmedTransactions: RewardTransaction[];
 } {
   let confirmedPoints = 0;
-  const confirmedTransactions: IRewardTransaction[] = [];
+  const confirmedTransactions: RewardTransaction[] = [];
   const now = new Date();
 
   if (user.rewardTransactions) {
