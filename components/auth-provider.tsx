@@ -11,10 +11,11 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signOut,
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { auth, googleProvider } from '@/lib/firebase';
-import { toast } from '@/components/ui/use-toast'; // ✅ Import toast
+import { toast } from '@/components/ui/use-toast';
 import type { AvatarId } from './ui/avatar';
 
 interface User {
@@ -30,10 +31,11 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   signInWithGoogle: () => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUserStats: (carbonAdded: number) => void;
   updateAvatar: (avatarId: AvatarId) => void;
 }
@@ -48,13 +50,36 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchSession = async () => {
+    try {
+      const res = await fetch('/api/auth/session');
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (err) {
+      // Keep existing state on network error
+      console.error('Session fetch failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('ecoverse-user');
-    if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      setUser(parsed);
-    }
+    fetchSession();
+
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === 'logout-event') {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageEvent);
+    return () => window.removeEventListener('storage', handleStorageEvent);
   }, []);
 
   const signup = async (
@@ -90,11 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         console.error('❌ Signup failed:', data.error);
+        // Rollback Firebase user
+        await userCredential.user.delete();
         return false;
       }
 
       setUser(data.user);
-      localStorage.setItem('ecoverse-user', JSON.stringify(data.user));
       return true;
     } catch (err) {
       if (
@@ -123,11 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       // First authenticate with Firebase
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      await signInWithEmailAndPassword(auth, email, password);
 
       // Send verified token to backend
       const res = await fetch('/api/auth/signin', {
@@ -143,10 +165,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (res.ok) {
         setUser(data.user);
-        localStorage.setItem('ecoverse-user', JSON.stringify(data.user));
         return true;
       } else {
         console.warn('❌ Login failed:', data.error);
+        await signOut(auth);
         return false;
       }
     } catch (err) {
@@ -181,10 +203,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
-        localStorage.setItem('ecoverse-user', JSON.stringify(data.user));
         return true;
       } else {
         console.error('❌ Failed to authenticate Google user');
+        await signOut(auth);
         return false;
       }
     } catch (error) {
@@ -193,40 +215,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('ecoverse-user');
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setUser(null);
+      localStorage.setItem('logout-event', Date.now().toString());
+    }
   };
 
   const updateUserStats = (carbonAdded: number) => {
+    // Only optimistically update local state. The backend `/api/scan` already handles real persistence.
     if (user) {
-      const updatedUser = {
+      setUser({
         ...user,
         monthlyCarbon: user.monthlyCarbon + carbonAdded,
         totalScanned: user.totalScanned + 1,
-      };
-      setUser(updatedUser);
-      localStorage.setItem('ecoverse-user', JSON.stringify(updatedUser));
+      });
     }
   };
 
   const updateAvatar = async (avatarId: AvatarId) => {
     if (user) {
-      const updatedUser = {
+      const previousUser = { ...user };
+
+      setUser({
         ...user,
         avatarId,
-      };
-      setUser(updatedUser);
-      localStorage.setItem('ecoverse-user', JSON.stringify(updatedUser));
+      });
 
       try {
-        await fetch('/api/user/avatar', {
+        const res = await fetch('/api/user/avatar', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: user.email, avatarId }),
         });
+
+        if (!res.ok) throw new Error('Failed to update on server');
       } catch (err) {
         console.error('Failed to update avatar on server:', err);
+        // Rollback optimistic UI
+        setUser(previousUser);
       }
     }
   };
@@ -235,6 +267,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        isLoading,
         login,
         signup,
         signInWithGoogle,

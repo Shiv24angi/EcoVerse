@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { connectToMongo } from "./utils/mongo";
 
