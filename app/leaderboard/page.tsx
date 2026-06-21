@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar } from '@/components/ui/avatar';
 import {
   Trophy,
   Medal,
@@ -316,14 +316,7 @@ export default function LeaderboardPage() {
                           <div className="flex items-center justify-center w-10">
                             {getRankIcon(userEntry.rank)}
                           </div>
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-green-100">
-                              {userEntry.name
-                                .split(' ')
-                                .map((n: string) => n[0])
-                                .join('')}
-                            </AvatarFallback>
-                          </Avatar>
+                          <Avatar className="h-10 w-10" />
                           <div>
                             <div className="font-medium text-white flex items-center gap-2">
                               {isCurrentUser ? 'You' : userEntry.name}
