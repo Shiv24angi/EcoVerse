@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import DashboardLayout from '@/components/dashboard-layout';
-import { Avatar, AvatarId } from '@/components/ui/avatar';
 import {
   Card,
   CardContent,
