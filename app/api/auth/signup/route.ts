@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
-feat / unified - session - jwt;
 import { signToken } from '@/lib/auth';
-
 import { setAuthCookie } from '@/lib/auth';
-main;
 
 export async function POST(req: Request) {
   try {
@@ -79,27 +75,13 @@ export async function POST(req: Request) {
     // already implemented for Google Sign-In.
     await setAuthCookie(createdUser.email, createdUser._id.toString());
 
-    const token = await signToken({
-      email: user.email,
-      userId: user._id.toString(),
-    });
-
-    const cookieStore = await cookies();
-    cookieStore.set('auth_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/',
-    });
-
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Unknown server error';
 
     // Safely wrap critical runtime tracing with explicit rule suppression
-    /* eslint-disable-next-line no-console */
+
     console.error('🔥 Signup API error:', message);
 
     // FIX: Do not expose low-level database or system diagnostics directly to downstream clients

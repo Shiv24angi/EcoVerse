@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import DashboardLayout from '@/components/dashboard-layout';
+import { Avatar, AvatarId } from '@/components/ui/avatar';
 import {
   Card,
   CardContent,
@@ -11,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, type AvatarId } from '@/components/ui/avatar';
 import {
   Trophy,
   Medal,
@@ -31,6 +32,7 @@ import {
 interface LeaderboardUser {
   id: string;
   name: string;
+  avatarId?: AvatarId;
   monthlyCarbon: number;
   totalScanned: number;
   rank: number;
@@ -213,6 +215,10 @@ export default function LeaderboardPage() {
                     <div className="flex items-center gap-4">
                       {getRankIcon(currentUserData.rank)}
                       <div>
+                        <Avatar
+                          avatarId={currentUserData.avatarId}
+                          className="h-10 w-10"
+                        />
                         <div className="text-lg font-bold text-green-900">
                           Rank #{currentUserData.rank}
                         </div>
@@ -316,14 +322,10 @@ export default function LeaderboardPage() {
                           <div className="flex items-center justify-center w-10">
                             {getRankIcon(userEntry.rank)}
                           </div>
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-green-100">
-                              {userEntry.name
-                                .split(' ')
-                                .map((n: string) => n[0])
-                                .join('')}
-                            </AvatarFallback>
-                          </Avatar>
+                          <Avatar
+                            avatarId={userEntry.avatarId ?? 'avatar-1'}
+                            className="h-10 w-10"
+                          />
                           <div>
                             <div className="font-medium text-white flex items-center gap-2">
                               {isCurrentUser ? 'You' : userEntry.name}

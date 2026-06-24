@@ -10,7 +10,7 @@ export async function GET() {
     // Fetch all users and sort by totalPointsEarned (descending) and level (descending)
     const users = await User.find({})
       .select(
-        'name monthlyCarbon totalScanned createdAt lastScanDate streakCount rewardPoints confirmedPoints unconfirmedPoints totalPointsEarned level achievements purchasedItems activeBadges rewardTransactions'
+        'name monthlyCarbon totalScanned createdAt lastScanDate streakCount rewardPoints confirmedPoints unconfirmedPoints totalPointsEarned level achievements purchasedItems activeBadges rewardTransactions avatarId'
       )
       .sort({ totalPointsEarned: -1, level: -1, totalScanned: -1 }) // Primary: highest points, Secondary: highest level, Tertiary: most scans
       .lean();
@@ -43,6 +43,7 @@ export async function GET() {
       return {
         id: user._id.toString(),
         name: user.name,
+        avatarId: user.avatarId || 'avatar-1',
         monthlyCarbon: user.monthlyCarbon || 0,
         totalScanned: user.totalScanned || 0,
         rank: index + 1,
