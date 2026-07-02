@@ -391,7 +391,7 @@ npm install
 
 ### Configure Environment Variables
 
-Create a `.env.local` file.
+Create a `.env` file in the root directory.
 
 You can obtain
 
@@ -434,11 +434,14 @@ http://localhost:3000
 
 To spin up the application in an isolated container without configuring local Node versions or databases:
 
-1. **Initialize Environment Variables:**
+1. Initialize Environment Variables:
    Copy the template file to set up your local environment.
 
-   ```text
+   ```bash
+   # On macOS and Linux:
    cp .env.example .env
+   # On Windows (Command Prompt):
+   copy .env.example .env
    ```
 
    Note: Open the newly created .env file and populate it with your actual Firebase and Gemini credentials. The Docker Compose setup includes a local MongoDB container that automatically initializes with the Mongo credentials you provide in .env. You do not need to manually provision a MongoDB Atlas cluster for local development.
