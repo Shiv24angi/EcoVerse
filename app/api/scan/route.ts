@@ -121,6 +121,13 @@ export async function POST(req: Request) {
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         const user = await User.findOne({ email: userEmail });
 
+        if (user && user.scans?.some((s: any) => s.barcode === barcode)) {
+          return NextResponse.json(
+            { error: 'This product has already been scanned.' },
+            { status: 409 }
+          );
+        }
+
         // Confirm any aged unconfirmed points before computing the response
         agedPointsConfirmed = (await confirmAgedPoints(userEmail)) > 0;
 
