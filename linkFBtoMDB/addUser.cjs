@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const admin = require('firebase-admin');
 const serviceAccount = require('./serviceAccountKey.json');
 
@@ -13,7 +14,7 @@ async function addUser(name, email) {
       name,
       email,
     });
-    console.log(`✅ Added user with ID: ${docRef.id}`);
+    console.warn(`✅ Added user with ID: ${docRef.id}`);
   } catch (err) {
     console.error('❌ Error adding user:', err);
   }

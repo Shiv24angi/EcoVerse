@@ -43,14 +43,14 @@ let dbInstance = null;
 async function connectToMongo() {
     if (dbInstance)
         return dbInstance;
-    console.log("🔌 Connecting to MongoDB...");
+    console.warn("🔌 Connecting to MongoDB...");
     const client = new mongodb_1.MongoClient(uri, {
         serverSelectionTimeoutMS: 5000,
     });
     try {
         await client.connect();
         dbInstance = client.db(dbName);
-        console.log(`✅ MongoDB connected to: ${dbName}`);
+        console.warn(`✅ MongoDB connected to: ${dbName}`);
         return dbInstance;
     }
     catch (error) {

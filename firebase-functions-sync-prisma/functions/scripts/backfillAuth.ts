@@ -24,7 +24,7 @@ async function backfillUsers() {
             createdAt: new Date(userRecord.metadata.creationTime || new Date()),
           },
         });
-        console.log(`✅ Synced user ${userRecord.uid}`);
+        console.warn(`✅ Synced user ${userRecord.uid}`);
       }
       nextPageToken = listUsersResult.pageToken;
     } while (nextPageToken);

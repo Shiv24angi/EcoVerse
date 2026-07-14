@@ -1,40 +1,67 @@
-"use client"
+'use client';
 
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Camera, X, Flashlight, RotateCcw } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { BrowserMultiFormatReader } from "@zxing/browser"
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Camera, X, Flashlight, RotateCcw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 
-interface BarcodeScannerProps {
-  onScan: (barcode: string) => void
-  onClose: () => void
+interface TorchCapabilities extends MediaTrackCapabilities {
+  torch?: boolean;
 }
 
-export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
-  const [stream, setStream] = useState<MediaStream | null>(null)
-  const [isFlashOn, setIsFlashOn] = useState(false)
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment")
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const { toast } = useToast()
+interface TorchConstraintSet extends MediaTrackConstraintSet {
+  torch?: boolean;
+}
 
-  const codeReader = new BrowserMultiFormatReader()
+interface BarcodeScannerProps {
+  onScan: (barcode: string) => void;
+  onClose: () => void;
+}
 
-  useEffect(() => {
-    startCamera()
-    return () => stopCamera()
-  }, [facingMode])
+export default function BarcodeScanner({
+  onScan,
+  onClose,
+}: BarcodeScannerProps) {
+  const streamRef = useRef<MediaStream | null>(null);
+  const [isFlashOn, setIsFlashOn] = useState(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>(
+    'environment'
+  );
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const isScanningRef = useRef(false);
+  const isActiveRef = useRef(true);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      simulateScan()
-    }, 3000)
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  if (!codeReaderRef.current) {
+    codeReaderRef.current = new BrowserMultiFormatReader();
+  }
 
-    return () => clearInterval(interval)
-  }, [stream])
+  const cleanupCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    streamRef.current = null;
 
-  const startCamera = async () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    cleanupCamera();
+  }, [cleanupCamera]);
+
+  const startCamera = useCallback(async () => {
     try {
       const constraints = {
         video: {
@@ -42,87 +69,124 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
+      };
+
+      const mediaStream =
+        await navigator.mediaDevices.getUserMedia(constraints);
+
+      if (!isActiveRef.current) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+        return;
       }
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-      setStream(mediaStream)
+      streamRef.current = mediaStream;
 
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        videoRef.current.play()
+        videoRef.current.srcObject = mediaStream;
+        videoRef.current.play();
       }
     } catch (error) {
-      toast({
-        title: "Camera access denied",
-        description: "Please allow camera access to scan barcodes.",
-        variant: "destructive",
-      })
-    }
-  }
+      if (!isActiveRef.current) return;
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop())
-      setStream(null)
+      toast({
+        title: 'Camera access denied',
+        description: 'Please allow camera access to scan barcodes.',
+        variant: 'destructive',
+      });
     }
-  }
+  }, [facingMode, toast]);
+
+  const handleScan = useCallback(
+    (barcode: string) => {
+      onScan(barcode);
+    },
+    [onScan]
+  );
+
+  const simulateScan = useCallback(async () => {
+    if (isScanningRef.current) return;
+    if (!videoRef.current || !streamRef.current || !codeReaderRef.current)
+      return;
+
+    isScanningRef.current = true;
+    try {
+      const result = await codeReaderRef.current.decodeOnceFromVideoElement(
+        videoRef.current
+      );
+      if (result && result.getText()) {
+        const barcode = result.getText();
+        handleScan(barcode);
+      }
+    } catch (error) {
+      if (!(error instanceof Error) || error.name !== 'NotFoundException') {
+        toast({
+          title: 'Scanning failed',
+          description: error instanceof Error ? error.message : 'Unknown error',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      isScanningRef.current = false;
+    }
+  }, [handleScan, toast]);
+
+  // Hook 1: Handles camera initialization lifecycle
+  useEffect(() => {
+    isActiveRef.current = true;
+
+    const initializeCamera = async () => {
+      await startCamera();
+    };
+
+    void initializeCamera();
+
+    return () => {
+      isActiveRef.current = false;
+      cleanupCamera();
+    };
+  }, [cleanupCamera, startCamera]);
+
+  // Hook 2: Handles the scanning interval orchestration
+  useEffect(() => {
+    const interval = setInterval(() => {
+      simulateScan();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [simulateScan]);
 
   const toggleFlash = async () => {
-    if (stream) {
-      const track = stream.getVideoTracks()[0]
-      const capabilities = track.getCapabilities() as any
+    if (streamRef.current) {
+      const track = streamRef.current.getVideoTracks()[0];
+      const capabilities = track.getCapabilities() as TorchCapabilities;
 
       if (capabilities.torch) {
         try {
           await track.applyConstraints({
-            advanced: [{ torch: !isFlashOn } as any],
-          })
-          setIsFlashOn(!isFlashOn)
+            advanced: [{ torch: !isFlashOn } as TorchConstraintSet],
+          });
+          setIsFlashOn(!isFlashOn);
         } catch (error) {
           toast({
-            title: "Flash not available",
+            title: 'Flash not available',
             description: "Your device doesn't support camera flash.",
-            variant: "destructive",
-          })
+            variant: 'destructive',
+          });
         }
       }
     }
-  }
-
-  const switchCamera = () => {
-    setFacingMode(facingMode === "user" ? "environment" : "user")
-  }
-
-  const handleScan = (barcode: string) => {
-    onScan(barcode);
   };
 
-  const simulateScan = async () => {
-    if (videoRef.current) {
-      try {
-        const result = await codeReader.decodeOnceFromVideoElement(videoRef.current)
-        if (result && result.getText()) {
-          const barcode = result.getText()
-          handleScan(barcode)
-        }
-      } catch (error) {
-        if ((error as any)?.name !== "NotFoundException") {
-          toast({
-            title: "Scanning failed",
-            description: (error as Error).message,
-            variant: "destructive",
-          })
-        }
-      }
-    }
-  }
+  const switchCamera = () => {
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
+  };
 
   const enterBarcodeManually = () => {
-    const input = prompt("Enter barcode manually:")
+    const input = prompt('Enter barcode manually:');
     if (input && input.trim()) {
-      handleScan(input.trim())
+      handleScan(input.trim());
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
@@ -131,7 +195,9 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-white">Scan Barcode</CardTitle>
-              <CardDescription className="text-gray-400">Position the barcode within the frame</CardDescription>
+              <CardDescription className="text-gray-400">
+                Position the barcode within the frame
+              </CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -140,7 +206,14 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
-            <video ref={videoRef} className="w-full h-64 bg-black rounded-lg object-cover" autoPlay playsInline muted />
+            <video
+              ref={videoRef}
+              data-testid="barcode-video"
+              className="w-full h-64 bg-black rounded-lg object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
 
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="relative w-48 h-24 border-2 border-green-400 rounded-lg">
@@ -159,11 +232,16 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                 variant="secondary"
                 size="sm"
                 onClick={toggleFlash}
-                className={`${isFlashOn ? "bg-yellow-600" : "bg-gray-700"}`}
+                className={`${isFlashOn ? 'bg-yellow-600' : 'bg-gray-700'}`}
               >
                 <Flashlight className="h-4 w-4" />
               </Button>
-              <Button variant="secondary" size="sm" onClick={switchCamera} className="bg-gray-700">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={switchCamera}
+                className="bg-gray-700"
+              >
                 <RotateCcw className="h-4 w-4" />
               </Button>
             </div>
@@ -171,7 +249,8 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
 
           <div className="text-center space-y-4">
             <p className="text-sm text-gray-400">
-              Align the barcode within the green frame and it will be scanned automatically
+              Align the barcode within the green frame and it will be scanned
+              automatically
             </p>
 
             <div className="flex gap-2">
@@ -179,7 +258,11 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                 <Camera className="mr-2 h-4 w-4" />
                 Scan Now
               </Button>
-              <Button onClick={enterBarcodeManually} variant="outline" className="flex-1">
+              <Button
+                onClick={enterBarcodeManually}
+                variant="outline"
+                className="flex-1"
+              >
                 Enter Manually
               </Button>
             </div>
@@ -191,5 +274,5 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

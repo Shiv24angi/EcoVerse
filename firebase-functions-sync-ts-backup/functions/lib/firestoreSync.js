@@ -42,7 +42,7 @@ exports.syncLeaderboardCreate = functions.firestore
     .document(`${collectionPath}/{docId}`)
     .onCreate(async (snapshot, context) => {
     try {
-        console.log("📥 Create Trigger Fired");
+        console.warn("📥 Create Trigger Fired");
         const docId = context.params.docId;
         const data = snapshot.data();
         const db = await (0, mongo_1.connectToMongo)();
@@ -51,7 +51,7 @@ exports.syncLeaderboardCreate = functions.firestore
             firebaseId: docId,
             ...data,
         });
-        console.log(`✅ Firestore → MongoDB: Created ${docId}`);
+        console.warn(`✅ Firestore → MongoDB: Created ${docId}`);
     }
     catch (err) {
         console.error("❌ Create Error:", err);
@@ -62,13 +62,13 @@ exports.syncLeaderboardUpdate = functions.firestore
     .document(`${collectionPath}/{docId}`)
     .onUpdate(async (change, context) => {
     try {
-        console.log("🔁 Update Trigger Fired");
+        console.warn("🔁 Update Trigger Fired");
         const docId = context.params.docId;
         const newData = change.after.data();
         const db = await (0, mongo_1.connectToMongo)();
         const mongo = db.collection("leaderboard");
         await mongo.updateOne({ firebaseId: docId }, { $set: newData });
-        console.log(`✅ Firestore → MongoDB: Updated ${docId}`);
+        console.warn(`✅ Firestore → MongoDB: Updated ${docId}`);
     }
     catch (err) {
         console.error("❌ Update Error:", err);
@@ -79,12 +79,12 @@ exports.syncLeaderboardDelete = functions.firestore
     .document(`${collectionPath}/{docId}`)
     .onDelete(async (snapshot, context) => {
     try {
-        console.log("❌ Delete Trigger Fired");
+        console.warn("❌ Delete Trigger Fired");
         const docId = context.params.docId;
         const db = await (0, mongo_1.connectToMongo)();
         const mongo = db.collection("leaderboard");
         await mongo.deleteOne({ firebaseId: docId });
-        console.log(`✅ Firestore → MongoDB: Deleted ${docId}`);
+        console.warn(`✅ Firestore → MongoDB: Deleted ${docId}`);
     }
     catch (err) {
         console.error("❌ Delete Error:", err);

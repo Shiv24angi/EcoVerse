@@ -1,7 +1,7 @@
 ---
 name: Bug Report
 about: Found something broken? Let us know!
-title: "[BUG] "
+title: '[BUG] '
 labels: bug
 assignees: ''
 ---
@@ -34,7 +34,7 @@ assignees: ''
 
 - OS: (e.g. Windows 11, macOS)
 - Browser: (e.g. Chrome, Firefox)
-- Node version: (e.g. 18.0.0) 
+- Node version: (e.g. 18.0.0)
 
 ## Anything Else?
 

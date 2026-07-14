@@ -46,12 +46,12 @@ exports.handleUserSignup = functions.auth.user().onCreate(async (user) => {
         photoURL: user.photoURL || null,
         createdAt: new Date(),
     });
-    console.log(`✅ Synced new user ${user.uid} to MongoDB`);
+    console.warn(`✅ Synced new user ${user.uid} to MongoDB`);
 });
 exports.handleUserDeletion = functions.auth.user().onDelete(async (user) => {
     const db = await (0, mongo_1.connectToMongo)();
     const collection = db.collection("users");
     await collection.deleteOne({ uid: user.uid });
-    console.log(`🗑️ Removed user ${user.uid} from MongoDB`);
+    console.warn(`🗑️ Removed user ${user.uid} from MongoDB`);
 });
 //# sourceMappingURL=authSync.js.map

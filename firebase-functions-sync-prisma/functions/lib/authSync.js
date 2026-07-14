@@ -48,9 +48,9 @@ exports.handleUserSignup = functions.auth.user().onCreate(async (user) => {
             photoURL: user.photoURL,
         },
     });
-    console.log(`✅ Synced new user ${user.uid} to PostgreSQL`);
+    console.warn(`✅ Synced new user ${user.uid} to PostgreSQL`);
 });
 exports.handleUserDeletion = functions.auth.user().onDelete(async (user) => {
     await prisma_1.default.user.delete({ where: { uid: user.uid } });
-    console.log(`🗑️ Removed user ${user.uid} from PostgreSQL`);
+    console.warn(`🗑️ Removed user ${user.uid} from PostgreSQL`);
 });

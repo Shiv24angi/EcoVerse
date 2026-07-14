@@ -1,15 +1,9 @@
 {
   "compilerOptions": {
     "paths": {
-      "@/*": [
-        "./*"
-      ] // ✅ Fix your alias from "@/": ["./"] to "@/*": ["./*"]
+      "@/*": ["./*"] // ✅ Fix your alias from "@/": ["./"] to "@/*": ["./*"]
     },
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "target": "ES6",
     "skipLibCheck": true,
@@ -26,17 +20,13 @@
       {
         "name": "next"
       }
-    ],
-  
-
+    ]
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "next-env.d.ts",
-    ".next/types/**/*.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", ".next/types/**/*.ts"],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "firebase-functions-sync-prisma",
+    "firebase-functions-sync-ts",
+    "firebase-functions-sync-ts-backup"
   ]
 }

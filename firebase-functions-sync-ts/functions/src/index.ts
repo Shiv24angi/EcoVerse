@@ -1,4 +1,4 @@
-import { onUserCreated, onUserDeleted } from "firebase-functions/v2/auth";
+import * as functions from "firebase-functions";
 import {
   onDocumentCreated,
   onDocumentUpdated,
@@ -8,31 +8,76 @@ import { connectToMongo } from "./utils/mongo";
 
 const leaderboardPath = "leaderboard/{docId}";
 
-// AUTH: onCreate
-export const handleUserSignup = onUserCreated(async (event) => {
-  const user = event.data;
-  const db = await connectToMongo();
-  const users = db.collection("users");
+export const handleUserSignup = functions.auth.user().onCreate(async (user) => {
+  try {
+    const db = await connectToMongo();
+    const collection = db.collection("users");
 
-  await users.insertOne({
-    uid: user.uid,
-    email: user.email || null,
-    displayName: user.displayName || null,
-    photoURL: user.photoURL || null,
-    createdAt: new Date(),
-  });
+    const existingUser = await collection.findOne({
+      $or: [
+        { firebaseUid: user.uid },
+        { email: user.email || "" },
+      ],
+    });
 
-  console.log(`✅ Synced new user ${user.uid}`);
+    if (existingUser) {
+      if (!existingUser.firebaseUid && user.uid) {
+        await collection.updateOne(
+          { _id: existingUser._id },
+          { $set: { firebaseUid: user.uid } }
+        );
+        console.warn(`🔄 Linked existing user ${user.email} to firebaseUid ${user.uid}`);
+      } else {
+        console.warn(`⏭️ User ${user.uid} already exists, skipping sync`);
+      }
+      return;
+    }
+
+    await collection.insertOne({
+      firebaseUid: user.uid,
+      email: user.email || null,
+      name: user.displayName || user.email?.split("@")[0] || "User",
+      authProvider: "google",
+      createdAt: new Date(),
+      monthlyCarbon: 0,
+      totalScanned: 0,
+      streakCount: 0,
+      bestStreakCount: 0,
+      rewardPoints: 0,
+      confirmedPoints: 0,
+      unconfirmedPoints: 0,
+      totalPointsEarned: 0,
+      level: 1,
+      joinedAt: new Date().toISOString(),
+    });
+
+    console.warn(`✅ Synced new user ${user.uid}`);
+  } catch (error) {
+    if ((error as any)?.code === 11000) {
+      console.warn(`⏭️ Duplicate user ${user.uid} (race condition), skipping`);
+      return;
+    }
+    console.error("❌ Failed to sync user:", error);
+    throw error;
+  }
 });
 
-// AUTH: onDelete
-export const handleUserDeletion = onUserDeleted(async (event) => {
-  const user = event.data;
-  const db = await connectToMongo();
-  const users = db.collection("users");
+export const handleUserDeletion = functions.auth.user().onDelete(async (user) => {
+  try {
+    const db = await connectToMongo();
+    const collection = db.collection("users");
 
-  await users.deleteOne({ uid: user.uid });
-  console.log(`🗑️ Deleted user ${user.uid}`);
+    const result = await collection.deleteOne({ firebaseUid: user.uid });
+
+    if (result.deletedCount > 0) {
+      console.warn(`🗑️ Deleted user ${user.uid}`);
+    } else {
+      console.warn(`⚠️ User ${user.uid} not found for deletion`);
+    }
+  } catch (error) {
+    console.error("❌ Failed to delete user:", error);
+    throw error;
+  }
 });
 
 // FIRESTORE: onCreate
@@ -53,7 +98,7 @@ export const syncLeaderboardCreate = onDocumentCreated(leaderboardPath, async (e
     ...data,
   });
 
-  console.log(`📥 Firestore → MongoDB: Created ${docId}`);
+  console.warn(`📥 Firestore → MongoDB: Created ${docId}`);
 });
 
 // FIRESTORE: onUpdate
@@ -71,7 +116,7 @@ export const syncLeaderboardUpdate = onDocumentUpdated(leaderboardPath, async (e
 
   await mongo.updateOne({ firebaseId: docId }, { $set: newData });
 
-  console.log(`🔁 Firestore → MongoDB: Updated ${docId}`);
+  console.warn(`🔁 Firestore → MongoDB: Updated ${docId}`);
 });
 
 // FIRESTORE: onDelete
@@ -83,5 +128,5 @@ export const syncLeaderboardDelete = onDocumentDeleted(leaderboardPath, async (e
 
   await mongo.deleteOne({ firebaseId: docId });
 
-  console.log(`❌ Firestore → MongoDB: Deleted ${docId}`);
+  console.warn(`❌ Firestore → MongoDB: Deleted ${docId}`);
 });

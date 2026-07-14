@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 require('dotenv').config({ path: '../.env.local' });
 const admin = require('firebase-admin');
 const { MongoClient } = require('mongodb');
@@ -49,7 +50,7 @@ async function syncToMongo() {
     }));
 
     const result = await collection.bulkWrite(bulkOps);
-    console.log(`✅ Synced ${result.upsertedCount + result.modifiedCount} auth users to MongoDB.`);
+    console.warn(`✅ Synced ${result.upsertedCount + result.modifiedCount} auth users to MongoDB.`);
 
     await mongoClient.close();
   } catch (error) {
