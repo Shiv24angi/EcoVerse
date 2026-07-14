@@ -72,9 +72,8 @@ export default function RewardsNotification({
   }, [notification, handleDismiss]);
 
   // Changed guard clause to let the fade-out exit animation play smoothly
-  if (!notification) return null;
-
   const getIcon = () => {
+    if (!notification) return null;
     switch (notification.type) {
       case 'points':
         return <Gift className="h-5 w-5" />;
@@ -90,6 +89,7 @@ export default function RewardsNotification({
   };
 
   const getColor = () => {
+    if (!notification) return '';
     switch (notification.type) {
       case 'points':
         return notification.pointsType === 'confirmed'
@@ -111,86 +111,86 @@ export default function RewardsNotification({
       className={`fixed top-4 right-4 z-50 transition-all duration-300 transform ${
         visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}
+      role="status"
+      aria-live="polite"
     >
-      <Card
-        className={`${getColor()} border-0 text-white max-w-sm`}
-        role="status"
-        aria-live="polite"
-      >
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5">{getIcon()}</div>
-            <div className="flex-1">
-              <p className="font-medium text-sm">{notification.message}</p>
+      {notification && (
+        <Card className={`${getColor()} border-0 text-white max-w-sm`}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">{getIcon()}</div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">{notification.message}</p>
 
-              {notification.type === 'points' && notification.points && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-white/20 text-white border-0"
-                  >
-                    +{notification.points} pts
-                  </Badge>
-                  {notification.pointsType && (
+                {notification.type === 'points' && notification.points && (
+                  <div className="flex items-center gap-2 mt-2">
                     <Badge
-                      variant="outline"
-                      className={`border-white/30 text-white ${
-                        notification.pointsType === 'confirmed'
-                          ? 'bg-green-500/20'
-                          : 'bg-yellow-500/20'
-                      }`}
+                      variant="secondary"
+                      className="bg-white/20 text-white border-0"
                     >
-                      {notification.pointsType === 'confirmed' ? (
-                        <>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Confirmed
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="h-3 w-3 mr-1" />
-                          Pending
-                        </>
-                      )}
+                      +{notification.points} pts
                     </Badge>
-                  )}
-                </div>
-              )}
+                    {notification.pointsType && (
+                      <Badge
+                        variant="outline"
+                        className={`border-white/30 text-white ${
+                          notification.pointsType === 'confirmed'
+                            ? 'bg-green-500/20'
+                            : 'bg-yellow-500/20'
+                        }`}
+                      >
+                        {notification.pointsType === 'confirmed' ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Confirmed
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="h-3 w-3 mr-1" />
+                            Pending
+                          </>
+                        )}
+                      </Badge>
+                    )}
+                  </div>
+                )}
 
-              {notification.type === 'level_up' && notification.level && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-white/20 text-white border-0"
-                  >
-                    Level {notification.level}
-                  </Badge>
-                </div>
-              )}
+                {notification.type === 'level_up' && notification.level && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge
+                      variant="secondary"
+                      className="bg-white/20 text-white border-0"
+                    >
+                      Level {notification.level}
+                    </Badge>
+                  </div>
+                )}
 
-              {notification.type === 'achievement' && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-white/20 text-white border-0"
-                  >
-                    Achievement Unlocked!
-                  </Badge>
-                </div>
-              )}
+                {notification.type === 'achievement' && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge
+                      variant="secondary"
+                      className="bg-white/20 text-white border-0"
+                    >
+                      Achievement Unlocked!
+                    </Badge>
+                  </div>
+                )}
+              </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDismiss}
+                className="text-white hover:bg-white/20 h-6 w-6 p-0"
+                aria-label="Dismiss notification"
+              >
+                ×
+              </Button>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDismiss}
-              className="text-white hover:bg-white/20 h-6 w-6 p-0"
-              aria-label="Dismiss notification"
-            >
-              ×
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
