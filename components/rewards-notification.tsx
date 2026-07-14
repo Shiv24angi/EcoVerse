@@ -112,7 +112,11 @@ export default function RewardsNotification({
         visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}
     >
-      <Card className={`${getColor()} border-0 text-white max-w-sm`}>
+      <Card
+        className={`${getColor()} border-0 text-white max-w-sm`}
+        role="status"
+        aria-live="polite"
+      >
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <div className="mt-0.5">{getIcon()}</div>
@@ -180,6 +184,7 @@ export default function RewardsNotification({
               size="sm"
               onClick={handleDismiss}
               className="text-white hover:bg-white/20 h-6 w-6 p-0"
+              aria-label="Dismiss notification"
             >
               ×
             </Button>

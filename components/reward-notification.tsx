@@ -83,6 +83,8 @@ export default function RewardNotification({
     >
       <Card
         className={`w-80 bg-gradient-to-br ${getBackgroundColor()} border backdrop-blur-sm`}
+        role="status"
+        aria-live="polite"
       >
         <CardContent className="p-4">
           <div className="flex items-start justify-between">
@@ -129,6 +131,7 @@ export default function RewardNotification({
               size="sm"
               onClick={handleClose}
               className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+              aria-label="Dismiss notification"
             >
               <X className="h-4 w-4" />
             </Button>

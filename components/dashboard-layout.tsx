@@ -75,7 +75,8 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="relative h-10 w-10 rounded-full p-0"
+                className="relative h-10 w-10 rounded-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                aria-label="User profile and settings menu"
               >
                 <Avatar
                   avatarId={(user.avatarId ?? 'avatar-1') as AvatarId}
@@ -121,12 +122,17 @@ export default function DashboardLayout({
                 variant="ghost"
                 size="sm"
                 onClick={() => setCollapsed(!collapsed)}
-                className="text-muted-foreground"
+                className="text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                aria-expanded={!collapsed}
               >
                 {collapsed ? '>' : '<'}
               </Button>
             </div>
-            <nav className="flex-1 px-2 py-4 space-y-2">
+            <nav
+              className="flex-1 px-2 py-4 space-y-2"
+              aria-label="Sidebar Navigation"
+            >
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -134,14 +140,17 @@ export default function DashboardLayout({
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      'group flex items-center gap-3 rounded-md px-3 py-2 font-medium transition-colors',
+                      'group flex items-center gap-3 rounded-md px-3 py-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
                       isActive
                         ? 'bg-primary/10 text-primary'
                         : 'hover:bg-muted text-muted-foreground'
                     )}
+                    aria-current={isActive ? 'page' : undefined}
                   >
                     <item.icon className="h-5 w-5" />
-                    {!collapsed && <span>{item.name}</span>}
+                    <span className={cn(collapsed && 'sr-only')}>
+                      {item.name}
+                    </span>
                   </Link>
                 );
               })}
