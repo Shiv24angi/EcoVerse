@@ -13,7 +13,7 @@ import {
   Gift,
   TrendingDown,
   LogOut,
-  FileText,
+  Medal,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -38,6 +38,7 @@ const navigation = [
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Rewards', href: '/rewards', icon: Gift },
+  { name: 'Badges', href: '/badges', icon: Medal },
 ];
 
 export default function DashboardLayout({

@@ -111,7 +111,9 @@ export default function RewardsPage() {
 
   const fetchRewardsData = async () => {
     try {
-      const response = await fetch(`/api/rewards?email=test@example.com`);
+      const response = await fetch('/api/rewards', {
+        headers: { 'x-user-email': user?.email ?? '' },
+      });
       if (response.ok) {
         const data = await response.json();
         setRewardsData(data);
@@ -132,9 +134,9 @@ export default function RewardsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-user-email': user?.email ?? '',
         },
         body: JSON.stringify({
-          email: 'test@example.com',
           itemId,
         }),
       });

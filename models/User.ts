@@ -214,6 +214,57 @@ UserSchema.index({ firebaseUid: 1 }, { sparse: true });
 // Index for sync query path: look up by email with firebaseUid population.
 UserSchema.index({ email: 1, firebaseUid: 1 });
 
+// Schema hydration middleware: fill in missing fields that may be absent
+// on documents inserted by Firebase Cloud Functions (which bypass Mongoose).
+// Runs after findOne / find / findOneAndUpdate so the returned document
+// always has every array/object field populated.
+function hydrateMissingFields(doc: any) {
+  if (!doc) return;
+  const defaults: Record<string, unknown> = {
+    scans: [],
+    rewardTransactions: [],
+    achievements: [],
+    purchasedItems: [],
+    monthlyCarbonHistory: [],
+    activeBadges: [],
+    streakProtectors: 0,
+    doublePointsDays: 0,
+    hasAdvancedAnalytics: false,
+    customAvatar: null,
+    avatarId: 'avatar-1',
+    avatarCustomization: {},
+    monthlyCarbonGoal: null,
+    lastMonthlyReset: null,
+    lastMonthlyBonusCheck: null,
+    monthlyBonusesEarned: 0,
+    bestStreakCount: 0,
+    nextLevelPoints: 100,
+    level: 1,
+    confirmedPoints: 0,
+    unconfirmedPoints: 0,
+    totalPointsEarned: 0,
+    rewardPoints: 0,
+    streakCount: 0,
+    totalScanned: 0,
+    monthlyCarbon: 0,
+    lastScanDate: null,
+  };
+  for (const [key, value] of Object.entries(defaults)) {
+    if (typeof doc.isSelected === 'function' && !doc.isSelected(key)) {
+      continue;
+    }
+    if (doc[key] === undefined || doc[key] === null) {
+      doc[key] = value;
+    }
+  }
+}
+
+UserSchema.post('findOne', hydrateMissingFields);
+UserSchema.post('find', function (docs) {
+  if (Array.isArray(docs)) docs.forEach(hydrateMissingFields);
+});
+UserSchema.post('findOneAndUpdate', hydrateMissingFields);
+
 // Virtual for sustainability level
 UserSchema.virtual('sustainabilityLevel').get(function () {
   if (this.monthlyCarbon < 20) return 'Excellent';

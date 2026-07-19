@@ -170,6 +170,7 @@ export async function POST(req: Request) {
             email: userEmail,
             lastScanDate: previousLastScanDate,
             'scans.barcode': { $ne: barcode },
+            streakProtectors: { $gte: streakUpdate.streakProtectorsUsed },
           },
           {
             $inc: {
@@ -322,6 +323,18 @@ export async function POST(req: Request) {
               }
               updatedUser = freshUser;
             }
+
+            // Cap scans to last 500 entries and rewardTransactions to last 1000
+            await User.updateOne({ email: userEmail }, [
+              { $set: { scans: { $slice: ['$scans', -500] } } },
+              {
+                $set: {
+                  rewardTransactions: {
+                    $slice: ['$rewardTransactions', -1000],
+                  },
+                },
+              },
+            ]);
 
             // Store final state for response and break retry loop
             initialUpdate = updatedUser;

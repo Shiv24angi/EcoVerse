@@ -84,6 +84,14 @@ def create_scan(scan_data: ScanCreate, db: Session = Depends(get_db)):
     )
     
     db.commit()
+    
+    # Wrap badge evaluation in error handling to prevent scan endpoint failures
+    try:
+        evaluate_and_award_badges(scan_data.user_id, db)
+    except Exception:
+        # Badge evaluation is best-effort; scan is already persisted
+        db.rollback()
+
     return {"success": True, "message": "Scan logged to database!"}
 
 # --- ENDPOINT 3: Analytics ---
@@ -188,3 +196,27 @@ def get_user_profile(user_id: str, db: Session = Depends(get_db), x_caller_id: s
         "scans": safe_scans,
         "badges": safe_badges
     }
+# --- GAMIFICATION ENGINE ---
+def evaluate_and_award_badges(user_id: str, db: Session):
+    scan_count = db.query(models.Scan).filter(models.Scan.user_id == user_id).count()
+
+    # Data-driven milestones: easy to add more thresholds later!
+    milestones = [
+        (1, "first_scan"),
+        (10, "ten_scans"),  # Renamed from 'eco_novice' to match frontend requirements
+    ]
+
+    for threshold, badge_id in milestones:
+        if scan_count >= threshold:
+            existing = db.query(models.UserBadge).filter(
+                models.UserBadge.user_id == user_id,
+                models.UserBadge.badge_id == badge_id,
+            ).first()
+
+            if not existing:
+                try:
+                    db.add(models.UserBadge(user_id=user_id, badge_id=badge_id))
+                    db.commit()
+                except IntegrityError:
+                    # Catch race conditions if the user double-clicks the scan button
+                    db.rollback()

@@ -103,7 +103,10 @@ export default function ScanPage() {
     try {
       const res = await fetch('/api/scan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': user?.email ?? '',
+        },
         body: JSON.stringify({
           barcode: actualBarcode,
           timezoneOffset: new Date().getTimezoneOffset(),

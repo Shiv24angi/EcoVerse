@@ -14,6 +14,9 @@ export interface Achievement {
   condition: (user: RewardUser) => boolean;
   points: number;
   icon: string;
+  category?: 'Scanning' | 'Streaks' | 'Carbon' | 'Levels' | 'Special';
+  currentProgress?: (user: RewardUser) => number;
+  maxProgress?: number;
 }
 
 export interface RewardTransaction {
@@ -172,6 +175,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.totalScanned ?? 0) >= 1,
     points: 50,
     icon: '🎯',
+    category: 'Scanning',
+    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 1),
+    maxProgress: 1,
   },
   {
     id: 'ten_scans',
@@ -180,6 +186,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.totalScanned ?? 0) >= 10,
     points: 100,
     icon: '📱',
+    category: 'Scanning',
+    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 10),
+    maxProgress: 10,
   },
   {
     id: 'fifty_scans',
@@ -188,6 +197,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.totalScanned ?? 0) >= 50,
     points: 250,
     icon: '🏆',
+    category: 'Scanning',
+    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 50),
+    maxProgress: 50,
   },
   {
     id: 'hundred_scans',
@@ -196,6 +208,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.totalScanned ?? 0) >= 100,
     points: 500,
     icon: '👑',
+    category: 'Scanning',
+    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 100),
+    maxProgress: 100,
   },
   {
     id: 'five_hundred_scans',
@@ -204,6 +219,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.totalScanned ?? 0) >= 500,
     points: 1500,
     icon: '🌟',
+    category: 'Scanning',
+    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 500),
+    maxProgress: 500,
   },
   {
     id: 'week_streak',
@@ -212,6 +230,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.streakCount ?? 0) >= 7,
     points: 150,
     icon: '🔥',
+    category: 'Streaks',
+    currentProgress: (user) => Math.min(user.streakCount ?? 0, 7),
+    maxProgress: 7,
   },
   {
     id: 'month_streak',
@@ -220,6 +241,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.streakCount ?? 0) >= 30,
     points: 1000,
     icon: '👑',
+    category: 'Streaks',
+    currentProgress: (user) => Math.min(user.streakCount ?? 0, 30),
+    maxProgress: 30,
   },
   {
     id: 'hundred_day_streak',
@@ -228,6 +252,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.streakCount ?? 0) >= 100,
     points: 3000,
     icon: '💎',
+    category: 'Streaks',
+    currentProgress: (user) => Math.min(user.streakCount ?? 0, 100),
+    maxProgress: 100,
   },
   {
     id: 'eco_warrior',
@@ -237,6 +264,9 @@ export const ACHIEVEMENTS: Achievement[] = [
       (user.monthlyCarbon ?? 0) < 20 && (user.totalScanned ?? 0) >= 10,
     points: 300,
     icon: '🌱',
+    category: 'Carbon',
+    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 10),
+    maxProgress: 10,
   },
   {
     id: 'carbon_conscious',
@@ -246,6 +276,9 @@ export const ACHIEVEMENTS: Achievement[] = [
       (user.monthlyCarbon ?? 0) < 30 && (user.totalScanned ?? 0) >= 5,
     points: 150,
     icon: '🌿',
+    category: 'Carbon',
+    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 5),
+    maxProgress: 5,
   },
   {
     id: 'zero_waste_hero',
@@ -255,6 +288,9 @@ export const ACHIEVEMENTS: Achievement[] = [
       (user.monthlyCarbon ?? 0) < 10 && (user.totalScanned ?? 0) >= 15,
     points: 500,
     icon: '🌍',
+    category: 'Carbon',
+    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 15),
+    maxProgress: 15,
   },
   {
     id: 'low_carbon_specialist',
@@ -268,6 +304,13 @@ export const ACHIEVEMENTS: Achievement[] = [
     },
     points: 400,
     icon: '♻️',
+    category: 'Carbon',
+    currentProgress: (user) =>
+      Math.min(
+        (user.scans || []).filter((s) => s.carbonEstimate < 1).length,
+        25
+      ),
+    maxProgress: 25,
   },
   {
     id: 'level_5',
@@ -276,6 +319,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.level ?? 0) >= 5,
     points: 500,
     icon: '⭐',
+    category: 'Levels',
+    currentProgress: (user) => Math.min(user.level ?? 0, 5),
+    maxProgress: 5,
   },
   {
     id: 'level_10',
@@ -284,6 +330,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.level ?? 0) >= 10,
     points: 1000,
     icon: '🏅',
+    category: 'Levels',
+    currentProgress: (user) => Math.min(user.level ?? 0, 10),
+    maxProgress: 10,
   },
   {
     id: 'level_15',
@@ -292,6 +341,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.level ?? 0) >= 15,
     points: 2500,
     icon: '🌟',
+    category: 'Levels',
+    currentProgress: (user) => Math.min(user.level ?? 0, 15),
+    maxProgress: 15,
   },
   {
     id: 'points_millionaire',
@@ -300,6 +352,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (user) => (user.totalPointsEarned || 0) >= 10000,
     points: 1000,
     icon: '💰',
+    category: 'Special',
+    currentProgress: (user) => Math.min(user.totalPointsEarned ?? 0, 10000),
+    maxProgress: 10000,
   },
   {
     id: 'early_adopter',
@@ -310,6 +365,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: () => false, // Disabled until user creation tracking is implemented
     points: 200,
     icon: '🏃',
+    category: 'Special',
+    currentProgress: () => 0,
+    maxProgress: 1,
   },
 ];
 
