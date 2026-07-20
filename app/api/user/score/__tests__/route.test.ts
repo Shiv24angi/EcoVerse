@@ -78,8 +78,28 @@ describe('POST /api/user/score', () => {
     expect(User.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
-  it('should check for duplicates scoped to the same product, amount and manual source', async () => {
-    (User.findOne as jest.Mock).mockResolvedValue(null);
+  it('should allow the entry when no matching scan exists yet', async () => {
+    const mockUser = {
+      email: 'test@example.com',
+      totalScanned: 0,
+      totalPointsEarned: 0,
+      lastScanDate: null,
+      streakCount: 0,
+      bestStreakCount: 0,
+      streakProtectors: 0,
+      level: 1,
+      scans: [],
+    };
+
+    (User.findOne as jest.Mock).mockResolvedValue(mockUser);
+    (User.findOneAndUpdate as jest.Mock).mockResolvedValue({
+      ...mockUser,
+      monthlyCarbon: 2.5,
+      totalScanned: 1,
+      streakCount: 1,
+      bestStreakCount: 1,
+      toObject: () => mockUser,
+    });
 
     const request = new Request('http://localhost/api/user/score', {
       method: 'POST',
@@ -93,20 +113,12 @@ describe('POST /api/user/score', () => {
       }),
     });
 
-    await POST(request);
+    const response = await POST(request);
+    expect(response.status).toBe(200);
 
-    expect(User.findOne).toHaveBeenCalledWith(
-      expect.objectContaining({
-        email: 'test@example.com',
-        scans: {
-          $elemMatch: expect.objectContaining({
-            productName: 'Reusable Water Bottle',
-            carbonEstimate: 2.5,
-            source: 'Manual Entry',
-            date: expect.objectContaining({ $gte: expect.any(Date) }),
-          }),
-        },
-      })
-    );
+    // The pre-loop duplicate query is gone — findOne is only called with
+    // the plain email filter to fetch the user for the CAS attempt.
+    expect(User.findOne).toHaveBeenCalledWith({ email: 'test@example.com' });
+    expect(User.findOneAndUpdate).toHaveBeenCalled();
   });
 });

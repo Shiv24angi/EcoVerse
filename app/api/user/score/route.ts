@@ -150,34 +150,11 @@ export async function POST(req: Request) {
     await dbConnect();
     await checkAndRunMonthlyRollover(email);
 
-    // Reject identical manual entries submitted within a short window
-    // (double-clicks, page refreshes) before they ever reach the retry
-    // loop below, so the same activity can't be recorded twice.
-    const DUPLICATE_WINDOW_MS = 10_000;
-    const duplicateWindowStart = new Date(Date.now() - DUPLICATE_WINDOW_MS);
-    const recentDuplicate = await User.findOne({
-      email,
-      scans: {
-        $elemMatch: {
-          productName,
-          carbonEstimate: carbonValue,
-          source: 'Manual Entry',
-          date: { $gte: duplicateWindowStart },
-        },
-      },
-    });
-
-    if (recentDuplicate) {
-      return NextResponse.json(
-        { error: 'This activity was already submitted a moment ago' },
-        { status: 409 }
-      );
-    }
-
     // Retry loop with CAS guard on lastScanDate — mirrors the barcode
     // scan endpoint's compare-and-set pattern to prevent double-counting
     // when two concurrent manual entries arrive.
     const MAX_RETRIES = 5;
+    const DUPLICATE_WINDOW_MS = 10_000;
     let finalUpdate = null;
     let pointsEarned = 0;
     let oldLevel = 1;
@@ -190,6 +167,27 @@ export async function POST(req: Request) {
 
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // Reject identical manual entries submitted within a short window
+      // (double-clicks, page refreshes). Checked against the snapshot
+      // fetched for this attempt, so if two concurrent requests race past
+      // this check the CAS guard below lets only one of them write; the
+      // loser retries against fresh state and is caught here instead.
+      const duplicateWindowStart = new Date(Date.now() - DUPLICATE_WINDOW_MS);
+      const isDuplicate = user.scans?.some(
+        (scan: any) =>
+          scan.productName === productName &&
+          scan.carbonEstimate === carbonValue &&
+          scan.source === 'Manual Entry' &&
+          new Date(scan.date) >= duplicateWindowStart
+      );
+
+      if (isDuplicate) {
+        return NextResponse.json(
+          { error: 'This activity was already submitted a moment ago' },
+          { status: 409 }
+        );
       }
 
       // Confirm any aged unconfirmed points before recording new scan
