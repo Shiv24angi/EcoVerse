@@ -104,6 +104,85 @@ Examples include:
 
 ---
 
+## System Architecture
+
+EcoVerse is a single Next.js application that handles both the UI (server and client components) and the API layer (route handlers under `/app/api`). The browser talks to these route handlers, which read and write user data in MongoDB via Mongoose models. Firebase is used for authentication, while a JWT is stored in a cookie and verified by middleware on every protected request.
+
+### System Architecture Diagram
+
+```mermaid
+flowchart LR
+  Browser[Browser / Client Components]
+  MW[Next.js Middleware<br/>JWT auth guard]
+  Pages[App Routes<br/>/dashboard /scan /rewards<br/>/carbon-tracking /tree-plantation]
+  API[API Route Handlers<br/>/app/api/*]
+  FB[Firebase Auth]
+  DB[(MongoDB via Mongoose)]
+  Cache[(CarbonCache)]
+
+  Browser -- protected routes --> MW
+  MW -- sets x-user-email header --> Pages
+  Pages -- fetch /api/* --> API
+  API -- verify token --> FB
+  API -- read/write --> DB
+  API -- cache lookups --> Cache
+  Browser -- sign in / sign up --> FB
+```
+
+### Frontend ↔ Backend Communication
+
+- The UI is rendered by Next.js App Router pages under `/app`. Pages marked `'use client'` call API route handlers with the browser `fetch` API.
+- API routes live under `/app/api` (e.g. `/api/user/score`, `/api/rewards`, `/api/user/tree-plantation`).
+- Requests are identified by the `x-user-email` header. **This header is never trusted from the client** — it is injected by `middleware.ts` only after verifying the `auth_token` cookie (see Authentication Flow below).
+- Responses are JSON. The frontend updates local React state from the returned payload.
+- The app opts out of static generation for data routes (`export const dynamic = 'force-dynamic'`) so every request hits the live database.
+
+### Database Schema Overview
+
+Data is stored in MongoDB and modelled with Mongoose schemas in `/models`.
+
+- **`User`** (`models/User.ts`) – the central document. Key fields:
+  - Identity: `name`, `email`, `firebaseUid`, `authProvider`, `avatarId`
+  - Carbon tracking: `monthlyCarbon`, `monthlyCarbonGoal`, `totalScanned`, `scans[]`, `lastMonthlyReset`, `monthlyCarbonHistory[]`
+  - Rewards: `rewardPoints`, `confirmedPoints`, `unconfirmedPoints`, `rewardTransactions[]`, `achievements[]`, `level`, `purchasedItems[]`, `streakProtectors`, `doublePointsDays`, `hasAdvancedAnalytics`, `activeBadges[]`
+  - Tree plantation (Issue #241): `treePlantations[]` (each entry has `date`, `treesPlanted`, `location`, `treeType`, `notes`, `carbonOffset`)
+  - Embedded sub-schemas: `Scan`, `RewardTransaction`, `Achievement`, `MonthlyCarbonArchive`, `PurchasedItem`, `TreePlantation`
+- **`CarbonCache`** (`models/CarbonCache.ts`) – caches product carbon-footprint lookups to avoid recomputing estimates.
+
+### Authentication Flow
+
+1. A user signs in or signs up through Firebase Auth (UI in `/app/auth` and `/components/google-signin-button.tsx`).
+2. The issued credential is exchanged for a JWT, which is stored in the `auth_token` HTTP-only cookie.
+3. On every request, `middleware.ts` checks the cookie:
+   - If the route is protected (`/dashboard`, `/scan`, `/rewards`, `/carbon-tracking`, and any others added) and no valid token exists, the user is redirected to `/signin`.
+   - If a token exists, `verifyToken()` validates it. On success the verified email is set as the `x-user-email` request header; any client-supplied `x-user-email` is stripped first to prevent spoofing.
+4. API route handlers read `x-user-email` to load the correct `User` document.
+
+### Folder Structure Explanation
+
+```text
+EcoVerse/
+├── app/                  # Next.js App Router: pages + API route handlers
+│   ├── api/              # Backend route handlers (auth, user, rewards, scan...)
+│   ├── auth/             # Sign in / sign up pages
+│   ├── dashboard/        # Main dashboard view
+│   ├── scan/             # Product barcode scanner
+│   ├── carbon-tracking/  # Monthly carbon footprint tracking
+│   ├── rewards/          # Rewards & achievements
+│   ├── leaderboard/      # Community rankings
+│   ├── analytics/        # Charts and insights
+│   └── tree-plantation/  # Tree plantation progress tracker (#241)
+├── components/           # Reusable UI (dashboard-layout, scanner, ui/*)
+├── lib/                  # Shared logic: carbon-calculator, rewards-system,
+│                        #   streak-system, monthly-cycle, mongodb, firebase, auth
+├── models/               # Mongoose schemas (User, CarbonCache)
+├── middleware.ts         # JWT auth guard for protected routes
+├── public/               # Static assets
+└── ARCHITECTURE.md       # This document
+```
+
+---
+
 ## Tech Stack Reference
 
 EcoVerse is built using:

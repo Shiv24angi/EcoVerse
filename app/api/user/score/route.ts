@@ -12,6 +12,7 @@ import {
   checkAchievements,
   confirmAgedPoints,
   shouldConfirmImmediately,
+  calculateStreakUpdate,
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
@@ -148,181 +149,191 @@ export async function POST(req: Request) {
 
     await dbConnect();
     await checkAndRunMonthlyRollover(email);
-    const user = await User.findOne({ email });
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    // Retry loop with CAS guard on lastScanDate — mirrors the barcode
+    // scan endpoint's compare-and-set pattern to prevent double-counting
+    // when two concurrent manual entries arrive.
+    const MAX_RETRIES = 5;
+    let finalUpdate = null;
+    let pointsEarned = 0;
+    let oldLevel = 1;
+    let levelData = null;
+    let actuallyInsertedAchievements: any[] = [];
+    let finalUser: any = null;
 
-    const isFirstScan = (user.totalScanned || 0) === 0;
-    const totalScans = user.totalScanned || 0;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const user = await User.findOne({ email });
 
-    // Streak logic
-    const now = new Date();
-    let newStreakCount = user.streakCount || 0;
-
-    const lastScanDate = user.lastScanDate ? new Date(user.lastScanDate) : null;
-
-    const isSameDay =
-      lastScanDate && now.toDateString() === lastScanDate.toDateString();
-
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-
-    const isYesterday =
-      lastScanDate && yesterday.toDateString() === lastScanDate.toDateString();
-
-    if (!lastScanDate || isYesterday) {
-      newStreakCount += 1;
-    } else if (!isSameDay) {
-      newStreakCount = 1;
-    }
-
-    const newBestStreak = Math.max(newStreakCount, user.bestStreakCount || 0);
-
-    // Calculate points for this manual entry
-    const pointsData = calculateScanPoints(
-      carbonValue,
-      isFirstScan,
-      newStreakCount,
-      totalScans
-    );
-
-    const pointsEarned = pointsData.points;
-    const isConfirmed = pointsData.isConfirmed;
-
-    // Pre-calculate expected state for level and achievements
-    const newTotalPoints = (user.totalPointsEarned || 0) + pointsEarned;
-
-    const newTotalScanned = (user.totalScanned || 0) + 1;
-
-    const levelData = calculateLevel(newTotalPoints);
-
-    // Simulate user state for achievement check
-    const simulatedUser = {
-      ...user.toObject(),
-      totalPointsEarned: newTotalPoints,
-      totalScanned: newTotalScanned,
-      monthlyCarbon: (user.monthlyCarbon || 0) + carbonValue,
-      streakCount: newStreakCount,
-    };
-
-    const earnedAchievements = checkAchievements(simulatedUser);
-
-    const oldLevel = user.level || 1;
-
-    // Confirm any aged unconfirmed points before recording new scan
-    await confirmAgedPoints(email);
-
-    // Transform Achievement[] to IAchievement[] before persisting
-    const earnedAt = new Date();
-    const achievementRecords = earnedAchievements.map((achievement) => ({
-      id: achievement.id,
-      name: achievement.name,
-      description: achievement.description,
-      points: achievement.points,
-      earnedAt,
-    }));
-
-    // Single atomic update to user stats and history
-    const finalUpdate = await User.findOneAndUpdate(
-      { email },
-      {
-        $inc: {
-          monthlyCarbon: carbonValue,
-          totalScanned: 1,
-          rewardPoints: pointsEarned,
-          totalPointsEarned: pointsEarned,
-          confirmedPoints: isConfirmed ? pointsEarned : 0,
-          unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
-        },
-        $set: {
-          streakCount: newStreakCount,
-          bestStreakCount: newBestStreak,
-          lastScanDate: now,
-        },
-        $max: {
-          level: levelData.level,
-        },
-        $push: {
-          scans: {
-            productName,
-            carbonEstimate: carbonValue,
-            category: 'Manual Entry',
-            confidence: 'medium',
-            barcode: `MANUAL-${Date.now()}`,
-            date: new Date(),
-            source: 'Manual Entry',
-          },
-          rewardTransactions: {
-            _id: new mongoose.Types.ObjectId(),
-            type: 'earned',
-            points: pointsEarned,
-            pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
-            reason: 'scan',
-            description: `Manual entry: ${productName}`,
-            date: new Date(),
-          },
-        },
-      },
-      {
-        new: true,
-        runValidators: true,
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
-    );
 
-    if (!finalUpdate) {
-      return NextResponse.json(
-        { error: 'Failed to update user score' },
-        { status: 500 }
+      // Confirm any aged unconfirmed points before recording new scan
+      await confirmAgedPoints(email);
+
+      const isFirstScan = (user.totalScanned || 0) === 0;
+      const totalScans = user.totalScanned || 0;
+      const previousLastScanDate = user.lastScanDate;
+      oldLevel = user.level || 1;
+
+      // Use shared streak calculation instead of inline logic
+      const streakUpdate = calculateStreakUpdate(
+        user.lastScanDate,
+        user.streakCount ?? 0,
+        user.bestStreakCount ?? 0,
+        user.streakProtectors ?? 0
       );
-    }
 
-    // Insert achievements with deduplication
-    const isAchievementConfirmed = shouldConfirmImmediately('achievement');
-    let actuallyInsertedAchievements = 0;
-    for (const record of achievementRecords) {
-      const inserted = await User.findOneAndUpdate(
-        { email, 'achievements.id': { $ne: record.id } },
+      const streakCount = streakUpdate.streakCount;
+
+      // Calculate points for this manual entry
+      const pointsData = calculateScanPoints(
+        carbonValue,
+        isFirstScan,
+        streakCount,
+        totalScans
+      );
+
+      pointsEarned = pointsData.points;
+      const isConfirmed = pointsData.isConfirmed;
+
+      const newTotalPoints = (user.totalPointsEarned || 0) + pointsEarned;
+      levelData = calculateLevel(newTotalPoints);
+
+      // CAS guard: filter includes lastScanDate to prevent double-counting.
+      // If another request wrote first, the filter won't match and we retry.
+      finalUpdate = await User.findOneAndUpdate(
         {
-          $push: { achievements: record },
+          email,
+          lastScanDate: previousLastScanDate,
+        },
+        {
           $inc: {
-            rewardPoints: record.points,
-            totalPointsEarned: record.points,
-            confirmedPoints: isAchievementConfirmed ? record.points : 0,
-            unconfirmedPoints: isAchievementConfirmed ? 0 : record.points,
+            monthlyCarbon: carbonValue,
+            totalScanned: 1,
+            rewardPoints: pointsEarned,
+            totalPointsEarned: pointsEarned,
+            confirmedPoints: isConfirmed ? pointsEarned : 0,
+            unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
+            streakProtectors: -streakUpdate.streakProtectorsUsed,
+          },
+          $set: {
+            streakCount: streakUpdate.streakCount,
+            bestStreakCount: streakUpdate.bestStreakCount,
+            lastScanDate: new Date(),
+          },
+          $max: {
+            level: levelData.level,
+          },
+          $push: {
+            scans: {
+              productName,
+              carbonEstimate: carbonValue,
+              category: 'Manual Entry',
+              confidence: 'medium',
+              barcode: `MANUAL-${Date.now()}`,
+              date: new Date(),
+              source: 'Manual Entry',
+            },
+            rewardTransactions: {
+              _id: new mongoose.Types.ObjectId(),
+              type: 'earned',
+              points: pointsEarned,
+              pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
+              reason: 'scan',
+              description: `Manual entry: ${productName}`,
+              date: new Date(),
+            },
           },
         },
-        { new: false }
+        {
+          new: true,
+          runValidators: true,
+        }
       );
-      if (inserted) {
-        actuallyInsertedAchievements++;
-      }
-    }
 
-    // Recompute level from the persisted post-scan total; refresh again if
-    // achievement inserts added more points after the main update.
-    let finalLevel = calculateLevel(finalUpdate.totalPointsEarned || 0).level;
-    if (actuallyInsertedAchievements > 0) {
-      const freshUser = await User.findOne({ email });
-      if (freshUser) {
-        const recomputedLevel = calculateLevel(
-          freshUser.totalPointsEarned || 0
+      if (!finalUpdate) {
+        // CAS guard failed — another request updated lastScanDate. Retry.
+        continue;
+      }
+
+      // Simulate user state for achievement check
+      const simulatedUser = {
+        ...finalUpdate.toObject(),
+        totalPointsEarned: (user.totalPointsEarned || 0) + pointsEarned,
+        totalScanned: (user.totalScanned || 0) + 1,
+        monthlyCarbon: (user.monthlyCarbon || 0) + carbonValue,
+        streakCount: streakUpdate.streakCount,
+      };
+
+      const earnedAchievements = checkAchievements(simulatedUser);
+
+      const earnedAt = new Date();
+      const achievementRecords = earnedAchievements.map((achievement) => ({
+        id: achievement.id,
+        name: achievement.name,
+        description: achievement.description,
+        points: achievement.points,
+        earnedAt,
+      }));
+
+      const isAchievementConfirmed = shouldConfirmImmediately('achievement');
+      actuallyInsertedAchievements = [];
+      for (const record of achievementRecords) {
+        const inserted = await User.findOneAndUpdate(
+          { email, 'achievements.id': { $ne: record.id } },
+          {
+            $push: { achievements: record },
+            $inc: {
+              rewardPoints: record.points,
+              totalPointsEarned: record.points,
+              confirmedPoints: isAchievementConfirmed ? record.points : 0,
+              unconfirmedPoints: isAchievementConfirmed ? 0 : record.points,
+            },
+          },
+          { new: false }
         );
-        finalLevel = recomputedLevel.level;
+        if (inserted) {
+          actuallyInsertedAchievements.push(record);
+        }
       }
+
+      // Recompute level if achievements were inserted
+      let finalLevel = levelData.level;
+      if (actuallyInsertedAchievements.length > 0) {
+        const freshUser = await User.findOne({ email });
+        if (freshUser) {
+          const recomputedLevel = calculateLevel(
+            freshUser.totalPointsEarned || 0
+          );
+          finalLevel = recomputedLevel.level;
+          if (finalLevel > levelData.level) {
+            await User.updateOne({ email }, { $max: { level: finalLevel } });
+          }
+        }
+      }
+
+      finalUser = finalUpdate;
+      levelData.level = finalLevel;
+      break;
     }
 
-    if (finalLevel > levelData.level) {
-      await User.updateOne({ email }, { $max: { level: finalLevel } });
+    if (!finalUpdate || !levelData) {
+      return NextResponse.json(
+        {
+          error:
+            'Scan could not be recorded due to concurrent updates. Please try again.',
+        },
+        { status: 409 }
+      );
     }
 
     return NextResponse.json({
       newScore: finalUpdate.monthlyCarbon,
       totalScanned: finalUpdate.totalScanned,
       pointsEarned,
-      level: finalLevel,
-      leveledUp: finalLevel > oldLevel,
+      level: levelData.level,
+      leveledUp: levelData.level > oldLevel,
     });
   } catch (error) {
     console.error('Error updating score:', error);

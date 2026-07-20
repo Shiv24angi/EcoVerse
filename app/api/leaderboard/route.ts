@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     const users = await User.find(filter)
       .select(
-        'name monthlyCarbon totalScanned createdAt lastScanDate streakCount rewardPoints confirmedPoints unconfirmedPoints totalPointsEarned level achievements purchasedItems activeBadges rewardTransactions avatarId'
+        'name monthlyCarbon totalScanned createdAt lastScanDate streakCount rewardPoints confirmedPoints unconfirmedPoints totalPointsEarned level achievements purchasedItems activeBadges avatarId'
       )
       .sort({ totalPointsEarned: -1, level: -1, totalScanned: -1, _id: -1 })
       .limit(limit + 1)

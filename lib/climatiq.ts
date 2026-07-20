@@ -1,10 +1,8 @@
 import axios from 'axios';
 import dbConnect from '@/lib/mongodb';
 import CarbonCache from '@/models/CarbonCache';
-import {
-  calculateCarbonFootprint,
-  carbonDatabase,
-} from '@/lib/carbon-calculator';
+import { calculateCarbonFootprint } from '@/lib/carbon-calculator';
+import { CARBON_DATABASE } from '@/lib/env-constants';
 
 export interface CarbonFootprintResult {
   carbonFootprint: number;
@@ -78,7 +76,7 @@ export async function getCarbonFootprint(
         // Find matching default weight and category from local DB mapping
         let defaultWeight = 0.5;
         let matchedCategory = 'Unknown';
-        for (const [key, data] of Object.entries(carbonDatabase)) {
+        for (const [key, data] of Object.entries(CARBON_DATABASE)) {
           if (normalizedName.includes(key)) {
             defaultWeight = data.defaultWeight;
             matchedCategory = data.category;
