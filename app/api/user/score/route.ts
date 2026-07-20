@@ -150,6 +150,30 @@ export async function POST(req: Request) {
     await dbConnect();
     await checkAndRunMonthlyRollover(email);
 
+    // Reject identical manual entries submitted within a short window
+    // (double-clicks, page refreshes) before they ever reach the retry
+    // loop below, so the same activity can't be recorded twice.
+    const DUPLICATE_WINDOW_MS = 10_000;
+    const duplicateWindowStart = new Date(Date.now() - DUPLICATE_WINDOW_MS);
+    const recentDuplicate = await User.findOne({
+      email,
+      scans: {
+        $elemMatch: {
+          productName,
+          carbonEstimate: carbonValue,
+          source: 'Manual Entry',
+          date: { $gte: duplicateWindowStart },
+        },
+      },
+    });
+
+    if (recentDuplicate) {
+      return NextResponse.json(
+        { error: 'This activity was already submitted a moment ago' },
+        { status: 409 }
+      );
+    }
+
     // Retry loop with CAS guard on lastScanDate — mirrors the barcode
     // scan endpoint's compare-and-set pattern to prevent double-counting
     // when two concurrent manual entries arrive.
