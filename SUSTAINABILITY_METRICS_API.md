@@ -34,14 +34,15 @@ All endpoints run on Next.js App Router API routes (`force-dynamic`) and interfa
 
 ## Authentication & Headers
 
-Most endpoints require user authentication via HTTP Request Headers and/or session cookies:
+Protected API routes require authentication via the `auth_token` session cookie.
 
-| Header Name    | Required                           | Description                                | Example            |
-| :------------- | :--------------------------------- | :----------------------------------------- | :----------------- |
-| `Content-Type` | Optional (Required for POST/PATCH) | MIME type of request body                  | `application/json` |
-| `x-user-email` | **Yes** (Authenticated routes)     | Email address identifying the user account | `user@example.com` |
+| Cookie / Header Name | Location | Required | Description | Example |
+| :--- | :--- | :--- | :--- | :--- |
+| `auth_token` | HTTP Cookie | **Yes** (Authenticated routes) | Valid JWT authentication token issued upon sign-in | `Cookie: auth_token=eyJhbGci...` |
+| `Content-Type` | Header | Optional (Required for POST/PATCH) | MIME type of request body | `application/json` |
+| `x-user-email` | Header | Internal / Server-Injected | Injected by Next.js middleware upon validating `auth_token` | `x-user-email: user@example.com` |
 
-> **Note:** Endpoints like `/api/user/analytics` also perform cookie verification checking the `auth_token` cookie against the provided `x-user-email` header.
+> **Security Note:** `x-user-email` is a **server-side injected header**. Next.js middleware automatically strips any client-supplied `x-user-email` header from incoming requests to prevent identity spoofing, verifies the `auth_token` cookie, and injects the verified email address into internal request headers for downstream API handlers. Callers must pass the `auth_token` cookie when invoking authenticated endpoints.
 
 ---
 
@@ -53,7 +54,7 @@ The API uses standard HTTP response codes to indicate success or failure:
 | :-------------------------- | :---------------------- | :---------------------------------------------------------- |
 | `200 OK`                    | Success                 | Request completed successfully.                             |
 | `400 Bad Request`           | Client Error            | Missing or invalid parameters/payload.                      |
-| `401 Unauthorized`          | Authentication Error    | Missing or invalid `x-user-email` header or session.        |
+| `401 Unauthorized`          | Authentication Error    | Missing or invalid `auth_token` cookie or session.          |
 | `404 Not Found`             | Resource Missing        | User, product, or shop item was not found.                  |
 | `409 Conflict`              | Concurrency / Duplicate | Product already scanned or concurrent transaction conflict. |
 | `500 Internal Server Error` | Server Error            | Database failure or external API call error.                |
@@ -76,13 +77,13 @@ Performs carbon footprint analysis and packaging recyclability inference for a p
 
 - **URL:** `/api/scan`
 - **Method:** `POST`
-- **Authentication Required:** Yes (`x-user-email` header)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Headers
 
 ```http
 Content-Type: application/json
-x-user-email: user@example.com
+Cookie: auth_token=<your_jwt_token>
 ```
 
 #### Request Body
@@ -96,7 +97,7 @@ x-user-email: user@example.com
 ```bash
 curl -X POST http://localhost:3000/api/scan \
   -H "Content-Type: application/json" \
-  -H "x-user-email: alex@example.com" \
+  -H "Cookie: auth_token=<your_jwt_token>" \
   -d '{
     "barcode": "737628064502"
   }'
@@ -159,19 +160,19 @@ Retrieves historical carbon trends, current month carbon consumption, category b
 
 - **URL:** `/api/user/analytics`
 - **Method:** `GET`
-- **Authentication Required:** Yes (`x-user-email` header & `auth_token` cookie)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Headers
 
 ```http
-x-user-email: user@example.com
+Cookie: auth_token=<your_jwt_token>
 ```
 
 ##### Sample Request
 
 ```bash
 curl -X GET http://localhost:3000/api/user/analytics \
-  -H "x-user-email: alex@example.com"
+  -H "Cookie: auth_token=<your_jwt_token>"
 ```
 
 #### Sample Response (`200 OK`)
@@ -269,19 +270,19 @@ Returns overall user sustainability statistics, current month carbon total, pers
 
 - **URL:** `/api/user/score`
 - **Method:** `GET`
-- **Authentication Required:** Yes (`x-user-email` header)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Headers
 
 ```http
-x-user-email: user@example.com
+Cookie: auth_token=<your_jwt_token>
 ```
 
 ##### Sample Request
 
 ```bash
 curl -X GET http://localhost:3000/api/user/score \
-  -H "x-user-email: alex@example.com"
+  -H "Cookie: auth_token=<your_jwt_token>"
 ```
 
 #### Sample Response (`200 OK`)
@@ -352,7 +353,7 @@ Allows manual submission of product sustainability information and carbon footpr
 
 - **URL:** `/api/user/score`
 - **Method:** `POST`
-- **Authentication Required:** Yes (`x-user-email` header)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Body
 
@@ -366,7 +367,7 @@ Allows manual submission of product sustainability information and carbon footpr
 ```bash
 curl -X POST http://localhost:3000/api/user/score \
   -H "Content-Type: application/json" \
-  -H "x-user-email: alex@example.com" \
+  -H "Cookie: auth_token=<your_jwt_token>" \
   -d '{
     "productName": "Local Organic Apples (1kg)",
     "carbonEstimate": 0.4
@@ -400,7 +401,7 @@ Sets or clears the user's monthly carbon goal/budget (in kg CO₂). Setting to `
 
 - **URL:** `/api/user/score`
 - **Method:** `PATCH`
-- **Authentication Required:** Yes (`x-user-email` header)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Body
 
@@ -413,7 +414,7 @@ Sets or clears the user's monthly carbon goal/budget (in kg CO₂). Setting to `
 ```bash
 curl -X PATCH http://localhost:3000/api/user/score \
   -H "Content-Type: application/json" \
-  -H "x-user-email: alex@example.com" \
+  -H "Cookie: auth_token=<your_jwt_token>" \
   -d '{
     "monthlyCarbonGoal": 30
   }'
@@ -441,7 +442,7 @@ Submits user feedback regarding product packaging material to refine EcoVerse re
 
 - **URL:** `/api/user-packaging`
 - **Method:** `POST`
-- **Authentication Required:** Yes (`x-user-email` header)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Body
 
@@ -455,7 +456,7 @@ Submits user feedback regarding product packaging material to refine EcoVerse re
 ```bash
 curl -X POST http://localhost:3000/api/user-packaging \
   -H "Content-Type: application/json" \
-  -H "x-user-email: alex@example.com" \
+  -H "Cookie: auth_token=<your_jwt_token>" \
   -d '{
     "barcode": "737628064502",
     "material": "Tetra Pak"
@@ -548,19 +549,19 @@ Fetches detailed user eco-points summary (confirmed vs. unconfirmed), point tran
 
 - **URL:** `/api/rewards`
 - **Method:** `GET`
-- **Authentication Required:** Yes (`x-user-email` header)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Headers
 
 ```http
-x-user-email: user@example.com
+Cookie: auth_token=<your_jwt_token>
 ```
 
 ##### Sample Request
 
 ```bash
 curl -X GET http://localhost:3000/api/rewards \
-  -H "x-user-email: alex@example.com"
+  -H "Cookie: auth_token=<your_jwt_token>"
 ```
 
 #### Sample Response (`200 OK`)
@@ -608,7 +609,7 @@ Redeems user eco-points to purchase items from the Eco-Shop (e.g. streak protect
 
 - **URL:** `/api/rewards`
 - **Method:** `POST`
-- **Authentication Required:** Yes (`x-user-email` header)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Body
 
@@ -621,7 +622,7 @@ Redeems user eco-points to purchase items from the Eco-Shop (e.g. streak protect
 ```bash
 curl -X POST http://localhost:3000/api/rewards \
   -H "Content-Type: application/json" \
-  -H "x-user-email: alex@example.com" \
+  -H "Cookie: auth_token=<your_jwt_token>" \
   -d '{
     "itemId": "streak_protector"
   }'
@@ -656,19 +657,19 @@ Evaluates whether the user met their monthly carbon budget/goal for the precedin
 
 - **URL:** `/api/rewards/monthly-check`
 - **Method:** `POST`
-- **Authentication Required:** Yes (`x-user-email` header)
+- **Authentication Required:** Yes (`auth_token` cookie)
 
 #### Request Headers
 
 ```http
-x-user-email: user@example.com
+Cookie: auth_token=<your_jwt_token>
 ```
 
 ##### Sample Request
 
 ```bash
 curl -X POST http://localhost:3000/api/rewards/monthly-check \
-  -H "x-user-email: alex@example.com"
+  -H "Cookie: auth_token=<your_jwt_token>"
 ```
 
 #### Sample Response (`200 OK`)
