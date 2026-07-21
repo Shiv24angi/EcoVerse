@@ -15,8 +15,18 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar, TrendingDown, Target, Award, Pencil } from 'lucide-react';
+import { Calendar, TrendingDown, Target, Award, Pencil, Download } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+
+interface ScanEntry {
+  productName: string;
+  carbonEstimate: number;
+  category: string;
+  date: string;
+  barcode: string;
+  recyclabilityScore?: number;
+  ecoPoints?: number;
+}
 
 interface UserData {
   monthlyCarbon: number;
@@ -24,13 +34,7 @@ interface UserData {
   totalScanned: number;
   streakCount: number;
   bestStreakCount: number;
-  scans: Array<{
-    productName: string;
-    carbonEstimate: number;
-    category: string;
-    date: string;
-    barcode: string;
-  }>;
+  scans: ScanEntry[];
   sustainabilityLevel: string;
 }
 
@@ -154,6 +158,50 @@ export default function CarbonTrackingPage() {
   const uniqueDates = Object.keys(scansByDate).sort(
     (a, b) => new Date(b).getTime() - new Date(a).getTime()
   );
+
+  const handleExportCSV = () => {
+    if (userData.scans.length === 0) return;
+
+    // Define CSV columns
+    const headers = ['Product Name', 'Scan Date', 'Carbon Footprint (kg CO₂)', 'Recyclability Score', 'Eco Points'];
+
+    // Map scan data to CSV rows
+    const rows = userData.scans.map((scan) => {
+      const date = new Date(scan.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return [
+        `"${scan.productName.replace(/"/g, '""')}"`,
+        date,
+        scan.carbonEstimate.toFixed(2),
+        scan.recyclabilityScore ?? 'N/A',
+        scan.ecoPoints ?? 'N/A',
+      ];
+    });
+
+    // Build CSV content
+    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+
+    // Create download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'scan-history.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'CSV Exported',
+      description: `Downloaded ${userData.scans.length} scan records as scan-history.csv`,
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -349,13 +397,27 @@ export default function CarbonTrackingPage() {
           <TabsContent value="daily" className="space-y-6">
             <Card className="bg-cyan-100 border-none shadow-md">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-cyan-900">
-                  <Calendar className="h-5 w-5" />
-                  Daily Carbon Entries
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  Your scanned products and their carbon footprint
-                </CardDescription>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-cyan-900">
+                      <Calendar className="h-5 w-5" />
+                      Daily Carbon Entries
+                    </CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Your scanned products and their carbon footprint
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportCSV}
+                    disabled={userData.scans.length === 0}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">

@@ -196,6 +196,17 @@ export async function POST(req: Request) {
                 barcode: barcode,
                 date: scanTimestamp,
                 source: carbonData.source,
+                // Compute recyclability score from packaging data
+                recyclabilityScore: (() => {
+                  if (packaging.recyclable && packaging.biodegradable) return 95;
+                  if (packaging.recyclable) return 80;
+                  if (packaging.biodegradable) return 70;
+                  const materialLow = (packaging.material || '').toLowerCase();
+                  if (materialLow.includes('glass') || materialLow.includes('paper') || materialLow.includes('cardboard') || materialLow.includes('metal')) return 75;
+                  if (materialLow.includes('plastic') && (materialLow.includes('pet') || materialLow.includes('hdpe'))) return 50;
+                  return 30;
+                })(),
+                ecoPoints: pointsEarned,
               },
               rewardTransactions: {
                 _id: new mongoose.Types.ObjectId(),
