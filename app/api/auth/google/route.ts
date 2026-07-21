@@ -6,17 +6,15 @@ import dbConnect from '@/lib/mongodb';
 import mongoose from 'mongoose';
 import User, { type IUser } from '@/models/User';
 import { setAuthCookie } from '@/lib/auth';
+import { verifyFirebaseIdToken } from '@/lib/firebase-admin';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
 
 interface GoogleAuthRequestBody {
-  name?: string;
-  email?: string;
-  firebaseUid?: string;
+  idToken?: string;
 }
 
 export async function POST(req: Request) {
-  // FIX: Guard body parsing inside a try...catch to intercept malformed request payloads gracefully
   let body: unknown;
   try {
     body = await req.json();
@@ -34,33 +32,47 @@ export async function POST(req: Request) {
     );
   }
 
-  const { name, email, firebaseUid } = body as GoogleAuthRequestBody;
+  const { idToken } = body as GoogleAuthRequestBody;
 
-  if (
-    typeof name !== 'string' ||
-    typeof email !== 'string' ||
-    typeof firebaseUid !== 'string' ||
-    !name.trim() ||
-    !email.trim() ||
-    !firebaseUid.trim()
-  ) {
-    return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  if (typeof idToken !== 'string' || !idToken.trim()) {
+    return NextResponse.json(
+      { error: 'Missing Firebase ID token' },
+      { status: 400 }
+    );
   }
 
-  const trimmedName = name.trim();
-  const trimmedEmail = email.trim();
-  const trimmedFirebaseUid = firebaseUid.trim();
+  let decodedToken;
+  try {
+    decodedToken = await verifyFirebaseIdToken(idToken.trim());
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid or expired Firebase ID token' },
+      { status: 401 }
+    );
+  }
+
+  const verifiedUid = decodedToken.uid;
+  const verifiedEmail = decodedToken.email;
+  const verifiedName =
+    decodedToken.name || verifiedEmail?.split('@')[0] || 'Google User';
+
+  if (!verifiedEmail) {
+    return NextResponse.json(
+      { error: 'Firebase account has no email' },
+      { status: 400 }
+    );
+  }
 
   let userDoc: LeanUser | null = null;
   try {
     await dbConnect();
     userDoc = await User.findOneAndUpdate(
-      { email: trimmedEmail },
+      { email: verifiedEmail },
       {
         $setOnInsert: {
-          email: trimmedEmail,
-          name: trimmedName,
-          firebaseUid: trimmedFirebaseUid,
+          email: verifiedEmail,
+          name: verifiedName,
+          firebaseUid: verifiedUid,
           authProvider: 'google',
           avatarId: 'avatar-1',
           monthlyCarbon: 0,
@@ -75,7 +87,6 @@ export async function POST(req: Request) {
       }
     );
   } catch (err) {
-    // FIX: Suppress linting rule for tracking low-level operational failures
     console.error('Failed to upsert user in google route:', err);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
@@ -87,11 +98,8 @@ export async function POST(req: Request) {
     );
   }
 
-  // Set the auth_token cookie so middleware can verify the session and
-  // inject x-user-email on subsequent requests.
   await setAuthCookie(userDoc.email, userDoc._id.toString());
 
-  // Map the MongoDB document back to the required frontend shape using safe fallbacks
   const user = {
     _id: userDoc._id,
     name: userDoc.name || '',

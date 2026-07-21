@@ -193,17 +193,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
 
+      const idToken = await firebaseUser.getIdToken();
+
       const response = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name:
-            firebaseUser.displayName ||
-            firebaseUser.email?.split('@')[0] ||
-            'Google User',
-          email: firebaseUser.email,
-          firebaseUid: firebaseUser.uid,
-        }),
+        body: JSON.stringify({ idToken }),
       });
 
       if (response.ok) {
