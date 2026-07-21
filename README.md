@@ -321,6 +321,7 @@ EcoVerse/
 ├── Contribution.md                        # Enhanced contributor guide (GSSoC)
 ├── CODE_OF_CONDUCT.md                     # Community code of conduct
 ├── LICENSE.txt                            # MIT license
+├── SUSTAINABILITY_METRICS_API.md          # Dedicated API reference for sustainability metrics
 ├── REWARDS_SYSTEM.md                      # Eco-points & rewards documentation
 ├── MONGODB_SETUP.md                       # MongoDB setup guide
 └── MONGODB_TROUBLESHOOTING.md             # MongoDB troubleshooting guide
@@ -346,14 +347,17 @@ For a detailed breakdown of the entire project structure, API routes, database s
 
 ## API Endpoints
 
+> For complete API reference specifications including request parameters, sample JSON payloads, authentication requirements, response formats, and error codes for all sustainability endpoints, see [SUSTAINABILITY_METRICS_API.md](SUSTAINABILITY_METRICS_API.md).
+
 | Endpoint                     | Description                     |
 | ---------------------------- | ------------------------------- |
 | `/api/auth/google`           | Google Authentication           |
 | `/api/auth/signin`           | User Sign In                    |
 | `/api/auth/signup`           | User Sign Up                    |
 | `/api/scan`                  | Product Sustainability Analysis |
+| `/api/user/analytics`        | User Sustainability Analytics   |
 | `/api/user/avatar`           | User Avatar Management          |
-| `/api/user/score`            | Eco Score Management            |
+| `/api/user/score`            | Eco Score & Goal Management     |
 | `/api/user-packaging`        | Packaging Preferences           |
 | `/api/leaderboard`           | Community Rankings              |
 | `/api/rewards`               | Rewards Management              |
