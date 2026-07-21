@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TooltipWrapper from '@/components/ui/tooltip-wrapper';
 import {
   Gift,
   Star,
@@ -262,7 +263,9 @@ export default function RewardsPage() {
                   <CardTitle className="text-sm font-medium text-lime-700">
                     Available Points
                   </CardTitle>
-                  <Gift className="h-4 w-4 text-muted-foreground" />
+<TooltipWrapper text="Total reward points you've earned">
+                    <Gift className="h-4 w-4 text-muted-foreground" />
+                  </TooltipWrapper>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-lime-800">
@@ -297,7 +300,9 @@ export default function RewardsPage() {
                   <CardTitle className="text-sm font-medium text-lime-700">
                     Current Level
                   </CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
+                  <TooltipWrapper text="Your current level in the rewards system">
+                    <Star className="h-4 w-4 text-muted-foreground" />
+                  </TooltipWrapper>
                 </CardHeader>
                 <CardContent>
                   <div

@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarId } from '@/components/ui/avatar';
+import TooltipWrapper from '@/components/ui/tooltip-wrapper';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -142,7 +143,13 @@ export default function DashboardLayout({
                         : 'hover:bg-muted text-muted-foreground'
                     )}
                   >
-                    <item.icon className="h-5 w-5" />
+                    {collapsed ? (
+                      <TooltipWrapper text={item.name}>
+                        <item.icon className="h-5 w-5" />
+                      </TooltipWrapper>
+                    ) : (
+                      <item.icon className="h-5 w-5" />
+                    )}
                     {!collapsed && <span>{item.name}</span>}
                   </Link>
                 );

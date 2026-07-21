@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import TooltipWrapper from '@/components/ui/tooltip-wrapper';
 import {
   BarChart3,
   TrendingDown,
@@ -196,7 +197,9 @@ export default function AnalyticsPage() {
               <CardTitle className="text-sm font-medium text-teal-700">
                 Total CO₂ Saved
               </CardTitle>
-              <Leaf className="h-4 w-4 text-green-400" />
+              <TooltipWrapper text="Total CO₂ saved compared to your monthly goals">
+                <Leaf className="h-4 w-4 text-green-400" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-teal-800">
@@ -211,7 +214,9 @@ export default function AnalyticsPage() {
               <CardTitle className="text-sm font-medium text-teal-700">
                 Monthly Change
               </CardTitle>
-              <TrendingDown className="h-4 w-4 text-green-400" />
+              <TooltipWrapper text="Change in CO₂ emissions compared to the previous month">
+                <TrendingDown className="h-4 w-4 text-green-400" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-teal-800">
@@ -227,7 +232,9 @@ export default function AnalyticsPage() {
               <CardTitle className="text-sm font-medium text-teal-700">
                 Products Scanned
               </CardTitle>
-              <BarChart3 className="h-4 w-4 text-green-400" />
+              <TooltipWrapper text="Total number of products scanned this month">
+                <BarChart3 className="h-4 w-4 text-green-400" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-teal-800">
@@ -245,7 +252,9 @@ export default function AnalyticsPage() {
               <CardTitle className="text-sm font-medium text-teal-700">
                 Goal Achievement
               </CardTitle>
-              <Target className="h-4 w-4 text-green-400" />
+              <TooltipWrapper text="Indicates if your monthly carbon goal has been met">
+                <Target className="h-4 w-4 text-green-400" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-teal-800">
@@ -473,7 +482,8 @@ export default function AnalyticsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <TooltipWrapper text="Equivalent distance driven by a car to match your carbon footprint">
               <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
                 <div className="text-2xl mb-2">🚗</div>
                 <div className="text-lg font-bold text-teal-900">
@@ -483,6 +493,8 @@ export default function AnalyticsPage() {
                   Equivalent car driving
                 </div>
               </div>
+              </TooltipWrapper>
+              <TooltipWrapper text="Number of trees needed to absorb your monthly CO₂ emissions">
               <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
                 <div className="text-2xl mb-2">🌳</div>
                 <div className="text-lg font-bold text-teal-900">
@@ -492,6 +504,8 @@ export default function AnalyticsPage() {
                   Needed to offset CO₂
                 </div>
               </div>
+              </TooltipWrapper>
+              <TooltipWrapper text="Hours of LED bulb operation equivalent to your carbon footprint">
               <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
                 <div className="text-2xl mb-2">💡</div>
                 <div className="text-lg font-bold text-teal-900">
@@ -499,6 +513,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="text-sm text-teal-700">LED bulb equivalent</div>
               </div>
+              </TooltipWrapper>
             </div>
           </CardContent>
         </Card>

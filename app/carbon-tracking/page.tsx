@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import TooltipWrapper from '@/components/ui/tooltip-wrapper';
 import { Calendar, TrendingDown, Target, Award, Pencil } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
@@ -173,7 +174,9 @@ export default function CarbonTrackingPage() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 This Month
               </CardTitle>
-              <Calendar className="h-4 w-4 text-green-600" />
+<TooltipWrapper text="Your total CO₂ emissions for the current month">
+                <Calendar className="h-4 w-4 text-green-600" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-sky-900">
@@ -188,7 +191,9 @@ export default function CarbonTrackingPage() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Daily Average
               </CardTitle>
-              <TrendingDown className="h-4 w-4 text-green-600" />
+              <TooltipWrapper text="Average daily CO₂ emissions based on your scans">
+                <TrendingDown className="h-4 w-4 text-green-600" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-sky-900">
@@ -203,7 +208,9 @@ export default function CarbonTrackingPage() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Goal Progress
               </CardTitle>
-              <Target className="h-4 w-4 text-green-600" />
+              <TooltipWrapper text="Percentage of your monthly carbon goal achieved">
+                <Target className="h-4 w-4 text-green-600" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-sky-900">
@@ -218,7 +225,9 @@ export default function CarbonTrackingPage() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Streak
               </CardTitle>
-              <Award className="h-4 w-4 text-green-600" />
+<TooltipWrapper text="Consecutive days you've tracked your carbon footprint">
+                <Award className="h-4 w-4 text-green-600" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-sky-900">

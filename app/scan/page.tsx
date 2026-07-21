@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Scan, Search, AlertTriangle, CheckCircle, Camera } from 'lucide-react';
+import TooltipWrapper from '@/components/ui/tooltip-wrapper';
 import { useToast } from '@/hooks/use-toast';
 import BarcodeScanner from '@/components/barcode-scanner';
 import RewardsNotification, {
@@ -309,24 +310,28 @@ export default function ScanPage() {
               <CardTitle className="flex items-center justify-between text-cyan-700">
                 <span>{product.product}</span>
                 <div className="flex gap-2">
-                  <Badge
-                    className={`${getSustainabilityColor(product.sustainabilityScore!)} border`}
-                  >
-                    Score: {product.sustainabilityScore}
-                  </Badge>
-                  {product.confidence && (
+                  <TooltipWrapper text="Sustainability rating based on carbon footprint and packaging eco-friendliness">
                     <Badge
-                      variant="outline"
-                      className={
-                        product.confidence === 'high'
-                          ? 'border-green-600 text-green-700 bg-green-50'
-                          : product.confidence === 'medium'
-                            ? 'border-yellow-600 text-yellow-800 bg-yellow-50'
-                            : 'border-red-600 text-red-700 bg-red-50'
-                      }
+                      className={`${getSustainabilityColor(product.sustainabilityScore!)} border`}
                     >
-                      {product.confidence} confidence
+                      Score: {product.sustainabilityScore}
                     </Badge>
+                  </TooltipWrapper>
+                  {product.confidence && (
+                    <TooltipWrapper text="Confidence level of the carbon footprint estimate">
+                      <Badge
+                        variant="outline"
+                        className={
+                          product.confidence === 'high'
+                            ? 'border-green-600 text-green-700 bg-green-50'
+                            : product.confidence === 'medium'
+                              ? 'border-yellow-600 text-yellow-800 bg-yellow-50'
+                              : 'border-red-600 text-red-700 bg-red-50'
+                        }
+                      >
+                        {product.confidence} confidence
+                      </Badge>
+                    </TooltipWrapper>
                   )}
                 </div>
               </CardTitle>

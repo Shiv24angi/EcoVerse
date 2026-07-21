@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import { useAuth } from '@/components/auth-provider';
@@ -13,6 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import TooltipWrapper from '@/components/ui/tooltip-wrapper';
 import { Leaf, Scan, TrendingDown, Trophy, Star, Gift } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -145,7 +148,9 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-green-900">
                 Monthly CO₂
               </CardTitle>
-              <TrendingDown className="h-4 w-4 text-muted-foreground" />
+              <TooltipWrapper text="Your total carbon footprint for this month">
+                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-700">
@@ -164,7 +169,9 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-lime-900">
                 Products Scanned
               </CardTitle>
-              <Scan className="h-4 w-4 text-muted-foreground" />
+              <TooltipWrapper text="Total products scanned this month">
+                <Scan className="h-4 w-4 text-muted-foreground" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-lime-700">
@@ -179,7 +186,9 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-emerald-900">
                 Sustainability Score
               </CardTitle>
-              <Leaf className="h-4 w-4 text-muted-foreground" />
+              <TooltipWrapper text="Your eco-friendly rating based on carbon emissions">
+                <Leaf className="h-4 w-4 text-muted-foreground" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-emerald-700">
@@ -200,7 +209,9 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-teal-900">
                 Leaderboard Rank
               </CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
+              <TooltipWrapper text="Your ranking among all EcoVerse users">
+                <Trophy className="h-4 w-4 text-muted-foreground" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-teal-700">
@@ -220,7 +231,9 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-yellow-900">
                 Reward Points
               </CardTitle>
-              <Gift className="h-4 w-4 text-muted-foreground" />
+              <TooltipWrapper text="Reward points earned from scanning and achievements">
+                <Gift className="h-4 w-4 text-muted-foreground" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-700">
@@ -258,17 +271,19 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-cyan-900">
                 Level
               </CardTitle>
-              <Star
-                className={`h-4 w-4 ${
-                  (userStats?.level || 1) >= 10
-                    ? 'text-purple-400'
-                    : (userStats?.level || 1) >= 7
-                      ? 'text-yellow-400'
-                      : (userStats?.level || 1) >= 4
-                        ? 'text-blue-400'
-                        : 'text-green-400'
-                }`}
-              />
+              <TooltipWrapper text={`Current level: ${userStats?.level || 1}`}>
+                <Star
+                  className={`h-4 w-4 ${
+                    (userStats?.level || 1) >= 10
+                      ? 'text-purple-400'
+                      : (userStats?.level || 1) >= 7
+                        ? 'text-yellow-400'
+                        : (userStats?.level || 1) >= 4
+                          ? 'text-blue-400'
+                          : 'text-green-400'
+                  }`}
+                />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div
@@ -295,7 +310,9 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-teal-900">
                 Achievements
               </CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
+              <TooltipWrapper text="Total achievements you've unlocked">
+                <Trophy className="h-4 w-4 text-muted-foreground" />
+              </TooltipWrapper>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-teal-700">

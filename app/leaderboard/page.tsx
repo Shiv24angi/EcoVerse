@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -26,6 +27,7 @@ import {
   Zap,
   ChevronDown,
 } from 'lucide-react';
+import TooltipWrapper from '@/components/ui/tooltip-wrapper';
 
 interface LeaderboardUser {
   id: string;
@@ -364,9 +366,11 @@ export default function LeaderboardPage() {
             {/* Stats Summary */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="bg-emerald-100 border-none shadow-md">
-                <CardHeader className="pb-2">
+            <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
-                    <Target className="h-4 w-4" />
+                    <TooltipWrapper text="Your current position on the leaderboard">
+                      <Target className="h-4 w-4" />
+                    </TooltipWrapper>
                     Your Rank
                   </CardTitle>
                 </CardHeader>
@@ -383,7 +387,9 @@ export default function LeaderboardPage() {
               <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
-                    <Users className="h-4 w-4" />
+                    <TooltipWrapper text="Total number of active eco-warriors on the platform">
+                      <Users className="h-4 w-4" />
+                    </TooltipWrapper>
                     Total Users
                   </CardTitle>
                 </CardHeader>
@@ -400,7 +406,9 @@ export default function LeaderboardPage() {
               <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" />
+<TooltipWrapper text="Average number of eco points across all users">
+                      <BarChart3 className="h-4 w-4" />
+                    </TooltipWrapper>
                     Average Points
                   </CardTitle>
                 </CardHeader>
@@ -415,7 +423,9 @@ export default function LeaderboardPage() {
               <Card className="bg-emerald-100 border-none shadow-md">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-emerald-700 flex items-center gap-2">
-                    <Star className="h-4 w-4" />
+                    <TooltipWrapper text="Average level achieved across the community">
+                      <Star className="h-4 w-4" />
+                    </TooltipWrapper>
                     Average Level
                   </CardTitle>
                 </CardHeader>
