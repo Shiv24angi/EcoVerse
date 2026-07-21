@@ -469,7 +469,8 @@ export function calculateScanPoints(
   isFirstScan: boolean,
   streakCount: number,
   userTotalScans: number = 0,
-  isFirstScanOfDay: boolean = true
+  isFirstScanOfDay: boolean = true,
+  doublePointsActive: boolean = false
 ): {
   points: number;
   reasons: string[];
@@ -516,6 +517,12 @@ export function calculateScanPoints(
     reasons.push(
       `Weekly milestone bonus: +${POINT_REWARDS.WEEKLY_GOAL} points`
     );
+  }
+
+  // Double Points Day — doubles all points earned from this scan
+  if (doublePointsActive && points > 0) {
+    reasons.push(`Double Points Day: +${points} bonus points`);
+    points *= 2;
   }
 
   return { points, reasons, isConfirmed };

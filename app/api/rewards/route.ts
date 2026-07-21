@@ -355,7 +355,8 @@ export async function POST(req: Request) {
         activeBadges?: string;
       };
       $set?: {
-        hasAdvancedAnalytics: boolean;
+        hasAdvancedAnalytics?: boolean;
+        customAvatar?: string;
       };
     }
 
@@ -400,7 +401,10 @@ export async function POST(req: Request) {
         updateQuery.$inc.doublePointsDays = 1;
         break;
       case 'custom_avatar':
-        // Handled elsewhere
+        updateQuery.$set = {
+          ...updateQuery.$set,
+          customAvatar: 'enabled',
+        };
         break;
     }
 

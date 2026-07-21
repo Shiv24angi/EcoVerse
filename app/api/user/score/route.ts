@@ -214,13 +214,16 @@ export async function POST(req: Request) {
       );
 
       const streakCount = streakUpdate.streakCount;
+      const doublePointsActive = (user.doublePointsDays ?? 0) > 0;
 
       // Calculate points for this manual entry
       const pointsData = calculateScanPoints(
         carbonValue,
         isFirstScan,
         streakCount,
-        totalScans
+        totalScans,
+        true,
+        doublePointsActive
       );
 
       pointsEarned = pointsData.points;
@@ -245,6 +248,7 @@ export async function POST(req: Request) {
             confirmedPoints: isConfirmed ? pointsEarned : 0,
             unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
             streakProtectors: -streakUpdate.streakProtectorsUsed,
+            doublePointsDays: doublePointsActive ? -1 : 0,
           },
           $set: {
             streakCount: streakUpdate.streakCount,
