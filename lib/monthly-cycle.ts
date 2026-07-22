@@ -132,7 +132,7 @@ export async function checkAndRunMonthlyRollover(
   // Determine whether the eco-bonus was/should be awarded for this month.
   const bonusResult = calculateMonthlyBonus({
     monthlyCarbon: user.monthlyCarbon ?? 0,
-    totalScanned: user.totalScanned ?? 0,
+    totalScanned: totalScans,
   });
 
   const bonusPoints = bonusResult ? bonusResult.points : 0;
