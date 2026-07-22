@@ -113,10 +113,15 @@ export default function ScanPage() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok || data.error || !data.productName)
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Product lookup failed');
+      }
+
+      if (!data.productName) {
         throw new Error('Product not found in API');
+      }
 
       setProduct({
         barcode: actualBarcode,
@@ -217,7 +222,10 @@ export default function ScanPage() {
     } catch (err) {
       toast({
         title: 'Error',
-        description: 'Could not find product in API or local data.',
+        description:
+          err instanceof Error
+            ? err.message
+            : 'Could not find product in API or local data.',
         variant: 'destructive',
       });
       setProduct(null);
