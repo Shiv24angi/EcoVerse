@@ -25,16 +25,14 @@ export async function PUT(req: Request) {
       { email },
       { $set: { avatarId } },
       { new: true }
-    );
+    ).select('avatarId');
 
     if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    console.warn('User from DB:', updatedUser?.avatarId);
-
     return NextResponse.json(
-      { success: true, user: updatedUser },
+      { success: true, avatarId: updatedUser.avatarId },
       { status: 200 }
     );
   } catch (error) {
