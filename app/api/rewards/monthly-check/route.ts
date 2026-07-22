@@ -10,6 +10,17 @@ import { verifyCookieAuth } from '@/lib/auth';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
 
+function countScansInMonth(
+  scans: Array<{ date: Date | string }> = [],
+  month: number,
+  year: number
+): number {
+  return scans.filter((scan) => {
+    const scanDate = new Date(scan.date);
+    return scanDate.getMonth() === month && scanDate.getFullYear() === year;
+  }).length;
+}
+
 // POST /api/rewards/monthly-check - Check and award monthly bonuses
 export async function POST(req: Request) {
   const email = req.headers.get('x-user-email');
@@ -42,7 +53,15 @@ export async function POST(req: Request) {
       lastCheck.getFullYear() === currentDate.getFullYear();
 
     if (!isSameMonthAndYear) {
-      const monthlyBonus = calculateMonthlyBonus(user);
+      const currentMonthScans = countScansInMonth(
+        user.scans,
+        currentDate.getMonth(),
+        currentDate.getFullYear()
+      );
+      const monthlyBonus = calculateMonthlyBonus({
+        monthlyCarbon: user.monthlyCarbon,
+        totalScanned: currentMonthScans,
+      });
 
       if (monthlyBonus) {
         // Atomically award monthly bonus to prevent race conditions
@@ -156,7 +175,15 @@ export async function GET(req: Request) {
       lastCheck.getMonth() !== currentDate.getMonth() ||
       lastCheck.getFullYear() !== currentDate.getFullYear();
 
-    const monthlyBonus = calculateMonthlyBonus(user);
+    const currentMonthScans = countScansInMonth(
+      user.scans,
+      currentDate.getMonth(),
+      currentDate.getFullYear()
+    );
+    const monthlyBonus = calculateMonthlyBonus({
+      monthlyCarbon: user.monthlyCarbon,
+      totalScanned: currentMonthScans,
+    });
 
     return NextResponse.json({
       eligibleForBonus,
