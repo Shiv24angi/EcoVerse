@@ -64,10 +64,12 @@ const MONTH_LABELS = [
 
 /** Returns the week label for a day-of-month (1-indexed). */
 function weekLabel(day: number): string {
-  if (day <= 7) return 'Week 1';
-  if (day <= 14) return 'Week 2';
-  if (day <= 21) return 'Week 3';
-  return 'Week 4';
+  return `Week ${Math.ceil(day / 7)}`;
+}
+
+function weeksInMonth(month: number, year: number): number {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  return Math.ceil(daysInMonth / 7);
 }
 
 /**
@@ -169,19 +171,20 @@ export async function GET(req: Request) {
       .slice(0, 8); // top 8 categories
 
     // ── Weekly progress (current month) ─────────────────────────────────
-    const weekMap: Record<string, number> = {
-      'Week 1': 0,
-      'Week 2': 0,
-      'Week 3': 0,
-      'Week 4': 0,
-    };
+    const weekCount = weeksInMonth(currentMonth, currentYear);
+    const weekMap: Record<string, number> = Object.fromEntries(
+      Array.from({ length: weekCount }, (_, index) => [
+        `Week ${index + 1}`,
+        0,
+      ])
+    );
     for (const scan of currentMonthScans) {
       const day = new Date(scan.date).getDate();
       const label = weekLabel(day);
       weekMap[label] = (weekMap[label] ?? 0) + (scan.carbonEstimate ?? 0);
     }
 
-    const weeklyTarget = parseFloat((monthlyGoal / 4).toFixed(2));
+    const weeklyTarget = parseFloat((monthlyGoal / weekCount).toFixed(2));
     const weeklyProgress: WeeklyDataPoint[] = Object.entries(weekMap).map(
       ([week, carbon]) => ({
         week,
