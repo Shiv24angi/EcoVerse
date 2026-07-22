@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
 
   // If missing token on protected route, redirect to signin
   if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/signin', request.url));
+    return NextResponse.redirect(new URL('/auth/signin', request.url));
   }
 
   // Clone headers to modify them
@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-user-email', payload.email);
     } else if (isProtectedRoute) {
       // Invalid token on a protected route
-      return NextResponse.redirect(new URL('/signin', request.url));
+      return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
   }
 
