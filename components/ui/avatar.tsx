@@ -4,18 +4,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-
-export const avatarImages = {
-  'avatar-1': '/avatars/av1.jpg',
-  'avatar-2': '/avatars/av2.jpg',
-  'avatar-3': '/avatars/av3.jpg',
-  'avatar-4': '/avatars/av4.jpg',
-  'avatar-5': '/avatars/av5.jpg',
-  'avatar-6': '/avatars/av6.jpg',
-  'avatar-7': '/avatars/av7.jpg',
-  'avatar-8': '/avatars/av8.jpg',
-};
-export type AvatarId = keyof typeof avatarImages;
+import { avatarImages, type AvatarId } from '@/lib/avatar-options';
 
 interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   avatarId?: AvatarId;
@@ -50,3 +39,4 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
 Avatar.displayName = 'Avatar';
 
 export { Avatar };
+export type { AvatarId };
