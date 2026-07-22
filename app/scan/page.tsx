@@ -150,7 +150,7 @@ export default function ScanPage() {
           pointsType,
           leveledUp,
           newAchievements,
-          streakProtected,
+          streakProtectorUsed,
           milestone,
         } = data.rewards;
         if (pointsEarned > 0) {
@@ -161,7 +161,7 @@ export default function ScanPage() {
             pointsType,
           });
         }
-        if (streakProtected) {
+        if (streakProtectorUsed) {
           setTimeout(() => {
             showNotification({
               type: 'achievement',
@@ -179,7 +179,7 @@ export default function ScanPage() {
                 points: 0,
               });
             },
-            streakProtected ? 3000 : 1500
+            streakProtectorUsed ? 3000 : 1500
           );
         }
         if (leveledUp) {
@@ -191,7 +191,7 @@ export default function ScanPage() {
                 level: data.rewards.level,
               });
             },
-            (streakProtected ? 3000 : 1500) + (milestone ? 1500 : 0) + 500
+            (streakProtectorUsed ? 3000 : 1500) + (milestone ? 1500 : 0) + 500
           );
         }
         if (newAchievements?.length) {
@@ -205,7 +205,7 @@ export default function ScanPage() {
                 });
               },
               3000 +
-                (streakProtected ? 1500 : 0) +
+                (streakProtectorUsed ? 1500 : 0) +
                 (milestone ? 1500 : 0) +
                 index * 1500
             );
