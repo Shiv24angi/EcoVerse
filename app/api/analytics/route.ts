@@ -32,6 +32,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    if (!user.hasAdvancedAnalytics) {
+      return NextResponse.json(
+        { error: 'Advanced analytics is locked' },
+        { status: 403 }
+      );
+    }
+
     const scans = user.scans || [];
     const monthlyCarbonGoal = user.monthlyCarbonGoal || 40;
 

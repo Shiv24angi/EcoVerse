@@ -89,12 +89,21 @@ export default function AnalyticsPage() {
       if (!user?.email) return;
       try {
         const res = await fetch('/api/analytics');
+        if (res.status === 403) {
+          throw new Error(
+            'Advanced Analytics is locked. Redeem it in the rewards shop to view this page.'
+          );
+        }
         if (!res.ok) throw new Error('Failed to load analytics');
         const json: AnalyticsData = await res.json();
         setData(json);
       } catch (err) {
         console.error('Analytics fetch error:', err);
-        setError('Unable to load analytics data. Please try again.');
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to load analytics data. Please try again.'
+        );
       } finally {
         setLoading(false);
       }
