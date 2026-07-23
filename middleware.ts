@@ -6,6 +6,7 @@ const protectedRoutes = [
   '/dashboard',
   '/scan',
   '/rewards',
+  '/badges',
   '/carbon-tracking',
   '/analytics',
 ];
@@ -57,6 +58,7 @@ export const config = {
     '/dashboard/:path*',
     '/scan/:path*',
     '/rewards/:path*',
+    '/badges/:path*',
     '/carbon-tracking/:path*',
     '/analytics/:path*',
     '/api/:path*',
