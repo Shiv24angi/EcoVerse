@@ -670,49 +670,58 @@ export async function confirmAgedPoints(email: string): Promise<number> {
   );
   const { default: User } = await import('@/models/User');
 
+  const user = await User.findOne(
+    {
+      email,
+      unconfirmedPoints: { $gt: 0 },
+      rewardTransactions: {
+        $elemMatch: {
+          pointsType: 'unconfirmed',
+          type: 'earned',
+          date: { $lte: cutoff },
+        },
+      },
+    },
+    { rewardTransactions: 1 }
+  ).lean<Pick<RewardUser, 'rewardTransactions'>>();
+
+  const eligibleTransactions = (user?.rewardTransactions ?? []).filter(
+    (transaction) =>
+      transaction._id &&
+      transaction.pointsType === 'unconfirmed' &&
+      transaction.type === 'earned' &&
+      transaction.date <= cutoff
+  );
+  const eligiblePoints = eligibleTransactions.reduce(
+    (total, transaction) => total + transaction.points,
+    0
+  );
+
+  if (eligiblePoints <= 0) return 0;
+
+  const eligibleTransactionIds = eligibleTransactions.map(
+    (transaction) => transaction._id
+  );
+
   const result = await User.findOneAndUpdate(
     {
       email,
       unconfirmedPoints: { $gt: 0 },
+      'rewardTransactions._id': { $in: eligibleTransactionIds },
     },
     [
-      {
-        $set: {
-          _eligiblePoints: {
-            $sum: {
-              $map: {
-                input: {
-                  $filter: {
-                    input: { $ifNull: ['$rewardTransactions', []] },
-                    as: 't',
-                    cond: {
-                      $and: [
-                        { $eq: ['$$t.pointsType', 'unconfirmed'] },
-                        { $eq: ['$$t.type', 'earned'] },
-                        { $lte: ['$$t.date', cutoff] },
-                      ],
-                    },
-                  },
-                },
-                as: 'et',
-                in: { $ifNull: ['$$et.points', 0] },
-              },
-            },
-          },
-        },
-      },
       {
         $set: {
           confirmedPoints: {
             $add: [
               { $ifNull: ['$confirmedPoints', 0] },
-              { $ifNull: ['$_eligiblePoints', 0] },
+              eligiblePoints,
             ],
           },
           unconfirmedPoints: {
             $subtract: [
               { $ifNull: ['$unconfirmedPoints', 0] },
-              { $ifNull: ['$_eligiblePoints', 0] },
+              eligiblePoints,
             ],
           },
           rewardTransactions: {
@@ -725,7 +734,7 @@ export async function confirmAgedPoints(email: string): Promise<number> {
                     $and: [
                       { $eq: ['$$t.pointsType', 'unconfirmed'] },
                       { $eq: ['$$t.type', 'earned'] },
-                      { $lte: ['$$t.date', cutoff] },
+                      { $in: ['$$t._id', eligibleTransactionIds] },
                     ],
                   },
                   then: {
@@ -741,13 +750,12 @@ export async function confirmAgedPoints(email: string): Promise<number> {
           },
         },
       },
-      { $unset: '_eligiblePoints' },
     ],
     { new: true }
   );
 
   if (!result) return 0;
-  return (result as any)._eligiblePoints ?? 0;
+  return eligiblePoints;
 }
 
 export function getUserPointsSummary(user: RewardUser): {
