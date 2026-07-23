@@ -16,6 +16,10 @@ import {
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
+function getUtcDayKey(date: Date) {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
 
@@ -174,6 +178,11 @@ export async function POST(req: Request) {
       const isFirstScan = (user.totalScanned || 0) === 0;
       const totalScans = user.totalScanned || 0;
       const previousLastScanDate = user.lastScanDate;
+      const scanTimestamp = new Date();
+      const isFirstScanOfDay =
+        !previousLastScanDate ||
+        getUtcDayKey(scanTimestamp) !==
+          getUtcDayKey(new Date(previousLastScanDate));
       oldLevel = user.level || 1;
 
       // Use shared streak calculation instead of inline logic
@@ -181,7 +190,8 @@ export async function POST(req: Request) {
         user.lastScanDate,
         user.streakCount ?? 0,
         user.bestStreakCount ?? 0,
-        user.streakProtectors ?? 0
+        user.streakProtectors ?? 0,
+        scanTimestamp
       );
 
       const streakCount = streakUpdate.streakCount;
@@ -191,7 +201,8 @@ export async function POST(req: Request) {
         carbonValue,
         isFirstScan,
         streakCount,
-        totalScans
+        totalScans,
+        isFirstScanOfDay
       );
 
       pointsEarned = pointsData.points;
@@ -220,7 +231,7 @@ export async function POST(req: Request) {
           $set: {
             streakCount: streakUpdate.streakCount,
             bestStreakCount: streakUpdate.bestStreakCount,
-            lastScanDate: new Date(),
+            lastScanDate: scanTimestamp,
           },
           $max: {
             level: levelData.level,
@@ -232,7 +243,7 @@ export async function POST(req: Request) {
               category: 'Manual Entry',
               confidence: 'medium',
               barcode: `MANUAL-${Date.now()}`,
-              date: new Date(),
+              date: scanTimestamp,
               source: 'Manual Entry',
             },
             rewardTransactions: {
