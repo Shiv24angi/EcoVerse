@@ -7,24 +7,53 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { setAuthCookie } from '@/lib/auth';
 
+interface SignupRequestBody {
+  name?: unknown;
+  email?: unknown;
+  password?: unknown;
+  firebaseUid?: unknown;
+}
+
 export async function POST(req: Request) {
   try {
-    await dbConnect();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
 
-    const body = await req.json();
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
 
-    const { name, email, password, firebaseUid } = body;
+    const { name, email, password, firebaseUid } = body as SignupRequestBody;
 
     // Require basic fields
-    if (!name || !email) {
+    if (
+      typeof name !== 'string' ||
+      !name.trim() ||
+      typeof email !== 'string' ||
+      !email.trim()
+    ) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
+    const hasPassword = typeof password === 'string' && password.length > 0;
+    const hasFirebaseUid =
+      typeof firebaseUid === 'string' && firebaseUid.length > 0;
+
     // Require either password OR firebaseUid
-    if (!password && !firebaseUid) {
+    if (!hasPassword && !hasFirebaseUid) {
       return NextResponse.json(
         {
           error: 'Password or Firebase UID is required',
@@ -33,7 +62,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const existingUser = await User.findOne({ email });
+    const trimmedName = name.trim();
+    const normalizedEmail = email.trim();
+    const normalizedFirebaseUid = hasFirebaseUid ? firebaseUid : null;
+
+    await dbConnect();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return NextResponse.json(
@@ -45,21 +80,21 @@ export async function POST(req: Request) {
     // Hash password only for manual signup
     let hashedPassword = null;
 
-    if (password) {
+    if (hasPassword) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
     const createdUser = await User.create({
-      name,
-      username: name,
-      full_name: name,
-      email,
+      name: trimmedName,
+      username: trimmedName,
+      full_name: trimmedName,
+      email: normalizedEmail,
 
       // manual auth
       password: hashedPassword,
 
       // google auth
-      firebaseUid: firebaseUid || null,
+      firebaseUid: normalizedFirebaseUid,
 
       monthlyCarbon: 0,
       totalScanned: 0,
