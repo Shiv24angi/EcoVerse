@@ -72,15 +72,15 @@ export default function LeaderboardPage() {
   const [hasMore, setHasMore] = useState(false);
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
 
-  const fetchLeaderboardData = useCallback(async () => {
+  const fetchLeaderboardData = useCallback(async (nextCursor: string | null) => {
     try {
       const params = new URLSearchParams();
-      if (cursor) params.set('cursor', cursor);
+      if (nextCursor) params.set('cursor', nextCursor);
       if (user?._id) params.set('userId', user._id);
       const response = await fetch(`/api/leaderboard?${params.toString()}`);
       if (response.ok) {
         const data: LeaderboardResponse = await response.json();
-        if (!cursor) {
+        if (!nextCursor) {
           setLeaderboardData(data.leaderboard);
         } else {
           setLeaderboardData((prev) => [...prev, ...data.leaderboard]);
@@ -98,24 +98,21 @@ export default function LeaderboardPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [cursor, user?._id]);
+  }, [user?._id]);
 
   const handleLoadMore = () => {
+    if (!cursor || loadingMore) return;
     setLoadingMore(true);
+    void fetchLeaderboardData(cursor);
   };
 
   useEffect(() => {
-    fetchLeaderboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Reload when cursor changes due to loadMore
-  useEffect(() => {
-    if (loadingMore) {
-      fetchLeaderboardData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingMore]);
+    setLoading(true);
+    setCursor(null);
+    setHasMore(false);
+    setCurrentUserRank(null);
+    void fetchLeaderboardData(null);
+  }, [fetchLeaderboardData]);
 
   const getRankIcon = (index: number) => {
     const rank = index + 1;
