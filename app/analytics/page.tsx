@@ -88,7 +88,7 @@ export default function AnalyticsPage() {
     const fetchAnalytics = async () => {
       if (!user?.email) return;
       try {
-        const res = await fetch('/api/analytics');
+        const res = await fetch('/api/user/analytics');
         if (!res.ok) throw new Error('Failed to load analytics');
         const json: AnalyticsData = await res.json();
         setData(json);

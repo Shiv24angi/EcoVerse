@@ -31,10 +31,19 @@ interface WeeklyDataPoint {
   target: number;
 }
 
+interface SustainabilityTip {
+  title: string;
+  description: string;
+  impact: string;
+  difficulty: string;
+  icon: string;
+}
+
 interface AnalyticsResponse {
   monthlyData: MonthlyDataPoint[];
   categoryBreakdown: CategoryDataPoint[];
   weeklyProgress: WeeklyDataPoint[];
+  tips: SustainabilityTip[];
   currentMonth: {
     carbon: number;
     scanned: number;
@@ -43,6 +52,7 @@ interface AnalyticsResponse {
     year: number;
   };
   totalCarbonSaved: number;
+  averagePerScan: number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -189,6 +199,7 @@ export async function GET(req: Request) {
         target: weeklyTarget,
       })
     );
+    const tips = generateTips(categoryBreakdown);
 
     // ── Total carbon saved across all history ────────────────────────────
     const totalCarbonSaved = [
@@ -201,11 +212,16 @@ export async function GET(req: Request) {
       const saved = m.carbonGoal - m.carbonSpent;
       return acc + (saved > 0 ? saved : 0);
     }, 0);
+    const averagePerScan =
+      currentMonthScans.length > 0
+        ? parseFloat((currentMonthCarbon / currentMonthScans.length).toFixed(2))
+        : 0;
 
     const response: AnalyticsResponse = {
       monthlyData,
       categoryBreakdown,
       weeklyProgress,
+      tips,
       currentMonth: {
         carbon: parseFloat(currentMonthCarbon.toFixed(2)),
         scanned: currentMonthScans.length,
@@ -214,6 +230,7 @@ export async function GET(req: Request) {
         year: currentYear,
       },
       totalCarbonSaved: parseFloat(totalCarbonSaved.toFixed(2)),
+      averagePerScan,
     };
 
     return NextResponse.json(response);
@@ -224,4 +241,89 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
+}
+
+function generateTips(categoryBreakdown: CategoryDataPoint[]): SustainabilityTip[] {
+  const tips: SustainabilityTip[] = [];
+
+  const highCarbonCategory = categoryBreakdown.find((c) => c.percentage > 30);
+
+  if (highCarbonCategory) {
+    const cat = highCarbonCategory.category.toLowerCase();
+    let tip: SustainabilityTip;
+
+    if (
+      cat.includes('food') ||
+      cat.includes('groceries') ||
+      cat.includes('meat') ||
+      cat.includes('dairy')
+    ) {
+      tip = {
+        title: `Reduce ${highCarbonCategory.category} Consumption`,
+        description: `${highCarbonCategory.category} makes up ${highCarbonCategory.percentage}% of your footprint. Try plant-based alternatives 2-3 times per week.`,
+        impact: `Could save ~${Math.round(highCarbonCategory.carbon * 0.3)} kg CO2/month`,
+        difficulty: 'Medium',
+        icon: '\uD83E\uDD66',
+      };
+    } else if (cat.includes('transport') || cat.includes('travel')) {
+      tip = {
+        title: `Reduce ${highCarbonCategory.category} Emissions`,
+        description: `${highCarbonCategory.category} makes up ${highCarbonCategory.percentage}% of your footprint. Consider carpooling, public transit, or cycling.`,
+        impact: `Could save ~${Math.round(highCarbonCategory.carbon * 0.3)} kg CO2/month`,
+        difficulty: 'Medium',
+        icon: '\uD83D\uDE8C',
+      };
+    } else if (
+      cat.includes('energy') ||
+      cat.includes('electric') ||
+      cat.includes('utilities')
+    ) {
+      tip = {
+        title: `Reduce ${highCarbonCategory.category} Usage`,
+        description: `${highCarbonCategory.category} makes up ${highCarbonCategory.percentage}% of your footprint. Switch to energy-efficient appliances and LED bulbs.`,
+        impact: `Could save ~${Math.round(highCarbonCategory.carbon * 0.3)} kg CO2/month`,
+        difficulty: 'Medium',
+        icon: '\uD83D\uDCA1',
+      };
+    } else {
+      tip = {
+        title: `Reduce ${highCarbonCategory.category} Footprint`,
+        description: `${highCarbonCategory.category} makes up ${highCarbonCategory.percentage}% of your footprint. Look for eco-friendly alternatives.`,
+        impact: `Could save ~${Math.round(highCarbonCategory.carbon * 0.3)} kg CO2/month`,
+        difficulty: 'Medium',
+        icon: '\uD83C\uDF3F',
+      };
+    }
+
+    tips.push(tip);
+  }
+
+  tips.push(
+    {
+      title: 'Choose Local Produce',
+      description:
+        'Buy fruits and vegetables from local farmers to reduce transport emissions.',
+      impact: 'Could save 3 kg CO2/month',
+      difficulty: 'Easy',
+      icon: '\uD83C\uDF3F',
+    },
+    {
+      title: 'Minimise Packaging',
+      description:
+        'Choose products with less plastic packaging to reduce waste.',
+      impact: 'Could save 2 kg CO2/month',
+      difficulty: 'Easy',
+      icon: '\u267B\uFE0F',
+    },
+    {
+      title: 'Seasonal Shopping',
+      description:
+        'Buy seasonal fruits and vegetables to lower your footprint.',
+      impact: 'Could save 4 kg CO2/month',
+      difficulty: 'Easy',
+      icon: '\uD83C\uDF4E',
+    }
+  );
+
+  return tips;
 }
