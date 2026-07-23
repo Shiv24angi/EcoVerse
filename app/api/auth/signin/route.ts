@@ -7,13 +7,49 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { setAuthCookie } from '@/lib/auth';
 
+interface SigninRequestBody {
+  email?: unknown;
+  password?: unknown;
+}
+
 export async function POST(req: Request) {
   try {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = body as SigninRequestBody;
+
+    if (
+      typeof email !== 'string' ||
+      !email.trim() ||
+      typeof password !== 'string' ||
+      !password
+    ) {
+      return NextResponse.json(
+        { error: 'Missing email or password' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = email.trim();
+
     await dbConnect();
 
-    const { email, password } = await req.json();
-
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
