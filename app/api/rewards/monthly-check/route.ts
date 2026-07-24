@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import mongoose from 'mongoose';
 import User, { type IUser } from '@/models/User';
-import { calculateMonthlyBonus } from '@/lib/rewards-system';
+import { calculateLevel, calculateMonthlyBonus } from '@/lib/rewards-system';
 import { verifyCookieAuth } from '@/lib/auth';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
@@ -101,7 +101,9 @@ export async function POST(req: Request) {
         const newRewardPoints =
           (updatedUser.confirmedPoints || 0) +
           (updatedUser.unconfirmedPoints || 0);
+        const levelData = calculateLevel(updatedUser.totalPointsEarned || 0);
         await User.findByIdAndUpdate(updatedUser._id, {
+          $max: { level: levelData.level },
           $set: { rewardPoints: newRewardPoints },
         });
 
@@ -111,6 +113,7 @@ export async function POST(req: Request) {
           newTotalPoints: newRewardPoints,
           confirmedPoints: updatedUser.confirmedPoints,
           unconfirmedPoints: updatedUser.unconfirmedPoints,
+          level: Math.max(updatedUser.level || 1, levelData.level),
         });
       }
     }
