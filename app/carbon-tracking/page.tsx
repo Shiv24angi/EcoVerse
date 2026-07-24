@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, TrendingDown, Target, Award, Pencil, Download } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ScanEntry {
   productName: string;
@@ -122,8 +123,13 @@ export default function CarbonTrackingPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading...</div>
+        <div className="space-y-6">
+          <Skeleton className="h-12 w-1/2" />
+          <Skeleton className="h-8 w-3/4" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
+          </div>
+          <Skeleton className="h-64 w-full" />
         </div>
       </DashboardLayout>
     );
@@ -147,7 +153,10 @@ export default function CarbonTrackingPage() {
   // Group scans by date for better display
   const scansByDate = userData.scans.reduce(
     (acc: { [date: string]: UserData['scans'] }, scan) => {
-      const dateKey = new Date(scan.date).toDateString();
+      // Use a consistent, local-timezone-based key for grouping
+      const dateKey = new Date(scan.date).toLocaleDateString('en-CA', {
+        year: 'numeric', month: '2-digit', day: '2-digit'
+      });
       if (!acc[dateKey]) acc[dateKey] = [];
       acc[dateKey].push(scan);
       return acc;
