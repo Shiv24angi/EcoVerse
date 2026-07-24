@@ -166,6 +166,17 @@ export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
   },
 ];
 
+function currentMonthScanCount(user: RewardUser): number {
+  const now = new Date();
+  return (user.scans ?? []).filter((scan) => {
+    const scanDate = new Date(scan.date);
+    return (
+      scanDate.getMonth() === now.getMonth() &&
+      scanDate.getFullYear() === now.getFullYear()
+    );
+  }).length;
+}
+
 // Enhanced Achievement definitions
 export const ACHIEVEMENTS: Achievement[] = [
   {
@@ -261,11 +272,11 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: 'Eco Warrior',
     description: 'Keep monthly carbon footprint under 20kg',
     condition: (user) =>
-      (user.monthlyCarbon ?? 0) < 20 && (user.totalScanned ?? 0) >= 10,
+      (user.monthlyCarbon ?? 0) < 20 && currentMonthScanCount(user) >= 10,
     points: 300,
     icon: '🌱',
     category: 'Carbon',
-    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 10),
+    currentProgress: (user) => Math.min(currentMonthScanCount(user), 10),
     maxProgress: 10,
   },
   {
@@ -273,11 +284,11 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: 'Carbon Conscious',
     description: 'Keep monthly carbon footprint under 30kg',
     condition: (user) =>
-      (user.monthlyCarbon ?? 0) < 30 && (user.totalScanned ?? 0) >= 5,
+      (user.monthlyCarbon ?? 0) < 30 && currentMonthScanCount(user) >= 5,
     points: 150,
     icon: '🌿',
     category: 'Carbon',
-    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 5),
+    currentProgress: (user) => Math.min(currentMonthScanCount(user), 5),
     maxProgress: 5,
   },
   {
@@ -285,11 +296,11 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: 'Zero Waste Hero',
     description: 'Keep monthly carbon footprint under 10kg',
     condition: (user) =>
-      (user.monthlyCarbon ?? 0) < 10 && (user.totalScanned ?? 0) >= 15,
+      (user.monthlyCarbon ?? 0) < 10 && currentMonthScanCount(user) >= 15,
     points: 500,
     icon: '🌍',
     category: 'Carbon',
-    currentProgress: (user) => Math.min(user.totalScanned ?? 0, 15),
+    currentProgress: (user) => Math.min(currentMonthScanCount(user), 15),
     maxProgress: 15,
   },
   {

@@ -124,15 +124,51 @@ describe('Rewards System', () => {
     });
 
     it('should award complex achievements like Eco Warrior', () => {
+      const currentMonthScans = Array.from({ length: 15 }, (_, index) => ({
+        productName: `Product ${index}`,
+        carbonEstimate: 1,
+        category: 'Test',
+        confidence: 'medium' as const,
+        barcode: `1234567${index}`,
+        date: new Date(),
+      }));
       const user: RewardUser = {
         totalScanned: 15,
         streakCount: 1,
         level: 1,
         monthlyCarbon: 15, // Under 20kg
+        scans: currentMonthScans,
         achievements: [],
       };
       const newAchievements = checkAchievements(user);
       expect(newAchievements.map((a) => a.id)).toContain('eco_warrior');
+    });
+
+    it('should not award monthly carbon achievements from old scans', () => {
+      const oldDate = new Date();
+      oldDate.setMonth(oldDate.getMonth() - 1);
+      const oldScans = Array.from({ length: 15 }, (_, index) => ({
+        productName: `Old Product ${index}`,
+        carbonEstimate: 1,
+        category: 'Test',
+        confidence: 'medium' as const,
+        barcode: `7654321${index}`,
+        date: oldDate,
+      }));
+      const user: RewardUser = {
+        totalScanned: 15,
+        streakCount: 1,
+        level: 1,
+        monthlyCarbon: 15,
+        scans: oldScans,
+        achievements: [],
+      };
+
+      const newAchievements = checkAchievements(user);
+      expect(newAchievements.map((a) => a.id)).not.toContain('eco_warrior');
+      expect(newAchievements.map((a) => a.id)).not.toContain(
+        'carbon_conscious'
+      );
     });
   });
 
