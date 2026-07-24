@@ -236,9 +236,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { itemId } = await req.json();
+  let payload: unknown;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
-  if (!itemId) {
+  if (typeof payload !== 'object' || payload === null) {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
+
+  const { itemId } = payload as { itemId?: unknown };
+
+  if (typeof itemId !== 'string' || !itemId.trim()) {
     return NextResponse.json(
       { error: 'Missing required fields' },
       { status: 400 }
