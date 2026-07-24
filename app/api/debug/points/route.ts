@@ -6,10 +6,28 @@ import {
   confirmPendingPoints,
   POINT_CONFIRMATION,
 } from '@/lib/rewards-system';
+import { verifyCookieAuth } from '@/lib/auth';
 
 // Force dynamic rendering — this route connects to MongoDB at request time
 // and must never be statically generated during `next build`.
 export const dynamic = 'force-dynamic';
+
+async function requireDebugOwner(req: Request, email: string) {
+  const requesterEmail = req.headers.get('x-user-email');
+
+  if (!requesterEmail) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const authError = await verifyCookieAuth(req, requesterEmail);
+  if (authError) return authError;
+
+  if (requesterEmail !== email) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  return null;
+}
 
 // GET /api/debug/points?email=user@email.com - Debug point system for a user
 export async function GET(req: Request) {
@@ -30,6 +48,9 @@ export async function GET(req: Request) {
   if (typeof email !== 'string') {
     return NextResponse.json({ error: 'Invalid input type' }, { status: 400 });
   }
+
+  const authError = await requireDebugOwner(req, email);
+  if (authError) return authError;
 
   try {
     await dbConnect();
@@ -144,6 +165,9 @@ export async function POST(req: Request) {
   if (typeof action !== 'string') {
     return NextResponse.json({ error: 'Invalid action type' }, { status: 400 });
   }
+
+  const authError = await requireDebugOwner(req, email);
+  if (authError) return authError;
 
   try {
     await dbConnect();
