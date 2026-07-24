@@ -16,6 +16,12 @@ import {
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
+const MANUAL_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
 
@@ -139,6 +145,7 @@ export async function POST(req: Request) {
     }
 
     const carbonValue = Number(carbonEstimate);
+    const normalizedProductName = productName.trim();
 
     if (!Number.isFinite(carbonValue) || carbonValue < 0) {
       return NextResponse.json(
@@ -149,6 +156,34 @@ export async function POST(req: Request) {
 
     await dbConnect();
     await checkAndRunMonthlyRollover(email);
+
+    const duplicateWindowStart = new Date(
+      Date.now() - MANUAL_DUPLICATE_WINDOW_MS
+    );
+    const duplicateManualEntry = await User.exists({
+      email,
+      scans: {
+        $elemMatch: {
+          source: 'Manual Entry',
+          productName: {
+            $regex: `^${escapeRegExp(normalizedProductName)}$`,
+            $options: 'i',
+          },
+          carbonEstimate: carbonValue,
+          date: { $gte: duplicateWindowStart },
+        },
+      },
+    });
+
+    if (duplicateManualEntry) {
+      return NextResponse.json(
+        {
+          error:
+            'This manual entry was already recorded recently. Please wait before submitting it again.',
+        },
+        { status: 409 }
+      );
+    }
 
     // Retry loop with CAS guard on lastScanDate — mirrors the barcode
     // scan endpoint's compare-and-set pattern to prevent double-counting
@@ -227,7 +262,7 @@ export async function POST(req: Request) {
           },
           $push: {
             scans: {
-              productName,
+              productName: normalizedProductName,
               carbonEstimate: carbonValue,
               category: 'Manual Entry',
               confidence: 'medium',
@@ -241,7 +276,7 @@ export async function POST(req: Request) {
               points: pointsEarned,
               pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
               reason: 'scan',
-              description: `Manual entry: ${productName}`,
+              description: `Manual entry: ${normalizedProductName}`,
               date: new Date(),
             },
           },
