@@ -42,7 +42,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { barcode } = await req.json();
+  let payload: unknown;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
+
+  if (typeof payload !== 'object' || payload === null) {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
+
+  const { barcode } = payload as { barcode?: unknown };
 
   if (!barcode) {
     return NextResponse.json({ error: 'Barcode missing' }, { status: 400 });
