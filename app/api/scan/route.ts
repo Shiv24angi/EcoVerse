@@ -69,10 +69,16 @@ export async function POST(req: Request) {
       product = productRes.data.product;
     } catch (offError) {
       console.warn(
-        'Open Food Facts API failed, using barcode as fallback:',
+        'Open Food Facts API failed while verifying barcode:',
         offError
       );
-      product = { product_name: `Product ${barcode}`, brands: 'Unknown' };
+      return NextResponse.json(
+        {
+          error:
+            'Product lookup is temporarily unavailable. Please try again later.',
+        },
+        { status: 503 }
+      );
     }
 
     if (!product?.product_name) {
