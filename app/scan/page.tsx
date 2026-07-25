@@ -113,6 +113,19 @@ export default function ScanPage() {
         }),
       });
 
+      if (res.status === 429) {
+        const rateLimitData = await res.json().catch(() => ({}));
+        toast({
+          title: 'Slow down!',
+          description:
+            rateLimitData.error ||
+            'Too many scans. Please wait a moment before scanning again.',
+          variant: 'destructive',
+        });
+        setProduct(null);
+        return;
+      }
+
       const data = await res.json();
 
       if (!res.ok || data.error || !data.productName)

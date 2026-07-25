@@ -20,6 +20,7 @@ import {
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
+import { checkScanRateLimit } from '@/lib/rate-limit';
 
 type OpenFoodFactsResponse = {
   product: {
@@ -40,6 +41,21 @@ export async function POST(req: Request) {
 
   if (!userEmail) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimitResult = checkScanRateLimit(userEmail);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      {
+        error: 'Too many scans. Please wait a moment before scanning again.',
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil(rateLimitResult.retryAfterMs / 1000).toString(),
+        },
+      }
+    );
   }
 
   const { barcode } = await req.json();
