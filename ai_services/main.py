@@ -241,10 +241,10 @@ def get_user_analytics(user_id: str, db: Session = Depends(get_db), x_caller_id:
     )
     
     # 3. FORMAT THE RESPONSE: Turn the database tuples into a clean dictionary
-    # Example output: {"Food": 45.2, "Electronics": 120.5}
+    # Example output: {"Food": 45.2, "Electronics": 120.5, "Uncategorized": 10.0}
     category_breakdown = {
-        # If total_emissions is None (which happens if there are no scans), fall back to 0.0
-        row.category: round(row.total_emissions or 0.0, 2) 
+        # Fall back to "Uncategorized" if category is None
+        row.category or "Uncategorized": round(row.total_emissions or 0.0, 2) 
         for row in results
     }
     
