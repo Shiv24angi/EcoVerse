@@ -21,6 +21,13 @@ jest.mock('@/models/CarbonCache', () => {
       mockCache[doc.queryKey] = doc;
       return Promise.resolve(doc);
     }),
+    updateOne: jest.fn().mockImplementation((filter, update) => {
+      mockCache[filter.queryKey] = {
+        queryKey: filter.queryKey,
+        ...update.$set,
+      };
+      return Promise.resolve({ acknowledged: true, upsertedCount: 1 });
+    }),
     _clear: () => {
       for (const prop of Object.keys(mockCache)) {
         delete mockCache[prop];
@@ -107,7 +114,7 @@ describe('Climatiq Integration with Caching & Fallback', () => {
     expect(result.calculation).toContain('based on Climatiq');
 
     // Verify it got cached
-    expect(carbonCacheMock.create).toHaveBeenCalled();
+    expect(carbonCacheMock.updateOne).toHaveBeenCalled();
   });
 
   it('should serve from cache on subsequent requests', async () => {
