@@ -12,14 +12,49 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { barcode, material } = await req.json();
+  let payload: unknown;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
-  if (!barcode || !material) {
+  if (typeof payload !== 'object' || payload === null) {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
+
+  const { barcode, material } = payload as {
+    barcode?: unknown;
+    material?: unknown;
+  };
+
+  if (typeof barcode !== 'string' || !/^\d{8,14}$/.test(barcode)) {
+    return NextResponse.json(
+      { error: 'Invalid barcode format' },
+      { status: 400 }
+    );
+  }
+
+  if (typeof material !== 'string' || !material.trim()) {
     return NextResponse.json({ error: 'Missing data' }, { status: 400 });
   }
 
+  const normalizedMaterial = material.trim();
+  if (normalizedMaterial.length > 80) {
+    return NextResponse.json(
+      { error: 'Material is too long' },
+      { status: 400 }
+    );
+  }
+
   console.warn(
-    `User ${userEmail} reported packaging for ${barcode}: ${material}`
+    `User ${userEmail} reported packaging for ${barcode}: ${normalizedMaterial}`
   );
 
   // Optionally: Save to MongoDB here
