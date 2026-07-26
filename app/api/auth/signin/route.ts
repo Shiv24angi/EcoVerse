@@ -11,9 +11,33 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { email, password } = await req.json();
+    const payload: unknown = await req.json();
 
-    const user = await User.findOne({ email });
+    if (typeof payload !== 'object' || payload === null) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = payload as {
+      email?: unknown;
+      password?: unknown;
+    };
+
+    if (
+      typeof email !== 'string' ||
+      typeof password !== 'string' ||
+      !email.trim() ||
+      !password
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid credential fields' },
+        { status: 400 }
+      );
+    }
+
+    const user = await User.findOne({ email: email.trim() });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
