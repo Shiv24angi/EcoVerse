@@ -37,9 +37,6 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Calculate current level data
-    const levelData = calculateLevel(user.totalPointsEarned || 0);
-
     // --- ATOMIC POINT CONFIRMATION ---
     // We check for points that have passed the confirmation threshold.
     const confirmationData = confirmPendingPoints(user);
@@ -132,6 +129,9 @@ export async function GET(req: Request) {
         user = updatedUser;
       }
     }
+
+    // Calculate level data from the final user snapshot after confirmation.
+    const levelData = calculateLevel(user.totalPointsEarned || 0);
 
     const pointsSummary = getUserPointsSummary(user);
 
