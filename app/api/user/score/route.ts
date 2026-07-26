@@ -138,6 +138,7 @@ export async function POST(req: Request) {
       );
     }
 
+    const trimmedProductName = productName.trim();
     const carbonValue = Number(carbonEstimate);
 
     if (!Number.isFinite(carbonValue) || carbonValue < 0) {
@@ -227,7 +228,7 @@ export async function POST(req: Request) {
           },
           $push: {
             scans: {
-              productName,
+              productName: trimmedProductName,
               carbonEstimate: carbonValue,
               category: 'Manual Entry',
               confidence: 'medium',
@@ -241,7 +242,7 @@ export async function POST(req: Request) {
               points: pointsEarned,
               pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
               reason: 'scan',
-              description: `Manual entry: ${productName}`,
+              description: `Manual entry: ${trimmedProductName}`,
               date: new Date(),
             },
           },
