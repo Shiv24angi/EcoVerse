@@ -11,12 +11,29 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const body = await req.json();
+    const body: unknown = await req.json();
 
-    const { name, email, password, firebaseUid } = body;
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const { name, email, password, firebaseUid } = body as {
+      name?: unknown;
+      email?: unknown;
+      password?: unknown;
+      firebaseUid?: unknown;
+    };
 
     // Require basic fields
-    if (!name || !email) {
+    if (
+      typeof name !== 'string' ||
+      typeof email !== 'string' ||
+      !name.trim() ||
+      !email.trim()
+    ) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -24,7 +41,21 @@ export async function POST(req: Request) {
     }
 
     // Require either password OR firebaseUid
-    if (!password && !firebaseUid) {
+    if (
+      (password !== undefined && typeof password !== 'string') ||
+      (firebaseUid !== undefined && typeof firebaseUid !== 'string')
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid auth field type' },
+        { status: 400 }
+      );
+    }
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedFirebaseUid = firebaseUid?.trim() || null;
+
+    if (!password && !trimmedFirebaseUid) {
       return NextResponse.json(
         {
           error: 'Password or Firebase UID is required',
@@ -33,7 +64,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: trimmedEmail });
 
     if (existingUser) {
       return NextResponse.json(
@@ -50,16 +81,16 @@ export async function POST(req: Request) {
     }
 
     const createdUser = await User.create({
-      name,
-      username: name,
-      full_name: name,
-      email,
+      name: trimmedName,
+      username: trimmedName,
+      full_name: trimmedName,
+      email: trimmedEmail,
 
       // manual auth
       password: hashedPassword,
 
       // google auth
-      firebaseUid: firebaseUid || null,
+      firebaseUid: trimmedFirebaseUid,
 
       monthlyCarbon: 0,
       totalScanned: 0,
