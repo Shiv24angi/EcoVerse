@@ -114,6 +114,7 @@ export async function POST(req: Request) {
       let oldLevel = 1;
       let pointsEarned = 0;
       let isConfirmed = false;
+      let milestone: number | null = null;
       let actuallyInsertedAchievements: any[] = [];
       let updatedUser: any = null;
       let agedPointsConfirmed = false;
@@ -135,6 +136,7 @@ export async function POST(req: Request) {
         const isFirstScan = (user.totalScanned ?? 0) === 0;
         const totalScans = user.totalScanned ?? 0;
         const previousLastScanDate = user.lastScanDate;
+        const previousStreakCount = user.streakCount ?? 0;
         oldLevel = user.level || 1;
 
         streakUpdate = calculateStreakUpdate(
@@ -144,6 +146,11 @@ export async function POST(req: Request) {
           user.streakProtectors ?? 0
         );
         const streakCount = streakUpdate.streakCount;
+        milestone =
+          streakCount > previousStreakCount &&
+          (streakCount % 7 === 0 || streakCount === 30 || streakCount === 100)
+            ? streakCount
+            : null;
 
         pointsData = calculateScanPoints
           ? calculateScanPoints(
@@ -410,6 +417,7 @@ export async function POST(req: Request) {
           streakProtectorUsed: streakUpdate.streakProtectorsUsed > 0,
           streakProtectorsUsed: streakUpdate.streakProtectorsUsed,
           streakBroken: streakUpdate.streakBroken,
+          milestone,
           monthlyBonus,
           sustainabilityTier:
             updatedUser.monthlyCarbon < 10 && updatedUser.totalScanned >= 15
