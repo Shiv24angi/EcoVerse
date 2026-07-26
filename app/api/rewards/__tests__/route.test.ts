@@ -4,6 +4,7 @@
 
 import { GET, POST } from '../route';
 import User from '@/models/User';
+import { confirmAgedPoints } from '@/lib/rewards-system';
 
 jest.mock('@/lib/mongodb', () => {
   return {
@@ -19,6 +20,14 @@ jest.mock('@/models/User', () => {
       findOne: jest.fn(),
       findOneAndUpdate: jest.fn(),
     },
+  };
+});
+
+jest.mock('@/lib/rewards-system', () => {
+  const actual = jest.requireActual('@/lib/rewards-system');
+  return {
+    ...actual,
+    confirmAgedPoints: jest.fn().mockResolvedValue(0),
   };
 });
 
@@ -143,6 +152,7 @@ describe('Rewards API Route', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.success).toBe(true);
+      expect(confirmAgedPoints).toHaveBeenCalledWith('test@example.com');
 
       // Check atomic update query call
       expect(User.findOneAndUpdate).toHaveBeenCalledWith(
