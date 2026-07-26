@@ -192,9 +192,7 @@ export default function RewardsNotification({
 
 // Hook for managing reward notifications (Now safely memoized via useCallback)
 export function useRewardsNotification() {
-  const [notification, setNotification] = useState<RewardNotification | null>(
-    null
-  );
+  const [notifications, setNotifications] = useState<RewardNotification[]>([]);
 
   const showNotification = useCallback(
     (notificationData: Omit<RewardNotification, 'id' | 'timestamp'>) => {
@@ -203,17 +201,17 @@ export function useRewardsNotification() {
         id: `${Date.now()}-${Math.random()}`,
         timestamp: new Date(),
       };
-      setNotification(newNotification);
+      setNotifications((current) => [...current, newNotification]);
     },
     []
   );
 
   const dismissNotification = useCallback(() => {
-    setNotification(null);
+    setNotifications((current) => current.slice(1));
   }, []);
 
   return {
-    notification,
+    notification: notifications[0] ?? null,
     showNotification,
     dismissNotification,
   };
