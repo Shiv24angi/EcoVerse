@@ -20,6 +20,7 @@ import {
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
+import { findLowerCarbonAlternatives } from '@/lib/alternative-products';
 
 type OpenFoodFactsResponse = {
   product: {
@@ -380,6 +381,25 @@ export async function POST(req: Request) {
       // This ensures the UI is always in sync with the actual database state.
       const pointsSummary = getUserPointsSummary(updatedUser);
 
+      // Best-effort: if the alternatives lookup fails for any reason, the
+      // scan itself has already succeeded and been recorded above, so we
+      // shouldn't fail the whole request over a recommendation feature.
+      let alternatives: Awaited<
+        ReturnType<typeof findLowerCarbonAlternatives>
+      > = [];
+      try {
+        alternatives = await findLowerCarbonAlternatives(
+          carbonData.category,
+          carbonEstimate,
+          product.product_name
+        );
+      } catch (alternativesError) {
+        console.warn(
+          'Failed to compute alternative products:',
+          alternativesError
+        );
+      }
+
       const productImage =
         product.image_front_url ||
         product.image_url ||
@@ -397,6 +417,7 @@ export async function POST(req: Request) {
         ingredients: product.ingredients_text || 'Not available',
         image: productImage,
         packaging,
+        alternatives: alternatives.length > 0 ? alternatives : null,
         rewards: {
           pointsEarned,
           pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
