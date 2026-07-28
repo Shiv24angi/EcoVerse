@@ -5,7 +5,11 @@ import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { getActiveChallenges, getChallengeStatus } from '@/lib/challenges';
+import {
+  getActiveChallenges,
+  getChallengeStatus,
+  findChallengeById,
+} from '@/lib/challenges';
 import { calculateLevel, confirmAgedPoints } from '@/lib/rewards-system';
 
 /**
@@ -31,7 +35,27 @@ export async function GET(req: Request) {
     const activeChallenges = getActiveChallenges(now);
     const completedRecords = user.completedChallenges || [];
 
-    const challengesWithProgress = activeChallenges.map((challenge) => {
+    // Also include unclaimed completed challenges from the previous week so they remain claimable in UI
+    const pastWeekDate = new Date(now);
+    pastWeekDate.setUTCDate(pastWeekDate.getUTCDate() - 7);
+    const pastChallenges = getActiveChallenges(pastWeekDate);
+
+    const displayChallenges = [...activeChallenges];
+    for (const pCh of pastChallenges) {
+      if (!displayChallenges.some((c) => c.id === pCh.id)) {
+        const pStatus = getChallengeStatus(
+          pCh,
+          user.scans || [],
+          completedRecords,
+          now
+        );
+        if (pStatus.isCompleted && !pStatus.isClaimed) {
+          displayChallenges.push(pCh);
+        }
+      }
+    }
+
+    const challengesWithProgress = displayChallenges.map((challenge) => {
       const status = getChallengeStatus(
         challenge,
         user.scans || [],
@@ -58,9 +82,7 @@ export async function GET(req: Request) {
 
     // Map completed records for UI history display
     const completedHistory = completedRecords.map((rec) => {
-      const matchingDef = activeChallenges.find(
-        (c) => c.id === rec.challengeId
-      );
+      const matchingDef = findChallengeById(rec.challengeId);
       return {
         challengeId: rec.challengeId,
         name:
@@ -117,8 +139,7 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
-    const activeChallenges = getActiveChallenges(now);
-    const challenge = activeChallenges.find((c) => c.id === challengeId);
+    const challenge = findChallengeById(challengeId);
 
     if (!challenge) {
       return NextResponse.json(

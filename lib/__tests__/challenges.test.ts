@@ -1,4 +1,8 @@
-import { getActiveChallenges, getChallengeStatus } from '../challenges';
+import {
+  getActiveChallenges,
+  getChallengeStatus,
+  findChallengeById,
+} from '../challenges';
 import { IScan, IUserChallengeRecord } from '../../models/User';
 
 describe('Sustainability Challenges (lib/challenges.ts)', () => {
@@ -204,5 +208,14 @@ describe('Sustainability Challenges (lib/challenges.ts)', () => {
     expect(incompleteStatus.isCompleted).toBe(false);
     expect(incompleteStatus.currentProgress).toBe(2);
     expect(incompleteStatus.progressPercentage).toBeLessThan(100);
+  });
+
+  test('locates challenge definitions across week rollovers using findChallengeById', () => {
+    const pastChallengeId = 'weekly_scan_5_2026-07-20';
+    const foundChallenge = findChallengeById(pastChallengeId);
+
+    expect(foundChallenge).toBeDefined();
+    expect(foundChallenge?.id).toBe(pastChallengeId);
+    expect(foundChallenge?.name).toBe('Weekly Scan Hero');
   });
 });

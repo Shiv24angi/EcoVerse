@@ -1,4 +1,4 @@
-import { IScan } from '@/models/User';
+import { IScan, IUserChallengeRecord } from '@/models/User';
 
 export interface Challenge {
   id: string;
@@ -14,10 +14,16 @@ export interface Challenge {
   category?: 'Scanning' | 'Eco-Friendly' | 'Carbon' | 'Community';
 }
 
-export interface UserChallengeRecord {
-  challengeId: string;
-  completedAt: Date;
-  pointsEarned: number;
+export type UserChallengeRecord = IUserChallengeRecord;
+
+/**
+ * Helper to compute sum of carbon estimates for a set of scans.
+ */
+export function computeTotalCarbon(scans: IScan[]): number {
+  return (scans || []).reduce(
+    (acc, curr) => acc + (curr.carbonEstimate || 0),
+    0
+  );
 }
 
 /**
@@ -109,17 +115,10 @@ export function getActiveChallenges(now: Date = new Date()): Challenge[] {
       category: 'Carbon',
       condition: (scans) => {
         if (scans.length < 3) return false;
-        const totalCarbon = scans.reduce(
-          (acc, curr) => acc + (curr.carbonEstimate || 0),
-          0
-        );
-        return totalCarbon <= 3.0;
+        return computeTotalCarbon(scans) <= 3.0;
       },
       progress: (scans) => {
-        const totalCarbon = scans.reduce(
-          (acc, curr) => acc + (curr.carbonEstimate || 0),
-          0
-        );
+        const totalCarbon = computeTotalCarbon(scans);
         if (totalCarbon > 3.0) {
           // If carbon limit exceeded, cap progress below max (at most 2) so UI doesn't show 100% complete
           return Math.min(scans.length, 2);
@@ -166,4 +165,22 @@ export function getChallengeStatus(
     isClaimed,
     isExpired,
   };
+}
+
+/**
+ * Reconstruct and locate a challenge definition by its ID across current or past week windows.
+ */
+export function findChallengeById(challengeId: string): Challenge | undefined {
+  if (!challengeId) return undefined;
+  // Challenge IDs end with a date string: YYYY-MM-DD
+  const dateMatch = challengeId.match(/\d{4}-\d{2}-\d{2}$/);
+  if (dateMatch) {
+    const challengeDate = new Date(`${dateMatch[0]}T12:00:00Z`);
+    if (!isNaN(challengeDate.getTime())) {
+      const weekChallenges = getActiveChallenges(challengeDate);
+      const match = weekChallenges.find((c) => c.id === challengeId);
+      if (match) return match;
+    }
+  }
+  return getActiveChallenges().find((c) => c.id === challengeId);
 }
