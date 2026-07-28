@@ -54,6 +54,7 @@ export interface IUserChallengeRecord {
   challengeId: string;
   name?: string;
   icon?: string;
+  category?: string;
   completedAt: Date;
   pointsEarned: number;
 }
@@ -178,6 +179,7 @@ const UserChallengeRecordSchema = new mongoose.Schema({
   challengeId: { type: String, required: true },
   name: { type: String },
   icon: { type: String },
+  category: { type: String },
   completedAt: { type: Date, default: Date.now },
   pointsEarned: { type: Number, required: true },
 });

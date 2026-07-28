@@ -4,11 +4,25 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Target, Trophy, Clock, CheckCircle2, Award, Sparkles, Loader2 } from 'lucide-react';
+import {
+  Target,
+  Trophy,
+  Clock,
+  CheckCircle2,
+  Award,
+  Sparkles,
+  Loader2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ActiveChallenge {
@@ -31,6 +45,8 @@ interface ActiveChallenge {
 interface CompletedRecord {
   challengeId: string;
   name: string;
+  icon?: string;
+  category?: string;
   pointsEarned: number;
   completedAt: string;
 }
@@ -38,7 +54,10 @@ interface CompletedRecord {
 export default function ChallengesPage() {
   const { user } = useAuth();
   const [challenges, setChallenges] = useState<ActiveChallenge[]>([]);
-  const [completedHistory, setCompletedHistory] = useState<CompletedRecord[]>([]);
+  const [completedHistory, setCompletedHistory] = useState<CompletedRecord[]>(
+    []
+  );
+  const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -133,7 +152,8 @@ export default function ChallengesPage() {
               Sustainability Challenges
             </h1>
             <p className="text-emerald-100 text-sm sm:text-base leading-relaxed">
-              Complete weekly sustainability challenges to maintain green habits, earn reward points, and boost your EcoVerse rank!
+              Complete weekly sustainability challenges to maintain green
+              habits, earn reward points, and boost your EcoVerse rank!
             </p>
           </div>
           <div className="absolute right-4 -bottom-6 hidden md:block opacity-25">
@@ -165,9 +185,12 @@ export default function ChallengesPage() {
               <Card className="text-center py-12">
                 <CardContent className="space-y-4">
                   <div className="text-4xl">🌱</div>
-                  <h3 className="text-xl font-semibold">No active challenges available right now</h3>
+                  <h3 className="text-xl font-semibold">
+                    No active challenges available right now
+                  </h3>
                   <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                    Check back soon! New weekly sustainability challenges rotate automatically every Monday.
+                    Check back soon! New weekly sustainability challenges rotate
+                    automatically every Monday.
                   </p>
                 </CardContent>
               </Card>
@@ -217,7 +240,9 @@ export default function ChallengesPage() {
                         {/* Progress Bar */}
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-muted-foreground">Progress</span>
+                            <span className="text-muted-foreground">
+                              Progress
+                            </span>
                             <span className="text-emerald-700 dark:text-emerald-400">
                               {challenge.progress} / {challenge.maxProgress}
                             </span>
@@ -258,7 +283,11 @@ export default function ChallengesPage() {
                               Claim +{challenge.rewardPoints} Points
                             </Button>
                           ) : (
-                            <Button disabled variant="outline" className="w-full text-xs">
+                            <Button
+                              disabled
+                              variant="outline"
+                              className="w-full text-xs"
+                            >
                               In Progress
                             </Button>
                           )}
@@ -280,27 +309,41 @@ export default function ChallengesPage() {
                   Completed Challenge History
                 </CardTitle>
                 <CardDescription>
-                  Your record of completed sustainability challenges and rewards claimed.
+                  Your record of completed sustainability challenges and rewards
+                  claimed.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {completedHistory.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground text-sm">
-                    No completed challenges yet. Start scanning products to complete your first challenge!
+                    No completed challenges yet. Start scanning products to
+                    complete your first challenge!
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
-                    {completedHistory.map((item) => (
-                      <div key={item.challengeId} className="py-3 flex justify-between items-center text-sm">
+                    {completedHistory.map((item, idx) => (
+                      <div
+                        key={`${item.challengeId}-${idx}`}
+                        className="py-3 flex justify-between items-center text-sm"
+                      >
                         <div className="flex items-center gap-3">
                           <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
                           <div>
-                            <p className="font-semibold text-foreground">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="font-semibold text-foreground">
+                              {item.name}
+                            </p>
+                            <p
+                              className="text-xs text-muted-foreground"
+                              suppressHydrationWarning
+                            >
                               Completed on{' '}
                               {mounted
-                                ? new Date(item.completedAt).toLocaleDateString()
-                                : new Date(item.completedAt).toISOString().split('T')[0]}
+                                ? new Date(
+                                    item.completedAt
+                                  ).toLocaleDateString()
+                                : new Date(item.completedAt)
+                                    .toISOString()
+                                    .split('T')[0]}
                             </p>
                           </div>
                         </div>

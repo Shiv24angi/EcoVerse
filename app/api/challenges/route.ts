@@ -32,7 +32,12 @@ export async function GET(req: Request) {
     const completedRecords = user.completedChallenges || [];
 
     const challengesWithProgress = activeChallenges.map((challenge) => {
-      const status = getChallengeStatus(challenge, user.scans || [], completedRecords, now);
+      const status = getChallengeStatus(
+        challenge,
+        user.scans || [],
+        completedRecords,
+        now
+      );
       return {
         id: challenge.id,
         name: challenge.name,
@@ -53,11 +58,17 @@ export async function GET(req: Request) {
 
     // Map completed records for UI history display
     const completedHistory = completedRecords.map((rec) => {
-      const matchingDef = activeChallenges.find((c) => c.id === rec.challengeId);
+      const matchingDef = activeChallenges.find(
+        (c) => c.id === rec.challengeId
+      );
       return {
         challengeId: rec.challengeId,
-        name: rec.name || (matchingDef ? matchingDef.name : 'Sustainability Challenge'),
+        name:
+          rec.name ||
+          (matchingDef ? matchingDef.name : 'Sustainability Challenge'),
         icon: rec.icon || (matchingDef ? matchingDef.icon : '🌱'),
+        category:
+          rec.category || (matchingDef ? matchingDef.category : 'General'),
         pointsEarned: rec.pointsEarned,
         completedAt: rec.completedAt,
       };
@@ -91,7 +102,10 @@ export async function POST(req: Request) {
     const { challengeId } = await req.json();
 
     if (!challengeId) {
-      return NextResponse.json({ error: 'Challenge ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Challenge ID is required' },
+        { status: 400 }
+      );
     }
 
     await dbConnect();
@@ -113,7 +127,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const status = getChallengeStatus(challenge, user.scans || [], user.completedChallenges || [], now);
+    const status = getChallengeStatus(
+      challenge,
+      user.scans || [],
+      user.completedChallenges || [],
+      now
+    );
 
     if (status.isClaimed) {
       return NextResponse.json(
@@ -150,6 +169,7 @@ export async function POST(req: Request) {
             challengeId: challenge.id,
             name: challenge.name,
             icon: challenge.icon,
+            category: challenge.category || 'General',
             completedAt: earnedAt,
             pointsEarned: pointsToAward,
           },

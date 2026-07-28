@@ -1,5 +1,5 @@
 import { getActiveChallenges, getChallengeStatus } from '../challenges';
-import { IScan, UserChallengeRecord } from '../../models/User';
+import { IScan, IUserChallengeRecord } from '../../models/User';
 
 describe('Sustainability Challenges (lib/challenges.ts)', () => {
   const now = new Date('2026-07-28T12:00:00Z'); // Tuesday
@@ -55,7 +55,9 @@ describe('Sustainability Challenges (lib/challenges.ts)', () => {
 
   test('ignores scans outside the active challenge window', () => {
     const challenges = getActiveChallenges(now);
-    const scanHeroChallenge = challenges.find((c) => c.id.includes('weekly_scan_5'))!;
+    const scanHeroChallenge = challenges.find((c) =>
+      c.id.includes('weekly_scan_5')
+    )!;
 
     const status = getChallengeStatus(scanHeroChallenge, sampleScans, [], now);
     expect(status.scansInWindowCount).toBe(3); // Only 3 scans fall into current week
@@ -65,7 +67,9 @@ describe('Sustainability Challenges (lib/challenges.ts)', () => {
 
   test('detects challenge completion when target is reached', () => {
     const challenges = getActiveChallenges(now);
-    const ecoChoiceChallenge = challenges.find((c) => c.id.includes('weekly_recyclable_3'))!;
+    const ecoChoiceChallenge = challenges.find((c) =>
+      c.id.includes('weekly_recyclable_3')
+    )!;
 
     // 2 low carbon scans in sampleScans (0.4 and 0.8)
     let status = getChallengeStatus(ecoChoiceChallenge, sampleScans, [], now);
@@ -102,7 +106,7 @@ describe('Sustainability Challenges (lib/challenges.ts)', () => {
   test('tracks claimed status correctly', () => {
     const challenges = getActiveChallenges(now);
     const challenge = challenges[0];
-    const completedRecords: UserChallengeRecord[] = [
+    const completedRecords: IUserChallengeRecord[] = [
       {
         challengeId: challenge.id,
         completedAt: new Date(),
@@ -110,23 +114,95 @@ describe('Sustainability Challenges (lib/challenges.ts)', () => {
       },
     ];
 
-    const status = getChallengeStatus(challenge, sampleScans, completedRecords, now);
+    const status = getChallengeStatus(
+      challenge,
+      sampleScans,
+      completedRecords,
+      now
+    );
     expect(status.isClaimed).toBe(true);
   });
 
   test('handles Carbon Saver progress and completion condition consistently', () => {
     const challenges = getActiveChallenges(now);
-    const carbonSaver = challenges.find((c) => c.id.includes('weekly_low_carbon_target'))!;
+    const carbonSaver = challenges.find((c) =>
+      c.id.includes('weekly_low_carbon_target')
+    )!;
 
-    // 3 high carbon scans exceeding 3.0kg CO2 limit
-    const highCarbonScans: IScan[] = [
-      { productName: 'A', carbonEstimate: 1.5, category: 'Food', confidence: 'high', barcode: '1', date: new Date('2026-07-27T10:00:00Z') },
-      { productName: 'B', carbonEstimate: 1.5, category: 'Food', confidence: 'high', barcode: '2', date: new Date('2026-07-27T11:00:00Z') },
-      { productName: 'C', carbonEstimate: 1.0, category: 'Food', confidence: 'high', barcode: '3', date: new Date('2026-07-27T12:00:00Z') },
+    // Case 1: 3 low carbon scans within total 3.0kg CO2 limit (0.5 + 0.5 + 0.8 = 1.8kg)
+    const validScans: IScan[] = [
+      {
+        productName: 'A',
+        carbonEstimate: 0.5,
+        category: 'Food',
+        confidence: 'high',
+        barcode: '1',
+        date: new Date('2026-07-27T10:00:00Z'),
+      },
+      {
+        productName: 'B',
+        carbonEstimate: 0.5,
+        category: 'Food',
+        confidence: 'high',
+        barcode: '2',
+        date: new Date('2026-07-27T11:00:00Z'),
+      },
+      {
+        productName: 'C',
+        carbonEstimate: 0.8,
+        category: 'Food',
+        confidence: 'high',
+        barcode: '3',
+        date: new Date('2026-07-27T12:00:00Z'),
+      },
     ];
 
-    const status = getChallengeStatus(carbonSaver, highCarbonScans, [], now);
-    expect(status.isCompleted).toBe(false);
-    expect(status.progressPercentage).toBeLessThan(100);
+    const completedStatus = getChallengeStatus(
+      carbonSaver,
+      validScans,
+      [],
+      now
+    );
+    expect(completedStatus.isCompleted).toBe(true);
+    expect(completedStatus.currentProgress).toBe(3);
+    expect(completedStatus.progressPercentage).toBe(100);
+
+    // Case 2: 3 high carbon scans exceeding 3.0kg CO2 limit (1.5 + 1.5 + 1.0 = 4.0kg)
+    const highCarbonScans: IScan[] = [
+      {
+        productName: 'A',
+        carbonEstimate: 1.5,
+        category: 'Food',
+        confidence: 'high',
+        barcode: '1',
+        date: new Date('2026-07-27T10:00:00Z'),
+      },
+      {
+        productName: 'B',
+        carbonEstimate: 1.5,
+        category: 'Food',
+        confidence: 'high',
+        barcode: '2',
+        date: new Date('2026-07-27T11:00:00Z'),
+      },
+      {
+        productName: 'C',
+        carbonEstimate: 1.0,
+        category: 'Food',
+        confidence: 'high',
+        barcode: '3',
+        date: new Date('2026-07-27T12:00:00Z'),
+      },
+    ];
+
+    const incompleteStatus = getChallengeStatus(
+      carbonSaver,
+      highCarbonScans,
+      [],
+      now
+    );
+    expect(incompleteStatus.isCompleted).toBe(false);
+    expect(incompleteStatus.currentProgress).toBe(2);
+    expect(incompleteStatus.progressPercentage).toBeLessThan(100);
   });
 });
