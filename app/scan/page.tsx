@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Scan, Search, AlertTriangle, CheckCircle, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import BarcodeScanner from '@/components/barcode-scanner';
+import ErrorBoundary from '@/components/error-boundary';
 import RewardsNotification, {
   useRewardsNotification,
 } from '@/components/rewards-notification';
@@ -440,16 +441,55 @@ export default function ScanPage() {
         )}
 
         {isScanning && (
-          <BarcodeScanner
-            onScan={(scannedBarcode) => {
-              if (!scanLock) {
-                setBarcode(scannedBarcode);
-                setIsScanning(false);
-                handleScan(scannedBarcode);
-              }
-            }}
-            onClose={() => setIsScanning(false)}
-          />
+          <ErrorBoundary
+            scope="barcode scanner"
+            fallback={(error, resetError) => (
+              <Card className="border-destructive bg-destructive/5">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    <CardTitle>Scanner unavailable</CardTitle>
+                  </div>
+                  <CardDescription>
+                    {error.message.includes('NotAllowedError') ||
+                    error.message.includes('Permission')
+                      ? 'Please allow camera access to use the barcode scanner.'
+                      : error.message.includes('NotFoundError')
+                        ? 'No camera device found. Please use a device with a camera.'
+                        : 'Unable to access camera. Please check your browser permissions and try again.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Button
+                      onClick={() => {
+                        resetError();
+                        setIsScanning(false);
+                      }}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Close scanner
+                    </Button>
+                    <div className="text-xs text-muted-foreground p-3 bg-muted rounded">
+                      <p className="font-mono break-words">{error.message}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          >
+            <BarcodeScanner
+              onScan={(scannedBarcode) => {
+                if (!scanLock) {
+                  setBarcode(scannedBarcode);
+                  setIsScanning(false);
+                  handleScan(scannedBarcode);
+                }
+              }}
+              onClose={() => setIsScanning(false)}
+            />
+          </ErrorBoundary>
         )}
       </div>
 
