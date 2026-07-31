@@ -44,11 +44,18 @@ export async function middleware(request: NextRequest) {
 
   // Continue the request, passing along the (potentially) modified headers.
   // The x-user-email header is now only present if successfully verified from a token.
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+
+  // Add security headers to restrict camera and frame embedding
+  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+
+  return response;
 }
 
 export const config = {
