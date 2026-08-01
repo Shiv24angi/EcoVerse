@@ -64,7 +64,10 @@ describe('Product Search Endpoint (Issue #411)', () => {
       }));
 
       // Simulate pagination with limit
-      const pagedResults = results.slice(0, Math.min(results.length, MAX_PAGE_SIZE));
+      const pagedResults = results.slice(
+        0,
+        Math.min(results.length, MAX_PAGE_SIZE)
+      );
       expect(pagedResults.length).toBeLessThanOrEqual(50);
     });
 

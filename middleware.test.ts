@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { middleware } from './middleware';
 
 /**
@@ -10,7 +10,9 @@ import { middleware } from './middleware';
 describe('Middleware Security Headers (Issue #412)', () => {
   describe('Permissions-Policy Header', () => {
     it('should set Permissions-Policy header restricting camera to self', async () => {
-      const request = new NextRequest(new URL('http://localhost:3000/api/test'));
+      const request = new NextRequest(
+        new URL('http://localhost:3000/api/test')
+      );
       const response = await middleware(request);
 
       expect(response?.headers.get('Permissions-Policy')).toBe(
@@ -19,7 +21,8 @@ describe('Middleware Security Headers (Issue #412)', () => {
     });
 
     it('should allow camera access only to the origin (self)', () => {
-      const permissionsPolicy = 'camera=(self), microphone=(self), geolocation=(self)';
+      const permissionsPolicy =
+        'camera=(self), microphone=(self), geolocation=(self)';
 
       // Verify the policy format is correct
       expect(permissionsPolicy).toContain('camera=(self)');
@@ -38,7 +41,9 @@ describe('Middleware Security Headers (Issue #412)', () => {
 
   describe('X-Frame-Options Header', () => {
     it('should set X-Frame-Options to DENY', async () => {
-      const request = new NextRequest(new URL('http://localhost:3000/api/test'));
+      const request = new NextRequest(
+        new URL('http://localhost:3000/api/test')
+      );
       const response = await middleware(request);
 
       expect(response?.headers.get('X-Frame-Options')).toBe('DENY');
@@ -53,7 +58,9 @@ describe('Middleware Security Headers (Issue #412)', () => {
 
   describe('X-Content-Type-Options Header', () => {
     it('should set X-Content-Type-Options to nosniff', async () => {
-      const request = new NextRequest(new URL('http://localhost:3000/api/test'));
+      const request = new NextRequest(
+        new URL('http://localhost:3000/api/test')
+      );
       const response = await middleware(request);
 
       expect(response?.headers.get('X-Content-Type-Options')).toBe('nosniff');
@@ -67,7 +74,9 @@ describe('Middleware Security Headers (Issue #412)', () => {
 
   describe('Headers on Different Routes', () => {
     it('should apply security headers to protected routes', async () => {
-      const request = new NextRequest(new URL('http://localhost:3000/dashboard'));
+      const request = new NextRequest(
+        new URL('http://localhost:3000/dashboard')
+      );
       const response = await middleware(request);
 
       // Should have security headers even if redirected due to missing token
@@ -85,7 +94,7 @@ describe('Middleware Security Headers (Issue #412)', () => {
         new URL('http://localhost:3000/api/rewards'),
         {
           headers: {
-            'Cookie': 'auth_token=valid-token',
+            Cookie: 'auth_token=valid-token',
           },
         }
       );
