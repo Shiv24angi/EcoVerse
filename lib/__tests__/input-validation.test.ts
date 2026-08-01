@@ -156,7 +156,10 @@ describe('Input Validation Utility (Issue #409)', () => {
     });
 
     it('should parse string integers', () => {
-      const result = validateIntegerParameter('25', 'page', { min: 1, max: 1000 });
+      const result = validateIntegerParameter('25', 'page', {
+        min: 1,
+        max: 1000,
+      });
       expect(result.valid).toBe(true);
       expect(result.value).toBe(25);
     });
@@ -176,7 +179,10 @@ describe('Input Validation Utility (Issue #409)', () => {
     });
 
     it('should reject values above maximum', () => {
-      const result = validateIntegerParameter(101, 'limit', { min: 1, max: 100 });
+      const result = validateIntegerParameter(101, 'limit', {
+        min: 1,
+        max: 100,
+      });
       expect(result.valid).toBe(false);
     });
 
