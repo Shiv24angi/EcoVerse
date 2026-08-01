@@ -111,9 +111,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let payload: unknown;
   try {
-    const payload: unknown = await req.json();
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
+  try {
     if (typeof payload !== 'object' || payload === null) {
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
@@ -353,9 +361,17 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let payload: unknown;
   try {
-    const payload: unknown = await req.json();
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
+  try {
     if (typeof payload !== 'object' || payload === null) {
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
