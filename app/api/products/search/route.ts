@@ -53,7 +53,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.trim();
     const pageParam = parseInt(searchParams.get('page') || '1', 10);
-    const limitParam = parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE), 10);
+    const limitParam = parseInt(
+      searchParams.get('limit') || String(DEFAULT_PAGE_SIZE),
+      10
+    );
 
     // Validate query parameter
     if (!query || query.length < 2) {
@@ -79,19 +82,16 @@ export async function GET(request: NextRequest) {
       count: number;
       page: number;
       page_size: number;
-    }>(
-      'https://world.openfoodfacts.org/cgi/search.pl',
-      {
-        params: {
-          search_terms: query,
-          page: page,
-          page_size: limit,
-          action: 'process',
-          json: 1,
-        },
-        timeout: 10000, // 10 second timeout to prevent hanging requests
-      }
-    );
+    }>('https://world.openfoodfacts.org/cgi/search.pl', {
+      params: {
+        search_terms: query,
+        page: page,
+        page_size: limit,
+        action: 'process',
+        json: 1,
+      },
+      timeout: 10000, // 10 second timeout to prevent hanging requests
+    });
 
     const { products = [], count = 0 } = response.data;
 

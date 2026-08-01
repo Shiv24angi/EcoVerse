@@ -159,7 +159,9 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(screen.getByText('Custom error UI: Custom error')).toBeInTheDocument();
+      expect(
+        screen.getByText('Custom error UI: Custom error')
+      ).toBeInTheDocument();
     });
 
     it('should provide reset function in fallback', async () => {
@@ -213,9 +215,7 @@ describe('ErrorBoundary', () => {
         'NotAllowedError'
       );
 
-      const fallback = (error: Error) => (
-        <div>{error.message}</div>
-      );
+      const fallback = (error: Error) => <div>{error.message}</div>;
 
       render(
         <ErrorBoundary fallback={fallback}>
@@ -234,9 +234,7 @@ describe('ErrorBoundary', () => {
         'NotFoundError'
       );
 
-      const fallback = (error: Error) => (
-        <div>{error.message}</div>
-      );
+      const fallback = (error: Error) => <div>{error.message}</div>;
 
       render(
         <ErrorBoundary fallback={fallback}>

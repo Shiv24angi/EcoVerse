@@ -51,7 +51,10 @@ export async function middleware(request: NextRequest) {
   });
 
   // Add security headers to restrict camera and frame embedding
-  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(self), microphone=(self), geolocation=(self)'
+  );
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
 
