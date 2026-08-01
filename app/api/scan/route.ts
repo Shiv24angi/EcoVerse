@@ -81,7 +81,10 @@ export async function POST(req: Request) {
         'Open Food Facts API failed, using barcode as fallback:',
         offError
       );
-      product = { product_name: `Product ${sanitizedBarcode}`, brands: 'Unknown' };
+      product = {
+        product_name: `Product ${sanitizedBarcode}`,
+        brands: 'Unknown',
+      };
     }
 
     if (!product?.product_name) {

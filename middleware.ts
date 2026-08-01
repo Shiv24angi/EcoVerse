@@ -51,8 +51,14 @@ export async function middleware(request: NextRequest) {
   });
 
   // Add security headers to prevent XSS and restrict permissions (Issue #408)
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
-  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  );
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(self), microphone=(self), geolocation=(self)'
+  );
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
 

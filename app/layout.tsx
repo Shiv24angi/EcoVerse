@@ -26,7 +26,10 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* CSP meta tag as fallback (Issue #408) */}
-        <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        />
       </head>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">

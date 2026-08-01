@@ -53,7 +53,8 @@ export function validateBarcode(barcode: unknown): {
   if (!BARCODE_PATTERN.test(sanitized)) {
     return {
       valid: false,
-      error: 'Barcode contains invalid characters. Use only letters, numbers, and -+./:% characters',
+      error:
+        'Barcode contains invalid characters. Use only letters, numbers, and -+./:% characters',
     };
   }
 
@@ -122,7 +123,8 @@ export function validateBarcodeFormat(barcode: string): {
   if (/^\d+$/.test(barcode) && (barcode.length < 8 || barcode.length > 14)) {
     return {
       valid: false,
-      error: 'Standard barcodes (EAN/UPC) must be 8-14 digits. Other formats supported with alphanumeric characters.',
+      error:
+        'Standard barcodes (EAN/UPC) must be 8-14 digits. Other formats supported with alphanumeric characters.',
     };
   }
 
