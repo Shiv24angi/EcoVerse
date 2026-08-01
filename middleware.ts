@@ -20,9 +20,18 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
+  // Helper function to set security headers on any response
+  const setSecurityHeaders = (response: NextResponse) => {
+    response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    return response;
+  };
+
   // If missing token on protected route, redirect to signin
   if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/signin', request.url));
+    const redirectResponse = NextResponse.redirect(new URL('/signin', request.url));
+    return setSecurityHeaders(redirectResponse);
   }
 
   // Clone headers to modify them
@@ -38,7 +47,8 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-user-email', payload.email);
     } else if (isProtectedRoute) {
       // Invalid token on a protected route
-      return NextResponse.redirect(new URL('/signin', request.url));
+      const redirectResponse = NextResponse.redirect(new URL('/signin', request.url));
+      return setSecurityHeaders(redirectResponse);
     }
   }
 
@@ -50,12 +60,7 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Add security headers to restrict camera and frame embedding
-  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-
-  return response;
+  return setSecurityHeaders(response);
 }
 
 export const config = {

@@ -66,18 +66,14 @@ describe('Middleware Security Headers (Issue #412)', () => {
   });
 
   describe('Headers on Different Routes', () => {
-    it('should apply security headers to protected routes', async () => {
+    it('should apply security headers to protected routes with redirect', async () => {
       const request = new NextRequest(new URL('http://localhost:3000/dashboard'));
       const response = await middleware(request);
 
-      // Should have security headers even if redirected due to missing token
-      if (response?.status === 307 || response?.status === 308) {
-        // Redirects may not carry all headers, but direct requests should
-        expect(true).toBe(true);
-      } else {
-        expect(response?.headers.get('Permissions-Policy')).toBeTruthy();
-        expect(response?.headers.get('X-Frame-Options')).toBe('DENY');
-      }
+      // Should have security headers even on redirects
+      expect(response?.headers.get('Permissions-Policy')).toBe('camera=(self), microphone=(self), geolocation=(self)');
+      expect(response?.headers.get('X-Frame-Options')).toBe('DENY');
+      expect(response?.headers.get('X-Content-Type-Options')).toBe('nosniff');
     });
 
     it('should apply security headers to API routes', async () => {
@@ -91,8 +87,9 @@ describe('Middleware Security Headers (Issue #412)', () => {
       );
       const response = await middleware(request);
 
-      expect(response?.headers.get('Permissions-Policy')).toBeTruthy();
+      expect(response?.headers.get('Permissions-Policy')).toBe('camera=(self), microphone=(self), geolocation=(self)');
       expect(response?.headers.get('X-Frame-Options')).toBe('DENY');
+      expect(response?.headers.get('X-Content-Type-Options')).toBe('nosniff');
     });
   });
 
