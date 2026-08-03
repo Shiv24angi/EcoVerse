@@ -100,14 +100,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password
       );
 
+      const idToken = await userCredential.user.getIdToken();
+
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          email,
           password,
-          firebaseUid: userCredential.user.uid,
+          idToken,
         }),
       });
 
@@ -193,16 +194,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
 
+      const idToken = await firebaseUser.getIdToken();
+
       const response = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name:
-            firebaseUser.displayName ||
-            firebaseUser.email?.split('@')[0] ||
-            'Google User',
-          email: firebaseUser.email,
-          firebaseUid: firebaseUser.uid,
+          idToken,
         }),
       });
 
