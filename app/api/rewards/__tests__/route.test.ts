@@ -83,6 +83,47 @@ describe('Rewards API Route', () => {
       expect(availableIds).toContain('streak_protector');
       expect(availableIds).toContain('double_points');
     });
+
+    it('is side-effect free: reports would-be-confirmed points without writing', async () => {
+      const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+      const mockUser = {
+        email: 'test@example.com',
+        totalPointsEarned: 1000,
+        confirmedPoints: 800,
+        unconfirmedPoints: 200,
+        rewardPoints: 800,
+        purchasedItems: [],
+        achievements: [],
+        rewardTransactions: [
+          {
+            _id: 'tx1',
+            type: 'earned',
+            points: 150,
+            pointsType: 'unconfirmed',
+            date: tenDaysAgo,
+          },
+        ],
+      };
+
+      (User.findOne as jest.Mock).mockResolvedValue(mockUser);
+
+      const request = new Request('http://localhost/api/rewards', {
+        headers: {
+          'x-user-email': 'test@example.com',
+        },
+      });
+
+      const response = await GET(request);
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      // The GET reports the points that WOULD be confirmed, but never writes.
+      expect(data.pendingConfirmation).toEqual({
+        pointsConfirmed: 150,
+        transactionsConfirmed: 1,
+      });
+      expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+    });
   });
 
   /**

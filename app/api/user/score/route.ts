@@ -25,7 +25,6 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
-    await checkAndRunMonthlyRollover(email);
     const user = await User.findOne({ email }).lean();
 
     if (!user) {

@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
+import { monthKey } from '@/lib/monthly-cycle';
 import { verifyCookieAuth } from '@/lib/auth';
 
 // ─── Types returned to the client ───────────────────────────────────────────
@@ -94,9 +94,9 @@ export async function GET(req: Request) {
   try {
     await dbConnect();
 
-    // Run rollover first so the data we read is current-month accurate.
-    await checkAndRunMonthlyRollover(email);
-
+    // Note: the monthly rollover is intentionally NOT run here. GET must be
+    // side-effect free (Issue #421); the rollover runs only on explicit write
+    // paths (scan / score POST) or via POST /api/rewards/monthly-check.
     const user = await User.findOne({ email }).lean();
 
     if (!user) {

@@ -631,6 +631,33 @@ export function getSustainabilityTier(
   };
 }
 
+/**
+ * Pure read: unconfirmed 'earned' transactions that have already crossed the
+ * confirmation delay. Never mutates the document — used by GET handlers to
+ * report what *would* be confirmed without changing server state (Issue #421).
+ */
+export function getConfirmableTransactions(
+  user: RewardUser
+): IRewardTransaction[] {
+  const now = new Date();
+  if (!user.rewardTransactions) return [];
+
+  return user.rewardTransactions.filter((transaction) => {
+    if (
+      transaction.pointsType === 'confirmed' ||
+      transaction.type === 'redeemed'
+    ) {
+      return false;
+    }
+
+    const transactionDate = new Date(transaction.date);
+    const hoursElapsed =
+      (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
+
+    return hoursElapsed >= POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS;
+  });
+}
+
 // Confirm pending points that meet the confirmation threshold
 export function confirmPendingPoints(user: UserPointsData): {
   confirmedPoints: number;
@@ -640,26 +667,11 @@ export function confirmPendingPoints(user: UserPointsData): {
   const confirmedTransactions: IRewardTransaction[] = [];
   const now = new Date();
 
-  if (user.rewardTransactions) {
-    for (const transaction of user.rewardTransactions) {
-      if (
-        transaction.pointsType === 'confirmed' ||
-        transaction.type === 'redeemed'
-      ) {
-        continue;
-      }
-
-      const transactionDate = new Date(transaction.date);
-      const hoursElapsed =
-        (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
-
-      if (hoursElapsed >= POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS) {
-        transaction.pointsType = 'confirmed';
-        transaction.confirmedAt = now;
-        confirmedPoints += transaction.points;
-        confirmedTransactions.push(transaction);
-      }
-    }
+  for (const transaction of getConfirmableTransactions(user)) {
+    transaction.pointsType = 'confirmed';
+    transaction.confirmedAt = now;
+    confirmedPoints += transaction.points;
+    confirmedTransactions.push(transaction);
   }
 
   return { confirmedPoints, confirmedTransactions };

@@ -4,6 +4,7 @@
 
 import { GET } from '../route';
 import User from '@/models/User';
+import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
 jest.mock('@/lib/mongodb', () => {
   return {
@@ -112,6 +113,9 @@ describe('GET /api/user/analytics', () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
+
+    // GET must be side-effect free (Issue #421): no monthly rollover is run.
+    expect(checkAndRunMonthlyRollover).not.toHaveBeenCalled();
 
     // Exact current-month figures from the running counters.
     expect(json.currentMonth.carbon).toBe(40);
