@@ -50,12 +50,12 @@ export default function ReportsPage() {
   const fetchData = useCallback(async () => {
     if (!user?.email) return;
     try {
-      const response = await fetch(
-        `/api/user/analytics?email=${encodeURIComponent(user.email)}`,
-        {
-          cache: 'no-store',
-        }
-      );
+      const response = await fetch(`/api/user/analytics`, {
+        headers: {
+          'x-user-email': encodeURIComponent(user.email),
+        },
+        cache: 'no-store',
+      });
       if (response.ok) {
         const json: AnalyticsResponse = await response.json();
         // The API returns historical data + current month at the end of the array.
@@ -99,7 +99,7 @@ export default function ReportsPage() {
         console.error('Error sharing:', err);
       }
     } else {
-      navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(text);
       alert('Copied to clipboard!');
     }
   };
