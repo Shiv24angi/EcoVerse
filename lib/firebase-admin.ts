@@ -45,7 +45,7 @@ export async function verifyFirebaseIdToken(
   idToken: string
 ): Promise<VerifiedFirebaseUser | null> {
   try {
-    const decoded = await getAuth(getAdminApp()).verifyIdToken(idToken);
+    const decoded = await getAuth(getAdminApp()).verifyIdToken(idToken, true);
 
     if (!decoded.uid || !decoded.email) {
       return null;

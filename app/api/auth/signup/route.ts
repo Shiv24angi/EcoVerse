@@ -12,7 +12,15 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
 
     if (typeof body !== 'object' || body === null) {
       return NextResponse.json(
@@ -21,9 +29,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, password, idToken } = body;
+    const { name, password, idToken } = body as {
+      name?: string;
+      password?: string;
+      idToken?: string;
+    };
 
-    if (!name || !password || !idToken) {
+    if (!name || !password || typeof idToken !== 'string' || !idToken.trim()) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -33,7 +45,7 @@ export async function POST(req: Request) {
     // SECURITY: Verify the Firebase ID token server-side. The client can no
     // longer supply a trusted email/firebaseUid pair — identity is derived
     // from the verified token only.
-    const verified = await verifyFirebaseIdToken(idToken);
+    const verified = await verifyFirebaseIdToken(idToken.trim());
 
     if (!verified) {
       return NextResponse.json(
