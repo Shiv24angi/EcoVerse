@@ -6,6 +6,7 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { setAuthCookie } from '@/lib/auth';
+import { verifyFirebaseIdToken } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
   try {
@@ -13,25 +14,35 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const { name, email, password, firebaseUid } = body;
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
 
-    // Require basic fields
-    if (!name || !email) {
+    const { name, password, idToken } = body;
+
+    if (!name || !password || !idToken) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Require either password OR firebaseUid
-    if (!password && !firebaseUid) {
+    // SECURITY: Verify the Firebase ID token server-side. The client can no
+    // longer supply a trusted email/firebaseUid pair — identity is derived
+    // from the verified token only.
+    const verified = await verifyFirebaseIdToken(idToken);
+
+    if (!verified) {
       return NextResponse.json(
-        {
-          error: 'Password or Firebase UID is required',
-        },
-        { status: 400 }
+        { error: 'Invalid or expired authentication token' },
+        { status: 401 }
       );
     }
+
+    const email = verified.email;
 
     const existingUser = await User.findOne({ email });
 
@@ -43,11 +54,7 @@ export async function POST(req: Request) {
     }
 
     // Hash password only for manual signup
-    let hashedPassword = null;
-
-    if (password) {
-      hashedPassword = await bcrypt.hash(password, 10);
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const createdUser = await User.create({
       name,
@@ -59,7 +66,7 @@ export async function POST(req: Request) {
       password: hashedPassword,
 
       // google auth
-      firebaseUid: firebaseUid || null,
+      firebaseUid: verified.uid,
 
       monthlyCarbon: 0,
       totalScanned: 0,

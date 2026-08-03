@@ -55,6 +55,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "8.5.1",
     "firebase": "^11.10.0",
+    "firebase-admin": "^12.0.0",
     "html5-qrcode": "^2.3.8",
     "input-otp": "1.4.1",
     "jose": "^6.2.3",
