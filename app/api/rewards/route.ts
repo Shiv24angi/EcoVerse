@@ -8,7 +8,7 @@ import {
   calculateLevel,
   ACHIEVEMENTS,
   REWARD_SHOP_ITEMS,
-  confirmPendingPoints,
+  getConfirmableTransactions,
   getUserPointsSummary,
 } from '@/lib/rewards-system';
 
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
-    let user = await User.findOne({ email });
+    const user = await User.findOne({ email });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -40,98 +40,19 @@ export async function GET(req: Request) {
     // Calculate current level data
     const levelData = calculateLevel(user.totalPointsEarned || 0);
 
-    // --- ATOMIC POINT CONFIRMATION ---
-    // We check for points that have passed the confirmation threshold.
-    const confirmationData = confirmPendingPoints(user);
-
-    if (confirmationData.confirmedPoints > 0) {
-      const now = new Date();
-      const transactionIdsToConfirm =
-        confirmationData.confirmedTransactions.map((t) => t._id);
-
-      // We perform an atomic update to move points from unconfirmed to confirmed status.
-      // We use an aggregation-pipeline update to ensure we only increment/decrement
-      // based on transactions that are currently in 'unconfirmed' status,
-      // preventing double-counting if a retry occurs.
-      const updatedUser = await User.findOneAndUpdate(
-        { email },
-        [
-          {
-            $set: {
-              // Calculate points from transactions that are actually still unconfirmed
-              matchedPoints: {
-                $sum: {
-                  $map: {
-                    input: {
-                      $filter: {
-                        input: { $ifNull: ['$rewardTransactions', []] },
-                        as: 't',
-                        cond: {
-                          $and: [
-                            { $in: ['$$t._id', transactionIdsToConfirm] },
-                            { $eq: ['$$t.pointsType', 'unconfirmed'] },
-                          ],
-                        },
-                      },
-                    },
-                    as: 'mt',
-                    in: { $ifNull: ['$$mt.points', 0] },
-                  },
-                },
-              },
-            },
-          },
-          {
-            $set: {
-              confirmedPoints: {
-                $add: [
-                  { $ifNull: ['$confirmedPoints', 0] },
-                  { $ifNull: ['$matchedPoints', 0] },
-                ],
-              },
-              unconfirmedPoints: {
-                $subtract: [
-                  { $ifNull: ['$unconfirmedPoints', 0] },
-                  { $ifNull: ['$matchedPoints', 0] },
-                ],
-              },
-              rewardTransactions: {
-                $map: {
-                  input: { $ifNull: ['$rewardTransactions', []] },
-                  as: 't',
-                  in: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          { $in: ['$$t._id', transactionIdsToConfirm] },
-                          { $eq: ['$$t.pointsType', 'unconfirmed'] },
-                        ],
-                      },
-                      then: {
-                        $mergeObjects: [
-                          '$$t',
-                          { pointsType: 'confirmed', confirmedAt: now },
-                        ],
-                      },
-                      else: '$$t',
-                    },
-                  },
-                },
-              },
-            },
-          },
-          { $unset: 'matchedPoints' },
-        ],
-        { new: true }
-      );
-
-      // Re-assign local user to the ground-truth updated document from DB.
-      // This ensures all subsequent logic (summaries, achievements) uses
-      // the most accurate and consistent data.
-      if (updatedUser) {
-        user = updatedUser;
-      }
-    }
+    // --- READ-ONLY PENDING CONFIRMATION ---
+    // GET must be safe and idempotent (Issue #421): report the points that
+    // *would* be confirmed once their delay elapses, without writing anything.
+    // Confirmation happens only on explicit write paths — a scan, or
+    // POST /api/rewards/confirm.
+    const confirmableTransactions = getConfirmableTransactions(user);
+    const confirmationData = {
+      confirmedPoints: confirmableTransactions.reduce(
+        (acc, t) => acc + (t.points ?? 0),
+        0
+      ),
+      confirmedTransactions: confirmableTransactions.length,
+    };
 
     const pointsSummary = getUserPointsSummary(user);
 
@@ -204,13 +125,13 @@ export async function GET(req: Request) {
         hasAdvancedAnalytics: user.hasAdvancedAnalytics || false,
         customAvatar: user.customAvatar || null,
       },
-      // Point confirmation info
+      // Point confirmation info — read-only report of what would be confirmed
+      // by an explicit confirm request (Issue #421).
       pendingConfirmation:
         confirmationData.confirmedPoints > 0
           ? {
               pointsConfirmed: confirmationData.confirmedPoints,
-              transactionsConfirmed:
-                confirmationData.confirmedTransactions.length,
+              transactionsConfirmed: confirmationData.confirmedTransactions,
             }
           : null,
     });

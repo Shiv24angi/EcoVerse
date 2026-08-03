@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
+import { monthKey } from '@/lib/monthly-cycle';
 import { verifyCookieAuth } from '@/lib/auth';
 
 // ─── Types returned to the client ───────────────────────────────────────────
@@ -94,9 +94,9 @@ export async function GET(req: Request) {
   try {
     await dbConnect();
 
-    // Run rollover first so the data we read is current-month accurate.
-    await checkAndRunMonthlyRollover(email);
-
+    // Note: the monthly rollover is intentionally NOT run here. GET must be
+    // side-effect free (Issue #421); the rollover runs only on explicit write
+    // paths (scan / score POST) or via POST /api/rewards/monthly-check.
     const user = await User.findOne({ email }).lean();
 
     if (!user) {
@@ -130,16 +130,23 @@ export async function GET(req: Request) {
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
 
-    const currentMonthCarbon = currentMonthScans.reduce(
-      (acc, s) => acc + (s.carbonEstimate ?? 0),
-      0
-    );
+    // Exact current-month totals come from the per-month running counters
+    // (Issue #420); the array is only a fallback for legacy documents and
+    // feeds the per-scan category/week breakdown below.
+    const currentMonthStats =
+      user.monthlyStats?.[monthKey(currentMonth, currentYear)] ?? {};
+
+    const currentMonthCarbon =
+      currentMonthStats.carbon ??
+      currentMonthScans.reduce((acc, s) => acc + (s.carbonEstimate ?? 0), 0);
+    const currentMonthScanCount =
+      currentMonthStats.scans ?? currentMonthScans.length;
 
     monthlyData.push({
       month: MONTH_LABELS[currentMonth],
       year: currentYear,
       carbon: parseFloat(currentMonthCarbon.toFixed(2)),
-      scanned: currentMonthScans.length,
+      scanned: currentMonthScanCount,
       goal: monthlyGoal,
       isCurrentMonth: true,
     });
@@ -208,7 +215,7 @@ export async function GET(req: Request) {
       weeklyProgress,
       currentMonth: {
         carbon: parseFloat(currentMonthCarbon.toFixed(2)),
-        scanned: currentMonthScans.length,
+        scanned: currentMonthScanCount,
         goal: monthlyGoal,
         month: MONTH_LABELS[currentMonth],
         year: currentYear,

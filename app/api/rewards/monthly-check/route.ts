@@ -7,10 +7,13 @@ import mongoose from 'mongoose';
 import User, { type IUser } from '@/models/User';
 import { calculateMonthlyBonus } from '@/lib/rewards-system';
 import { verifyCookieAuth } from '@/lib/auth';
+import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
 
-// POST /api/rewards/monthly-check - Check and award monthly bonuses
+// POST /api/rewards/monthly-check - Trigger the monthly rollover. This endpoint
+// no longer awards points itself: `checkAndRunMonthlyRollover` is the single
+// guarded path that may credit the monthly eco-bonus (exactly once per month).
 export async function POST(req: Request) {
   const email = req.headers.get('x-user-email');
 
@@ -30,87 +33,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const currentDate = new Date();
-    const lastCheck = user.lastMonthlyBonusCheck
-      ? new Date(user.lastMonthlyBonusCheck)
-      : null;
+    const rolledOver = await checkAndRunMonthlyRollover(email);
 
-    // Check if we need to award monthly bonus
-    const isSameMonthAndYear =
-      !!lastCheck &&
-      lastCheck.getMonth() === currentDate.getMonth() &&
-      lastCheck.getFullYear() === currentDate.getFullYear();
+    if (rolledOver) {
+      const updated = (await User.findOne({ email }).lean()) as LeanUser | null;
+      const history = updated?.monthlyCarbonHistory ?? [];
+      const archive =
+        history.length > 0 ? history[history.length - 1] : undefined;
 
-    if (!isSameMonthAndYear) {
-      const monthlyBonus = calculateMonthlyBonus(user);
-
-      if (monthlyBonus) {
-        // Atomically award monthly bonus to prevent race conditions
-        const bonusMonth = currentDate.getMonth();
-        const bonusYear = currentDate.getFullYear();
-        const updatedUser = await User.findOneAndUpdate(
-          {
-            _id: user._id,
-            $or: [
-              { lastMonthlyBonusCheck: null },
-              {
-                $expr: {
-                  $or: [
-                    {
-                      $ne: [
-                        { $month: '$lastMonthlyBonusCheck' },
-                        bonusMonth + 1,
-                      ],
-                    },
-                    { $ne: [{ $year: '$lastMonthlyBonusCheck' }, bonusYear] },
-                  ],
-                },
-              },
-            ],
-          },
-          {
-            $inc: {
-              confirmedPoints: monthlyBonus.points,
-              totalPointsEarned: monthlyBonus.points,
-              monthlyBonusesEarned: 1,
-            },
-            $push: {
-              rewardTransactions: {
-                type: 'earned',
-                points: monthlyBonus.points,
-                pointsType: 'confirmed',
-                reason: 'monthly_bonus',
-                description: monthlyBonus.reason,
-                date: currentDate,
-                confirmedAt: currentDate,
-              },
-            },
-            $set: { lastMonthlyBonusCheck: currentDate },
-          },
-          { new: true }
-        );
-
-        if (!updatedUser) {
-          // Another request already awarded the bonus
-          return NextResponse.json({
-            bonusAwarded: false,
-            message: 'Monthly bonus already awarded',
-          });
-        }
-
-        const newRewardPoints =
-          (updatedUser.confirmedPoints || 0) +
-          (updatedUser.unconfirmedPoints || 0);
-        await User.findByIdAndUpdate(updatedUser._id, {
-          $set: { rewardPoints: newRewardPoints },
-        });
-
+      if (archive && archive.bonusAwarded) {
+        const confirmedPoints = updated?.confirmedPoints ?? 0;
+        const unconfirmedPoints = updated?.unconfirmedPoints ?? 0;
         return NextResponse.json({
           bonusAwarded: true,
-          bonus: monthlyBonus,
-          newTotalPoints: newRewardPoints,
-          confirmedPoints: updatedUser.confirmedPoints,
-          unconfirmedPoints: updatedUser.unconfirmedPoints,
+          bonus: { points: archive.bonusPoints },
+          newTotalPoints: confirmedPoints + unconfirmedPoints,
+          confirmedPoints,
+          unconfirmedPoints,
         });
       }
     }

@@ -59,6 +59,10 @@ export interface IUser extends Document {
   monthlyCarbon: number;
   monthlyCarbonGoal: number | null;
   totalScanned: number;
+  // Lifetime count of scans with carbonEstimate < 1kg, so the
+  // `low_carbon_specialist` achievement stays accurate after the `scans`
+  // array is capped to bound document size (Issue #420).
+  lowCarbonScans: number;
   joinedAt: string;
   authProvider: 'email' | 'google';
   firebaseUid?: string;
@@ -89,6 +93,16 @@ export interface IUser extends Document {
   monthlyBonusesEarned: number;
   // Monthly carbon cycle — reset + archive history (Issue #122)
   lastMonthlyReset: Date | null;
+  /**
+   * Per-month running totals keyed by "YYYY-M" (0-based month, matching
+   * `getMonth()`). Updated atomically in the same update that records a scan,
+   * so archives stay exact even after the `scans`/`rewardTransactions` arrays
+   * are capped to bound document size (Issue #420).
+   */
+  monthlyStats: Record<
+    string,
+    { carbon: number; scans: number; points: number }
+  >;
   monthlyCarbonHistory: IMonthlyCarbonArchive[];
   // Avatar selection and customization foundation (Issue #33)
   avatarId: string;
@@ -174,6 +188,7 @@ const UserSchema = new mongoose.Schema(
     monthlyCarbon: { type: Number, default: 0 },
     monthlyCarbonGoal: { type: Number, default: null },
     totalScanned: { type: Number, default: 0 },
+    lowCarbonScans: { type: Number, default: 0 },
     joinedAt: { type: String, default: () => new Date().toISOString() },
     authProvider: { type: String, enum: ['email', 'google'], default: 'email' },
     firebaseUid: { type: String, sparse: true },
@@ -199,6 +214,8 @@ const UserSchema = new mongoose.Schema(
     monthlyBonusesEarned: { type: Number, default: 0 },
     // Monthly carbon cycle (Issue #122)
     lastMonthlyReset: { type: Date, default: null },
+    // Per-month running totals (Issue #420) — see IUser.monthlyStats.
+    monthlyStats: { type: mongoose.Schema.Types.Mixed, default: {} },
     monthlyCarbonHistory: { type: [MonthlyCarbonArchiveSchema], default: [] },
     avatarId: { type: String, default: 'avatar-1' },
     avatarCustomization: { type: mongoose.Schema.Types.Mixed, default: {} },
@@ -259,6 +276,7 @@ function hydrateMissingFields(doc: any) {
     monthlyCarbonGoal: null,
     lastMonthlyReset: null,
     lastMonthlyBonusCheck: null,
+    monthlyStats: {},
     monthlyBonusesEarned: 0,
     bestStreakCount: 0,
     nextLevelPoints: 100,
@@ -270,6 +288,7 @@ function hydrateMissingFields(doc: any) {
     streakCount: 0,
     totalScanned: 0,
     monthlyCarbon: 0,
+    lowCarbonScans: 0,
     lastScanDate: null,
   };
   for (const [key, value] of Object.entries(defaults)) {

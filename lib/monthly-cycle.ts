@@ -8,9 +8,11 @@
  * previous month's carbon data atomically, resets `monthlyCarbon` to 0, and
  * optionally awards the monthly eco-bonus — all without a cron job.
  *
- * Race-condition safety: the MongoDB update filter matches on `lastMonthlyReset`
- * (compare-and-set) so only the first concurrent caller wins; subsequent calls
- * within the same request burst are silent no-ops.
+ * The monthly eco-bonus is awarded only here (single guarded path): the
+ * compare-and-set filter matches on both `lastMonthlyReset` and
+ * `lastMonthlyBonusCheck`, so only the first concurrent caller wins and both
+ * guards are updated atomically. The separate `POST /api/rewards/monthly-check`
+ * route is a thin trigger into this function and no longer awards on its own.
  */
 
 import mongoose from 'mongoose';
@@ -19,27 +21,35 @@ import { calculateMonthlyBonus } from '@/lib/rewards-system';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
+/**
+ * Key used for `monthlyStats` on the user document: "YYYY-M" with a 0-based
+ * month (matching `getMonth()`). Exported so every route that records a scan
+ * increments the same bucket.
+ */
+export function monthKey(month: number, year: number): string {
+  return `${year}-${month}`;
+}
+
 /** True when `d` falls within the given calendar month/year. */
 function isInMonth(d: Date, month: number, year: number): boolean {
   return d.getFullYear() === year && d.getMonth() === month;
 }
 
 /**
- * Sum the carbon of every scan belonging to a specific month.
+ * Last instant of the given calendar month — used to stamp `lastMonthlyBonusCheck`
+ * with the month whose bonus was credited (not `now`, which already belongs to
+ * the next month).
  */
-function carbonInMonth(
-  scans: Array<{ carbonEstimate: number; date: Date | string }>,
-  month: number,
-  year: number
-): number {
-  return scans.reduce((acc, s) => {
-    const d = new Date(s.date);
-    return isInMonth(d, month, year) ? acc + (s.carbonEstimate ?? 0) : acc;
-  }, 0);
+function lastMomentOfMonth(month: number, year: number): Date {
+  return new Date(year, month + 1, 0, 23, 59, 59, 999);
 }
 
 /**
  * Count scans that belong to a specific month.
+ *
+ * Used only as a fallback for legacy documents that predate `monthlyStats`
+ * (Issue #420); the rollover archive is normally built from the running
+ * counters instead.
  */
 function scansInMonth(
   scans: Array<{ date: Date | string }>,
@@ -52,6 +62,10 @@ function scansInMonth(
 /**
  * Sum the points from rewardTransactions that belong to a specific month
  * and were of type 'earned'.
+ *
+ * Used only as a fallback for legacy documents that predate `monthlyStats`
+ * (Issue #420); the rollover archive is normally built from the running
+ * counters instead.
  */
 function pointsInMonth(
   transactions: Array<{
@@ -114,29 +128,40 @@ export async function checkAndRunMonthlyRollover(
   // ── Rollover is due ──────────────────────────────────────────────────────
   const archiveMonth = lastReset.getMonth();
   const archiveYear = lastReset.getFullYear();
+  const archiveKey = monthKey(archiveMonth, archiveYear);
+  const currentKey = monthKey(currentMonth, currentYear);
 
-  // Compute per-month stats from the sub-document arrays (which survive
-  // across months; we only reset the running `monthlyCarbon` counter).
-  const carbonSpent = carbonInMonth(
-    user.scans ?? [],
-    archiveMonth,
-    archiveYear
-  );
-  const totalScans = scansInMonth(user.scans ?? [], archiveMonth, archiveYear);
-  const pointsEarned = pointsInMonth(
-    user.rewardTransactions ?? [],
-    archiveMonth,
-    archiveYear
-  );
+  // Build the archive from the per-month running counters (`monthlyStats`)
+  // recorded by the scan routes. Those counters are exact even when the
+  // `scans`/`rewardTransactions` arrays have been capped to bound document
+  // size (Issue #420). For legacy documents created before the counters
+  // existed, fall back to the previous array-scanning helpers.
+  const archivedStats = user.monthlyStats?.[archiveKey] ?? {};
+  const carbonSpent = archivedStats.carbon ?? user.monthlyCarbon ?? 0;
+  const totalScans =
+    archivedStats.scans ??
+    scansInMonth(user.scans ?? [], archiveMonth, archiveYear);
+  const pointsEarned =
+    archivedStats.points ??
+    pointsInMonth(user.rewardTransactions ?? [], archiveMonth, archiveYear);
 
   // Determine whether the eco-bonus was/should be awarded for this month.
+  // `bonusEligible` reflects whether the archived month qualifies, while
+  // `shouldCredit` additionally requires that the bonus has not already been
+  // given for that month (tracked via `lastMonthlyBonusCheck`). The latter
+  // guards against a pre-consolidation double-award where the old
+  // `POST /api/rewards/monthly-check` path credited the same month first.
   const bonusResult = calculateMonthlyBonus({
     monthlyCarbon: carbonSpent,
     totalScanned: user.totalScanned ?? 0,
   });
 
   const bonusPoints = bonusResult ? bonusResult.points : 0;
-  const bonusAwarded = bonusResult !== null;
+  const bonusEligible = bonusResult !== null;
+  const alreadyCredited =
+    user.lastMonthlyBonusCheck != null &&
+    isInMonth(new Date(user.lastMonthlyBonusCheck), archiveMonth, archiveYear);
+  const shouldCredit = bonusEligible && !alreadyCredited;
 
   // Build the archive record.
   const archiveRecord = {
@@ -146,7 +171,7 @@ export async function checkAndRunMonthlyRollover(
     carbonGoal: user.monthlyCarbonGoal ?? 40,
     totalScans,
     pointsEarned,
-    bonusAwarded,
+    bonusAwarded: bonusEligible,
     bonusPoints,
     archivedAt: now,
   };
@@ -160,10 +185,14 @@ export async function checkAndRunMonthlyRollover(
     monthlyCarbonHistory: archiveRecord,
   };
 
-  if (bonusAwarded && bonusPoints > 0) {
+  if (shouldCredit && bonusPoints > 0) {
     incPayload.confirmedPoints = bonusPoints;
     incPayload.totalPointsEarned = bonusPoints;
     incPayload.monthlyBonusesEarned = 1;
+    // The bonus transaction is dated `now` (the new month), so it counts
+    // toward the new month's earned points — matching the pre-counter
+    // `pointsInMonth` semantics, which grouped by transaction date.
+    incPayload[`monthlyStats.${currentKey}.points`] = bonusPoints;
     pushPayload.rewardTransactions = {
       _id: new mongoose.Types.ObjectId(),
       type: 'earned',
@@ -177,19 +206,28 @@ export async function checkAndRunMonthlyRollover(
   }
 
   // Atomic compare-and-set: only runs if no other request already rolled over.
+  // Matches the exact pre-read values of BOTH guards so they are mutated
+  // together and a concurrent award can never slip in between.
   const result = await User.findOneAndUpdate(
     {
       email: userEmail,
-      // CAS guard — matches the exact lastMonthlyReset value we read above.
       lastMonthlyReset: user.lastMonthlyReset,
+      lastMonthlyBonusCheck: user.lastMonthlyBonusCheck ?? null,
     },
     {
       $inc: incPayload,
       $push: pushPayload,
       $set: {
         lastMonthlyReset: now,
-        lastMonthlyBonusCheck: bonusAwarded ? now : user.lastMonthlyBonusCheck,
+        // Record the credited month (not `now`, which already belongs to the
+        // new month) so `alreadyCredited` stays accurate at the next rollover.
+        lastMonthlyBonusCheck: shouldCredit
+          ? lastMomentOfMonth(archiveMonth, archiveYear)
+          : user.lastMonthlyBonusCheck,
       },
+      // The archived bucket is no longer needed (its numbers now live in
+      // `monthlyCarbonHistory`); drop it so the map never grows unbounded.
+      $unset: { [`monthlyStats.${archiveKey}`]: '' },
     },
     { new: false }
   );

@@ -2,8 +2,9 @@
  * @jest-environment node
  */
 
-import { POST, PATCH } from '../route';
+import { POST, PATCH, GET } from '../route';
 import User from '@/models/User';
+import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
 jest.mock('@/lib/mongodb', () => {
   return {
@@ -40,9 +41,58 @@ jest.mock('@/models/User', () => {
   };
 });
 
+function authRequest() {
+  return new Request('http://localhost/api/user/score', {
+    headers: {
+      'x-user-email': 'test@example.com',
+    },
+  });
+}
+
+const mockUser = {
+  email: 'test@example.com',
+  totalPointsEarned: 1200,
+  monthlyCarbon: 25,
+  monthlyCarbonGoal: 40,
+  totalScanned: 12,
+  streakCount: 3,
+  bestStreakCount: 5,
+  scans: [],
+  rewardPoints: 800,
+  level: 2,
+  rewardTransactions: [],
+  achievements: [],
+  purchasedItems: [],
+  activeBadges: [],
+  monthlyBonusesEarned: 0,
+};
+
 describe('User Score API Route', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('GET /api/user/score', () => {
+    it('should return 401 if x-user-email header is missing', async () => {
+      const req = new Request('http://localhost/api/user/score');
+      const res = await GET(req);
+
+      expect(res.status).toBe(401);
+    });
+
+    it('is side-effect free: never runs the monthly rollover (Issue #421)', async () => {
+      (User.findOne as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockReturnValue(mockUser),
+      });
+
+      const res = await GET(authRequest());
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.rewards).toHaveProperty('totalPointsEarned', 1200);
+      expect(checkAndRunMonthlyRollover).not.toHaveBeenCalled();
+      expect(User.findOne).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('PATCH /api/user/score', () => {

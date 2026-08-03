@@ -54,6 +54,7 @@ export interface RewardUser {
   confirmedPoints?: number;
   unconfirmedPoints?: number;
   scans?: IScan[];
+  lowCarbonScans?: number;
   achievements?: IAchievement[];
   purchasedItems?: IPurchasedItem[];
   rewardTransactions?: IRewardTransaction[];
@@ -297,9 +298,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: 'Low Carbon Specialist',
     description: 'Scan 25 products with less than 1kg CO2',
     condition: (user) => {
-      const lowCarbonScans = (user.scans || []).filter(
-        (scan) => scan.carbonEstimate < 1
-      ).length;
+      // Prefer the lifetime counter (Issue #420): it survives `$slice`-based
+      // caps on the `scans` array, so early low-carbon scans are not lost
+      // from achievement progress.
+      const lowCarbonScans =
+        user.lowCarbonScans ??
+        (user.scans || []).filter((scan) => scan.carbonEstimate < 1).length;
       return lowCarbonScans >= 25;
     },
     points: 400,
@@ -307,7 +311,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     category: 'Carbon',
     currentProgress: (user) =>
       Math.min(
-        (user.scans || []).filter((s) => s.carbonEstimate < 1).length,
+        user.lowCarbonScans ??
+          (user.scans || []).filter((s) => s.carbonEstimate < 1).length,
         25
       ),
     maxProgress: 25,
@@ -626,6 +631,33 @@ export function getSustainabilityTier(
   };
 }
 
+/**
+ * Pure read: unconfirmed 'earned' transactions that have already crossed the
+ * confirmation delay. Never mutates the document — used by GET handlers to
+ * report what *would* be confirmed without changing server state (Issue #421).
+ */
+export function getConfirmableTransactions(
+  user: RewardUser
+): IRewardTransaction[] {
+  const now = new Date();
+  if (!user.rewardTransactions) return [];
+
+  return user.rewardTransactions.filter((transaction) => {
+    if (
+      transaction.pointsType === 'confirmed' ||
+      transaction.type === 'redeemed'
+    ) {
+      return false;
+    }
+
+    const transactionDate = new Date(transaction.date);
+    const hoursElapsed =
+      (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
+
+    return hoursElapsed >= POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS;
+  });
+}
+
 // Confirm pending points that meet the confirmation threshold
 export function confirmPendingPoints(user: UserPointsData): {
   confirmedPoints: number;
@@ -635,26 +667,11 @@ export function confirmPendingPoints(user: UserPointsData): {
   const confirmedTransactions: IRewardTransaction[] = [];
   const now = new Date();
 
-  if (user.rewardTransactions) {
-    for (const transaction of user.rewardTransactions) {
-      if (
-        transaction.pointsType === 'confirmed' ||
-        transaction.type === 'redeemed'
-      ) {
-        continue;
-      }
-
-      const transactionDate = new Date(transaction.date);
-      const hoursElapsed =
-        (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
-
-      if (hoursElapsed >= POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS) {
-        transaction.pointsType = 'confirmed';
-        transaction.confirmedAt = now;
-        confirmedPoints += transaction.points;
-        confirmedTransactions.push(transaction);
-      }
-    }
+  for (const transaction of getConfirmableTransactions(user)) {
+    transaction.pointsType = 'confirmed';
+    transaction.confirmedAt = now;
+    confirmedPoints += transaction.points;
+    confirmedTransactions.push(transaction);
   }
 
   return { confirmedPoints, confirmedTransactions };
