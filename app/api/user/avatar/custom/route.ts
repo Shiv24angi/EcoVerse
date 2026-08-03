@@ -11,16 +11,43 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let body: unknown;
   try {
-    const { customAvatar } = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
-    if (typeof customAvatar !== 'string' || !customAvatar.trim()) {
+  const { customAvatar } = (body ?? {}) as { customAvatar?: unknown };
+
+  if (typeof customAvatar !== 'string' || !customAvatar.trim()) {
+    return NextResponse.json(
+      { error: 'Missing or invalid customAvatar URL' },
+      { status: 400 }
+    );
+  }
+
+  const avatarUrl = customAvatar.trim();
+
+  try {
+    const parsed = new URL(avatarUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return NextResponse.json(
-        { error: 'Missing or invalid customAvatar URL' },
+        { error: 'customAvatar must be an http(s) URL' },
         { status: 400 }
       );
     }
+  } catch {
+    return NextResponse.json(
+      { error: 'customAvatar must be a valid URL' },
+      { status: 400 }
+    );
+  }
 
+  try {
     await dbConnect();
 
     const user = await User.findOne({ email });
@@ -42,7 +69,7 @@ export async function PUT(req: Request) {
 
     const updatedUser = await User.findOneAndUpdate(
       { email },
-      { $set: { customAvatar: customAvatar.trim() } },
+      { $set: { customAvatar: avatarUrl } },
       { new: true }
     );
 
@@ -51,9 +78,10 @@ export async function PUT(req: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unknown server error';
-    console.error('Custom avatar update error:', message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('Custom avatar update error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update custom avatar' },
+      { status: 500 }
+    );
   }
 }
