@@ -47,9 +47,8 @@ export default function RewardNotification({
     }
   }, [notification, handleClose]);
 
-  if (!notification) return null;
-
   const getIcon = () => {
+    if (!notification) return null;
     switch (notification.type) {
       case 'achievement':
         return <Trophy className="h-6 w-6 text-yellow-400" />;
@@ -63,6 +62,7 @@ export default function RewardNotification({
   };
 
   const getBackgroundColor = () => {
+    if (!notification) return '';
     switch (notification.type) {
       case 'achievement':
         return 'from-yellow-500/10 to-orange-500/10 border-yellow-500/20';
@@ -80,61 +80,66 @@ export default function RewardNotification({
       className={`fixed top-4 right-4 z-50 transition-all duration-300 ${
         isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}
+      role="status"
+      aria-live="polite"
     >
-      <Card
-        className={`w-80 bg-gradient-to-br ${getBackgroundColor()} border backdrop-blur-sm`}
-      >
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
-              <div className="mt-0.5">{getIcon()}</div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-white text-sm">
-                  {notification.title}
-                </h3>
-                <p className="text-gray-300 text-xs mt-1">
-                  {notification.description}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  {notification.points && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-100 text-green-800 text-xs"
-                    >
-                      +{notification.points} pts
-                    </Badge>
-                  )}
-                  {notification.level && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-purple-100 text-purple-800 text-xs"
-                    >
-                      Level {notification.level}
-                    </Badge>
-                  )}
-                  {notification.achievement && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-yellow-100 text-yellow-800 text-xs"
-                    >
-                      {notification.achievement.icon}{' '}
-                      {notification.achievement.name}
-                    </Badge>
-                  )}
+      {notification && (
+        <Card
+          className={`w-80 bg-gradient-to-br ${getBackgroundColor()} border backdrop-blur-sm`}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-3">
+                <div className="mt-0.5">{getIcon()}</div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-white text-sm">
+                    {notification.title}
+                  </h3>
+                  <p className="text-gray-300 text-xs mt-1">
+                    {notification.description}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    {notification.points && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-green-100 text-green-800 text-xs"
+                      >
+                        +{notification.points} pts
+                      </Badge>
+                    )}
+                    {notification.level && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-purple-100 text-purple-800 text-xs"
+                      >
+                        Level {notification.level}
+                      </Badge>
+                    )}
+                    {notification.achievement && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-yellow-100 text-yellow-800 text-xs"
+                      >
+                        {notification.achievement.icon}{' '}
+                        {notification.achievement.name}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                aria-label="Dismiss notification"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

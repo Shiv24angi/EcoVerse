@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { POST } from '../route';
+import { POST, PATCH } from '../route';
 import User from '@/models/User';
 
 jest.mock('@/lib/mongodb', () => {
@@ -15,110 +15,206 @@ jest.mock('@/lib/mongodb', () => {
 jest.mock('@/lib/monthly-cycle', () => {
   return {
     __esModule: true,
-    checkAndRunMonthlyRollover: jest.fn().mockResolvedValue(false),
+    checkAndRunMonthlyRollover: jest.fn().mockResolvedValue(undefined),
   };
 });
+
+function createMockQuery(val: any) {
+  const p: any = Promise.resolve(val);
+  p.lean = jest.fn().mockResolvedValue(val);
+  return p;
+}
 
 jest.mock('@/models/User', () => {
   return {
     __esModule: true,
     default: {
-      findOne: jest.fn(),
+      findOne: jest.fn().mockImplementation(() => createMockQuery(null)),
       findOneAndUpdate: jest.fn(),
       updateOne: jest.fn(),
     },
   };
 });
 
-/**
- * Test suite for POST /api/user/score (manual eco-activity entry).
- * Verifies that resubmitting the same activity in quick succession is
- * rejected before it reaches the database write.
- */
-describe('POST /api/user/score', () => {
+describe('User Score API Route', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should reject a duplicate manual entry submitted within the dedup window', async () => {
-    const mockUser = {
-      email: 'test@example.com',
-      totalScanned: 3,
-      scans: [
-        {
-          productName: 'Reusable Water Bottle',
-          carbonEstimate: 2.5,
-          category: 'Manual Entry',
-          confidence: 'medium',
-          barcode: 'MANUAL-1700000000000',
-          date: new Date(),
-          source: 'Manual Entry',
-        },
-      ],
-    };
+  describe('PATCH /api/user/score', () => {
+    it('should return 401 if x-user-email header is missing', async () => {
+      const req = new Request('http://localhost/api/user/score', {
+        method: 'PATCH',
+      });
+      const res = await PATCH(req);
+      const json = await res.json();
 
-    (User.findOne as jest.Mock).mockResolvedValue(mockUser);
-
-    const request = new Request('http://localhost/api/user/score', {
-      method: 'POST',
-      headers: {
-        'x-user-email': 'test@example.com',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        productName: 'Reusable Water Bottle',
-        carbonEstimate: 2.5,
-      }),
+      expect(res.status).toBe(401);
+      expect(json).toEqual({ error: 'Unauthorized' });
     });
 
-    const response = await POST(request);
-    expect(response.status).toBe(409);
-    const data = await response.json();
-    expect(data.error).toBe('This activity was already submitted a moment ago');
-    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+    it('should return 400 for malformed JSON request body', async () => {
+      const req = new Request('http://localhost/api/user/score', {
+        method: 'PATCH',
+        headers: {
+          'x-user-email': 'test@example.com',
+          'content-type': 'application/json',
+        },
+        body: '{',
+      });
+
+      const res = await PATCH(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(json).toEqual({ error: 'Invalid JSON payload' });
+    });
+
+    it('should return 400 for invalid monthlyCarbonGoal values', async () => {
+      const req = new Request('http://localhost/api/user/score', {
+        method: 'PATCH',
+        headers: {
+          'x-user-email': 'test@example.com',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ monthlyCarbonGoal: -10 }),
+      });
+
+      const res = await PATCH(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(json).toEqual({
+        error:
+          'monthlyCarbonGoal must be a positive number (kg CO2), or null to clear it',
+      });
+    });
+
+    it('should update monthlyCarbonGoal successfully with valid number', async () => {
+      (User.findOneAndUpdate as jest.Mock).mockResolvedValue({
+        email: 'test@example.com',
+        monthlyCarbonGoal: 50,
+      });
+
+      const req = new Request('http://localhost/api/user/score', {
+        method: 'PATCH',
+        headers: {
+          'x-user-email': 'test@example.com',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ monthlyCarbonGoal: 50 }),
+      });
+
+      const res = await PATCH(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json).toEqual({ monthlyCarbonGoal: 50 });
+    });
   });
 
-  it('should allow the entry when no matching scan exists yet', async () => {
-    const mockUser = {
-      email: 'test@example.com',
-      totalScanned: 0,
-      totalPointsEarned: 0,
-      lastScanDate: null,
-      streakCount: 0,
-      bestStreakCount: 0,
-      streakProtectors: 0,
-      level: 1,
-      scans: [],
-    };
+  describe('POST /api/user/score', () => {
+    it('should return 400 for malformed JSON request body', async () => {
+      const req = new Request('http://localhost/api/user/score', {
+        method: 'POST',
+        headers: {
+          'x-user-email': 'test@example.com',
+          'content-type': 'application/json',
+        },
+        body: '{',
+      });
 
-    (User.findOne as jest.Mock).mockResolvedValue(mockUser);
-    (User.findOneAndUpdate as jest.Mock).mockResolvedValue({
-      ...mockUser,
-      monthlyCarbon: 2.5,
-      totalScanned: 1,
-      streakCount: 1,
-      bestStreakCount: 1,
-      toObject: () => mockUser,
+      const res = await POST(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(json).toEqual({ error: 'Invalid JSON payload' });
     });
 
-    const request = new Request('http://localhost/api/user/score', {
-      method: 'POST',
-      headers: {
-        'x-user-email': 'test@example.com',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        productName: 'Reusable Water Bottle',
-        carbonEstimate: 2.5,
-      }),
+    it('should reject a duplicate manual entry submitted within the dedup window', async () => {
+      const mockUser = {
+        email: 'test@example.com',
+        totalScanned: 3,
+        scans: [
+          {
+            productName: 'Reusable Water Bottle',
+            carbonEstimate: 2.5,
+            category: 'Manual Entry',
+            confidence: 'medium',
+            barcode: 'MANUAL-1700000000000',
+            date: new Date(),
+            source: 'Manual Entry',
+          },
+        ],
+      };
+
+      (User.findOne as jest.Mock).mockImplementation(() =>
+        createMockQuery(mockUser)
+      );
+
+      const request = new Request('http://localhost/api/user/score', {
+        method: 'POST',
+        headers: {
+          'x-user-email': 'test@example.com',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productName: 'Reusable Water Bottle',
+          carbonEstimate: 2.5,
+        }),
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(409);
+      const data = await response.json();
+      expect(data.error).toBe(
+        'This activity was already submitted a moment ago'
+      );
+      expect(User.findOneAndUpdate).not.toHaveBeenCalled();
     });
 
-    const response = await POST(request);
-    expect(response.status).toBe(200);
+    it('should allow the entry when no matching scan exists yet', async () => {
+      const mockUser = {
+        email: 'test@example.com',
+        totalScanned: 0,
+        totalPointsEarned: 0,
+        lastScanDate: null,
+        streakCount: 0,
+        bestStreakCount: 0,
+        streakProtectors: 0,
+        level: 1,
+        scans: [],
+      };
 
-    // The pre-loop duplicate query is gone — findOne is only called with
-    // the plain email filter to fetch the user for the CAS attempt.
-    expect(User.findOne).toHaveBeenCalledWith({ email: 'test@example.com' });
-    expect(User.findOneAndUpdate).toHaveBeenCalled();
+      (User.findOne as jest.Mock).mockImplementation(() =>
+        createMockQuery(mockUser)
+      );
+      (User.findOneAndUpdate as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        monthlyCarbon: 2.5,
+        totalScanned: 1,
+        streakCount: 1,
+        bestStreakCount: 1,
+        toObject: () => mockUser,
+      });
+
+      const request = new Request('http://localhost/api/user/score', {
+        method: 'POST',
+        headers: {
+          'x-user-email': 'test@example.com',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productName: 'Reusable Water Bottle',
+          carbonEstimate: 2.5,
+        }),
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(200);
+
+      expect(User.findOne).toHaveBeenCalledWith({ email: 'test@example.com' });
+      expect(User.findOneAndUpdate).toHaveBeenCalled();
+    });
   });
 });
