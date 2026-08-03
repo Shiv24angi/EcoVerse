@@ -45,6 +45,58 @@ export default function BarcodeScanner({
     codeReaderRef.current = new BrowserMultiFormatReader();
   }
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
+
+  // Focus management: move focus into dialog and return it when closed
+  useEffect(() => {
+    triggerElementRef.current = document.activeElement as HTMLElement;
+    const timer = setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 50);
+
+    return () => {
+      triggerElementRef.current?.focus();
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // Trap focus and handle escape key
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      const modalElement = modalRef.current;
+      if (!modalElement) return;
+
+      const focusableElements = modalElement.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex="0"]'
+      );
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0] as HTMLElement;
+      const lastElement = focusableElements[
+        focusableElements.length - 1
+      ] as HTMLElement;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    }
+  };
+
   const cleanupCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -189,17 +241,33 @@ export default function BarcodeScanner({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
+    <div
+      ref={modalRef}
+      onKeyDown={handleKeyDown}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="scanner-dialog-title"
+      className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center focus:outline-none"
+    >
       <Card className="w-full max-w-md mx-4 dark-card border-gray-700">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-white">Scan Barcode</CardTitle>
+              <CardTitle id="scanner-dialog-title" className="text-white">
+                Scan Barcode
+              </CardTitle>
               <CardDescription className="text-gray-400">
                 Position the barcode within the frame
               </CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button
+              ref={closeButtonRef}
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              aria-label="Close scanner"
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -233,6 +301,10 @@ export default function BarcodeScanner({
                 size="sm"
                 onClick={toggleFlash}
                 className={`${isFlashOn ? 'bg-yellow-600' : 'bg-gray-700'}`}
+                aria-label={
+                  isFlashOn ? 'Turn off flashlight' : 'Turn on flashlight'
+                }
+                aria-pressed={isFlashOn}
               >
                 <Flashlight className="h-4 w-4" />
               </Button>
@@ -241,6 +313,7 @@ export default function BarcodeScanner({
                 size="sm"
                 onClick={switchCamera}
                 className="bg-gray-700"
+                aria-label="Switch camera"
               >
                 <RotateCcw className="h-4 w-4" />
               </Button>

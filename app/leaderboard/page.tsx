@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
@@ -71,6 +71,7 @@ export default function LeaderboardPage() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
+  const loadingMoreCursorRef = useRef<string | null>(null);
 
   const fetchLeaderboardData = useCallback(async () => {
     try {
@@ -83,7 +84,13 @@ export default function LeaderboardPage() {
         if (!cursor) {
           setLeaderboardData(data.leaderboard);
         } else {
-          setLeaderboardData((prev) => [...prev, ...data.leaderboard]);
+          setLeaderboardData((prev) => {
+            const existingIds = new Set(prev.map((entry) => entry.id));
+            const newEntries = data.leaderboard.filter(
+              (entry) => !existingIds.has(entry.id)
+            );
+            return [...prev, ...newEntries];
+          });
         }
         setStats(data.stats);
         setCursor(data.nextCursor);
@@ -97,10 +104,14 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      loadingMoreCursorRef.current = null;
     }
   }, [cursor, user?._id]);
 
   const handleLoadMore = () => {
+    if (loadingMore || !hasMore || !cursor) return;
+    if (loadingMoreCursorRef.current === cursor) return;
+    loadingMoreCursorRef.current = cursor;
     setLoadingMore(true);
   };
 
