@@ -8,9 +8,11 @@
  * previous month's carbon data atomically, resets `monthlyCarbon` to 0, and
  * optionally awards the monthly eco-bonus — all without a cron job.
  *
- * Race-condition safety: the MongoDB update filter matches on `lastMonthlyReset`
- * (compare-and-set) so only the first concurrent caller wins; subsequent calls
- * within the same request burst are silent no-ops.
+ * The monthly eco-bonus is awarded only here (single guarded path): the
+ * compare-and-set filter matches on both `lastMonthlyReset` and
+ * `lastMonthlyBonusCheck`, so only the first concurrent caller wins and both
+ * guards are updated atomically. The separate `POST /api/rewards/monthly-check`
+ * route is a thin trigger into this function and no longer awards on its own.
  */
 
 import mongoose from 'mongoose';
@@ -22,6 +24,15 @@ import { calculateMonthlyBonus } from '@/lib/rewards-system';
 /** True when `d` falls within the given calendar month/year. */
 function isInMonth(d: Date, month: number, year: number): boolean {
   return d.getFullYear() === year && d.getMonth() === month;
+}
+
+/**
+ * Last instant of the given calendar month — used to stamp `lastMonthlyBonusCheck`
+ * with the month whose bonus was credited (not `now`, which already belongs to
+ * the next month).
+ */
+function lastMomentOfMonth(month: number, year: number): Date {
+  return new Date(year, month + 1, 0, 23, 59, 59, 999);
 }
 
 /**
@@ -130,13 +141,22 @@ export async function checkAndRunMonthlyRollover(
   );
 
   // Determine whether the eco-bonus was/should be awarded for this month.
+  // `bonusEligible` reflects whether the archived month qualifies, while
+  // `shouldCredit` additionally requires that the bonus has not already been
+  // given for that month (tracked via `lastMonthlyBonusCheck`). The latter
+  // guards against a pre-consolidation double-award where the old
+  // `POST /api/rewards/monthly-check` path credited the same month first.
   const bonusResult = calculateMonthlyBonus({
     monthlyCarbon: carbonSpent,
     totalScanned: user.totalScanned ?? 0,
   });
 
   const bonusPoints = bonusResult ? bonusResult.points : 0;
-  const bonusAwarded = bonusResult !== null;
+  const bonusEligible = bonusResult !== null;
+  const alreadyCredited =
+    user.lastMonthlyBonusCheck != null &&
+    isInMonth(new Date(user.lastMonthlyBonusCheck), archiveMonth, archiveYear);
+  const shouldCredit = bonusEligible && !alreadyCredited;
 
   // Build the archive record.
   const archiveRecord = {
@@ -146,7 +166,7 @@ export async function checkAndRunMonthlyRollover(
     carbonGoal: user.monthlyCarbonGoal ?? 40,
     totalScans,
     pointsEarned,
-    bonusAwarded,
+    bonusAwarded: bonusEligible,
     bonusPoints,
     archivedAt: now,
   };
@@ -160,7 +180,7 @@ export async function checkAndRunMonthlyRollover(
     monthlyCarbonHistory: archiveRecord,
   };
 
-  if (bonusAwarded && bonusPoints > 0) {
+  if (shouldCredit && bonusPoints > 0) {
     incPayload.confirmedPoints = bonusPoints;
     incPayload.totalPointsEarned = bonusPoints;
     incPayload.monthlyBonusesEarned = 1;
@@ -177,18 +197,24 @@ export async function checkAndRunMonthlyRollover(
   }
 
   // Atomic compare-and-set: only runs if no other request already rolled over.
+  // Matches the exact pre-read values of BOTH guards so they are mutated
+  // together and a concurrent award can never slip in between.
   const result = await User.findOneAndUpdate(
     {
       email: userEmail,
-      // CAS guard — matches the exact lastMonthlyReset value we read above.
       lastMonthlyReset: user.lastMonthlyReset,
+      lastMonthlyBonusCheck: user.lastMonthlyBonusCheck ?? null,
     },
     {
       $inc: incPayload,
       $push: pushPayload,
       $set: {
         lastMonthlyReset: now,
-        lastMonthlyBonusCheck: bonusAwarded ? now : user.lastMonthlyBonusCheck,
+        // Record the credited month (not `now`, which already belongs to the
+        // new month) so `alreadyCredited` stays accurate at the next rollover.
+        lastMonthlyBonusCheck: shouldCredit
+          ? lastMomentOfMonth(archiveMonth, archiveYear)
+          : user.lastMonthlyBonusCheck,
       },
     },
     { new: false }
