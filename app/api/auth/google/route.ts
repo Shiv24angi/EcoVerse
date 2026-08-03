@@ -54,18 +54,27 @@ export async function POST(req: Request) {
   let userDoc: LeanUser | null = null;
   try {
     await dbConnect();
+    // Link the verified Google identity onto the account. Linking fields go in
+    // `$set` (always applied) so an EXISTING user — e.g. one who first signed
+    // up with email/password — is updated with their Firebase UID, provider and
+    // profile name instead of being silently ignored by `$setOnInsert`.
     userDoc = await User.findOneAndUpdate(
       { email: trimmedEmail },
       {
-        $setOnInsert: {
-          email: trimmedEmail,
-          name: trimmedName,
+        $set: {
           firebaseUid: trimmedFirebaseUid,
           authProvider: 'google',
+          name: trimmedName,
+        },
+        $setOnInsert: {
+          email: trimmedEmail,
           avatarId: 'avatar-1',
           monthlyCarbon: 0,
           totalScanned: 0,
           joinedAt: new Date().toISOString(),
+        },
+        $addToSet: {
+          authProviders: 'google',
         },
       },
       {
