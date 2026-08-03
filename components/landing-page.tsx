@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { ThemeToggle } from './theme-toggle';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface LandingPageProps {
   onGetStarted?: () => void;
@@ -30,6 +31,7 @@ interface LandingPageProps {
 
 export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsVisible(true);
@@ -122,7 +124,9 @@ export default function ModernLandingPage({ onGetStarted }: LandingPageProps) {
                 </Button>
               </Link>
               <Button
-                onClick={() => onGetStarted?.()}
+                onClick={() =>
+                  onGetStarted ? onGetStarted() : router.push('/auth/signup')
+                }
                 className="bg-gradient-to-r from-teal-500 to-emerald-400 hover:from-teal-600 hover:to-emerald-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               >
                 Get Started

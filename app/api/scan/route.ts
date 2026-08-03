@@ -36,6 +36,10 @@ type OpenFoodFactsResponse = {
   code: string;
 };
 
+function getUtcDayKey(date: Date) {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
 export async function POST(req: Request) {
   const userEmail = req.headers.get('x-user-email');
 
@@ -148,12 +152,18 @@ export async function POST(req: Request) {
         const totalScans = user.totalScanned ?? 0;
         const previousLastScanDate = user.lastScanDate;
         oldLevel = user.level || 1;
+        scanTimestamp = new Date();
+        const isFirstScanOfDay =
+          !previousLastScanDate ||
+          getUtcDayKey(scanTimestamp) !==
+            getUtcDayKey(new Date(previousLastScanDate));
 
         streakUpdate = calculateStreakUpdate(
           user.lastScanDate,
           user.streakCount ?? 0,
           user.bestStreakCount ?? 0,
-          user.streakProtectors ?? 0
+          user.streakProtectors ?? 0,
+          scanTimestamp
         );
         const streakCount = streakUpdate.streakCount;
 
@@ -162,7 +172,8 @@ export async function POST(req: Request) {
               carbonEstimate,
               isFirstScan,
               streakCount,
-              totalScans
+              totalScans,
+              isFirstScanOfDay
             )
           : { points: 0, reasons: [], isConfirmed: false };
 
