@@ -351,6 +351,8 @@ export default function ScanPage() {
                       alt={product.product}
                       className="rounded-xl object-contain max-h-56 w-full shadow-sm border border-cyan-200 bg-white p-2"
                       onError={() => setImageError(true)}
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="rounded-xl border border-cyan-200 bg-white/60 flex flex-col items-center justify-center gap-2 h-48 w-full text-cyan-600">

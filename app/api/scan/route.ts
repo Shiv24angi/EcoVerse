@@ -20,6 +20,7 @@ import {
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
+import { sanitizeProductImage } from '@/lib/product-image';
 import { validateBarcode, validateBarcodeFormat } from '@/lib/input-validation';
 
 type OpenFoodFactsResponse = {
@@ -392,11 +393,15 @@ export async function POST(req: Request) {
       // This ensures the UI is always in sync with the actual database state.
       const pointsSummary = getUserPointsSummary(updatedUser);
 
-      const productImage =
-        product.image_front_url ||
-        product.image_url ||
-        product.image_front_small_url ||
-        null;
+      // Image URLs come from user-contributed Open Food Facts fields and are
+      // untrusted. Only allowlisted HTTPS openfoodfacts.org URLs reach the
+      // client; anything else resolves to null so the browser never contacts
+      // an arbitrary host (Issue #422).
+      const productImage = sanitizeProductImage(
+        product.image_front_url,
+        product.image_url,
+        product.image_front_small_url
+      );
 
       return NextResponse.json({
         productName: product.product_name,
