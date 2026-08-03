@@ -3,9 +3,11 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import axios from 'axios';
+import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import mongoose from 'mongoose';
+import { verifyToken } from '@/lib/auth';
 import { getCarbonFootprint } from '@/lib/climatiq';
 import {
   calculateScanPoints,
@@ -37,13 +39,22 @@ type OpenFoodFactsResponse = {
 };
 
 export async function POST(req: Request) {
-  const userEmail = req.headers.get('x-user-email');
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('auth_token')?.value;
 
-  if (!userEmail) {
+  if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const rateLimitResult = checkScanRateLimit(userEmail);
+  const authPayload = (await verifyToken(authToken)) as
+    | { email?: string; userId?: string }
+    | null;
+
+  if (!authPayload?.email || !authPayload.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimitResult = checkScanRateLimit(authPayload.userId);
   if (!rateLimitResult.allowed) {
     return NextResponse.json(
       {
@@ -58,6 +69,7 @@ export async function POST(req: Request) {
     );
   }
 
+  const userEmail = authPayload.email;
   const { barcode } = await req.json();
 
   if (!barcode) {

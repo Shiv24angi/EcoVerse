@@ -1,58 +1,89 @@
-interface RateLimitOptions {
-  limit: number;
-  windowMs: number;
+export const SCAN_RATE_LIMIT_WINDOW_MS = 60_000;
+export const SCAN_RATE_LIMIT_MAX_REQUESTS = 10;
+export const MAX_RATE_LIMIT_KEYS = 1_000;
+
+type RateLimitEntry = {
+  requestTimestamps: number[];
+  lastAccessedAt: number;
+};
+
+const requestLog = new Map<string, RateLimitEntry>();
+
+function pruneExpiredEntries(now: number) {
+  for (const [key, entry] of requestLog.entries()) {
+    if (now - entry.lastAccessedAt >= SCAN_RATE_LIMIT_WINDOW_MS) {
+      requestLog.delete(key);
+    }
+  }
 }
 
-interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  retryAfterMs: number;
+function refreshEntryOrder(key: string, entry: RateLimitEntry) {
+  requestLog.delete(key);
+  requestLog.set(key, entry);
 }
 
-const requestLog = new Map<string, number[]>();
+function enforceMaxKeyCount() {
+  while (requestLog.size > MAX_RATE_LIMIT_KEYS) {
+    const oldestKey = requestLog.keys().next().value;
+    if (oldestKey === undefined) {
+      break;
+    }
 
-export function checkRateLimit(
-  key: string,
-  { limit, windowMs }: RateLimitOptions
-): RateLimitResult {
+    requestLog.delete(oldestKey);
+  }
+}
+
+export function resetRateLimit() {
+  requestLog.clear();
+}
+
+export function checkScanRateLimit(identity: string) {
   const now = Date.now();
-  const windowStart = now - windowMs;
 
-  const timestamps = requestLog.get(key) ?? [];
+  pruneExpiredEntries(now);
 
-  const recent = timestamps.filter((t) => t > windowStart);
+  const existingEntry = requestLog.get(identity);
+  if (!existingEntry) {
+    requestLog.set(identity, {
+      requestTimestamps: [now],
+      lastAccessedAt: now,
+    });
+    enforceMaxKeyCount();
 
-  if (recent.length >= limit) {
-    const oldest = recent[0];
-    requestLog.set(key, recent);
     return {
-      allowed: false,
-      remaining: 0,
-      retryAfterMs: Math.max(0, oldest + windowMs - now),
+      allowed: true,
+      retryAfterMs: 0,
     };
   }
 
-  recent.push(now);
-  requestLog.set(key, recent);
+  const entry = {
+    ...existingEntry,
+    requestTimestamps: existingEntry.requestTimestamps.filter(
+      (timestamp) => now - timestamp < SCAN_RATE_LIMIT_WINDOW_MS
+    ),
+    lastAccessedAt: now,
+  };
+
+  if (entry.requestTimestamps.length >= SCAN_RATE_LIMIT_MAX_REQUESTS) {
+    refreshEntryOrder(identity, entry);
+    enforceMaxKeyCount();
+
+    const oldestTimestamp = entry.requestTimestamps[0];
+    return {
+      allowed: false,
+      retryAfterMs: Math.max(
+        0,
+        oldestTimestamp + SCAN_RATE_LIMIT_WINDOW_MS - now
+      ),
+    };
+  }
+
+  entry.requestTimestamps.push(now);
+  refreshEntryOrder(identity, entry);
+  enforceMaxKeyCount();
 
   return {
     allowed: true,
-    remaining: limit - recent.length,
     retryAfterMs: 0,
   };
-}
-
-export function resetRateLimit(key?: string): void {
-  if (key) {
-    requestLog.delete(key);
-  } else {
-    requestLog.clear();
-  }
-}
-
-export function checkScanRateLimit(userEmail: string): RateLimitResult {
-  return checkRateLimit(`scan:${userEmail}`, {
-    limit: 10,
-    windowMs: 60_000,
-  });
 }
