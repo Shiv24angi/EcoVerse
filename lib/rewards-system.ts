@@ -670,41 +670,93 @@ export async function confirmAgedPoints(email: string): Promise<number> {
   );
   const { default: User } = await import('@/models/User');
 
-  const user = await User.findOne({ email, unconfirmedPoints: { $gt: 0 } });
-  if (!user) return 0;
+  // Read the current confirmedPoints BEFORE the update so we can compute the delta.
+  const preDoc = await User.findOne(
+    { email, unconfirmedPoints: { $gt: 0 } },
+    { confirmedPoints: 1 }
+  ).lean();
+  const oldConfirmed = preDoc?.confirmedPoints ?? 0;
 
-  const agedPoints = (user.rewardTransactions || [])
-    .filter(
-      (t: IRewardTransaction) =>
-        t.pointsType === 'unconfirmed' &&
-        t.type === 'earned' &&
-        t.date <= cutoff
-    )
-    .reduce((sum: number, t: IRewardTransaction) => sum + (t.points || 0), 0);
-
-  if (agedPoints === 0) return 0;
-
-  await User.updateOne(
-    { email },
+  const result = await User.findOneAndUpdate(
     {
-      $inc: { confirmedPoints: agedPoints, unconfirmedPoints: -agedPoints },
-      $set: {
-        'rewardTransactions.$[eligible].pointsType': 'confirmed',
-        'rewardTransactions.$[eligible].confirmedAt': new Date(),
-      },
+      email,
+      unconfirmedPoints: { $gt: 0 },
     },
-    {
-      arrayFilters: [
-        {
-          'eligible.pointsType': 'unconfirmed',
-          'eligible.type': 'earned',
-          'eligible.date': { $lte: cutoff },
+    [
+      {
+        $set: {
+          _eligiblePoints: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: { $ifNull: ['$rewardTransactions', []] },
+                    as: 't',
+                    cond: {
+                      $and: [
+                        { $eq: ['$$t.pointsType', 'unconfirmed'] },
+                        { $eq: ['$$t.type', 'earned'] },
+                        { $lte: ['$$t.date', cutoff] },
+                      ],
+                    },
+                  },
+                },
+                as: 'et',
+                in: { $ifNull: ['$$et.points', 0] },
+              },
+            },
+          },
         },
-      ],
-    }
+      },
+      {
+        $set: {
+          confirmedPoints: {
+            $add: [
+              { $ifNull: ['$confirmedPoints', 0] },
+              { $ifNull: ['$_eligiblePoints', 0] },
+            ],
+          },
+          unconfirmedPoints: {
+            $subtract: [
+              { $ifNull: ['$unconfirmedPoints', 0] },
+              { $ifNull: ['$_eligiblePoints', 0] },
+            ],
+          },
+          rewardTransactions: {
+            $map: {
+              input: { $ifNull: ['$rewardTransactions', []] },
+              as: 't',
+              in: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $eq: ['$$t.pointsType', 'unconfirmed'] },
+                      { $eq: ['$$t.type', 'earned'] },
+                      { $lte: ['$$t.date', cutoff] },
+                    ],
+                  },
+                  then: {
+                    $mergeObjects: [
+                      '$$t',
+                      { pointsType: 'confirmed', confirmedAt: new Date() },
+                    ],
+                  },
+                  else: '$$t',
+                },
+              },
+            },
+          },
+        },
+      },
+      { $unset: '_eligiblePoints' },
+    ],
+    { new: true }
   );
 
-  return agedPoints;
+  if (!result) return 0;
+
+  const newConfirmed = (result as any).confirmedPoints ?? 0;
+  return newConfirmed - oldConfirmed;
 }
 
 export function getUserPointsSummary(user: RewardUser): {

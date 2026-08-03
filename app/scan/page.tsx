@@ -288,10 +288,18 @@ export default function ScanPage() {
                     e.key === 'Enter' && !scanLock && handleScan()
                   }
                 />
-                <Button onClick={() => setIsScanning(true)} variant="outline">
+                <Button
+                  onClick={() => setIsScanning(true)}
+                  variant="outline"
+                  aria-label="Scan barcode using camera"
+                >
                   <Camera className="h-4 w-4" />
                 </Button>
-                <Button onClick={() => handleScan()} disabled={isLoading}>
+                <Button
+                  onClick={() => handleScan()}
+                  disabled={isLoading}
+                  aria-label="Search barcode"
+                >
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : (
