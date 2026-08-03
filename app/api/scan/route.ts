@@ -20,6 +20,7 @@ import {
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
+import { validateBarcode, validateBarcodeFormat } from '@/lib/input-validation';
 
 type OpenFoodFactsResponse = {
   product: {
@@ -48,14 +49,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Barcode missing' }, { status: 400 });
   }
 
-  // Barcode validation: must be 8-14 digit string
-  if (
-    typeof barcode !== 'string' ||
-    !/^\d{8,14}$/.test(barcode) ||
-    barcode.length > 14
-  ) {
+  // Validate barcode input (Issue #409: prevent unbounded queries)
+  const barcodeValidation = validateBarcode(barcode);
+  if (!barcodeValidation.valid) {
     return NextResponse.json(
-      { error: 'Invalid barcode format' },
+      { error: barcodeValidation.error || 'Invalid barcode' },
+      { status: 400 }
+    );
+  }
+
+  const sanitizedBarcode = barcodeValidation.sanitized!;
+
+  // Additional validation for standard barcode formats
+  const formatValidation = validateBarcodeFormat(sanitizedBarcode);
+  if (!formatValidation.valid) {
+    return NextResponse.json(
+      { error: formatValidation.error || 'Invalid barcode format' },
       { status: 400 }
     );
   }
@@ -64,7 +73,7 @@ export async function POST(req: Request) {
     let product;
     try {
       const productRes = await axios.get<OpenFoodFactsResponse>(
-        `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
+        `https://world.openfoodfacts.org/api/v0/product/${sanitizedBarcode}.json`
       );
       product = productRes.data.product;
     } catch (offError) {
@@ -72,7 +81,10 @@ export async function POST(req: Request) {
         'Open Food Facts API failed, using barcode as fallback:',
         offError
       );
-      product = { product_name: `Product ${barcode}`, brands: 'Unknown' };
+      product = {
+        product_name: `Product ${sanitizedBarcode}`,
+        brands: 'Unknown',
+      };
     }
 
     if (!product?.product_name) {
@@ -169,7 +181,7 @@ export async function POST(req: Request) {
           {
             email: userEmail,
             lastScanDate: previousLastScanDate,
-            'scans.barcode': { $ne: barcode },
+            'scans.barcode': { $ne: sanitizedBarcode },
             streakProtectors: { $gte: streakUpdate.streakProtectorsUsed },
           },
           {
@@ -193,7 +205,7 @@ export async function POST(req: Request) {
                 carbonEstimate: carbonEstimate,
                 category: carbonData.category,
                 confidence: carbonData.confidence,
-                barcode: barcode,
+                barcode: sanitizedBarcode,
                 date: scanTimestamp,
                 source: carbonData.source,
               },
@@ -204,7 +216,7 @@ export async function POST(req: Request) {
                 pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
                 reason: 'scan',
                 description: `Scanned ${product.product_name}`,
-                barcode: barcode,
+                barcode: sanitizedBarcode,
                 date: scanTimestamp,
               },
             },
@@ -356,7 +368,7 @@ export async function POST(req: Request) {
 
       if (!initialUpdate || !streakUpdate || !pointsData) {
         const alreadyScanned = await User.findOne(
-          { email: userEmail, 'scans.barcode': barcode },
+          { email: userEmail, 'scans.barcode': sanitizedBarcode },
           { projection: { _id: 1 } }
         );
         const reason = alreadyScanned
