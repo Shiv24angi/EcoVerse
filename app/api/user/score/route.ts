@@ -14,7 +14,7 @@ import {
   shouldConfirmImmediately,
   calculateStreakUpdate,
 } from '@/lib/rewards-system';
-import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
+import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
@@ -205,6 +205,13 @@ export async function POST(req: Request) {
       pointsEarned = pointsData.points;
       const isConfirmed = pointsData.isConfirmed;
 
+      // Bucket for the per-month running counters (Issue #420).
+      const statsTimestamp = new Date();
+      const statsKey = monthKey(
+        statsTimestamp.getMonth(),
+        statsTimestamp.getFullYear()
+      );
+
       const newTotalPoints = (user.totalPointsEarned || 0) + pointsEarned;
       levelData = calculateLevel(newTotalPoints);
 
@@ -224,6 +231,11 @@ export async function POST(req: Request) {
             confirmedPoints: isConfirmed ? pointsEarned : 0,
             unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
             streakProtectors: -streakUpdate.streakProtectorsUsed,
+            // Per-month running counters (Issue #420)
+            [`monthlyStats.${statsKey}.carbon`]: carbonValue,
+            [`monthlyStats.${statsKey}.scans`]: 1,
+            [`monthlyStats.${statsKey}.points`]: pointsEarned,
+            lowCarbonScans: carbonValue < 1 ? 1 : 0,
           },
           $set: {
             streakCount: streakUpdate.streakCount,

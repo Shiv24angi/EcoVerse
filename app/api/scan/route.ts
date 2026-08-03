@@ -18,7 +18,7 @@ import {
   calculateStreakUpdate,
   shouldConfirmImmediately,
 } from '@/lib/rewards-system';
-import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
+import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
 import { validateBarcode, validateBarcodeFormat } from '@/lib/input-validation';
 
@@ -169,6 +169,13 @@ export async function POST(req: Request) {
         isConfirmed = pointsData.isConfirmed;
         pointsEarned = pointsData.points;
         scanTimestamp = new Date();
+        // Bucket for the per-month running counters (Issue #420) — the
+        // archive/analytics totals come from these instead of the capped
+        // `scans`/`rewardTransactions` arrays.
+        const statsKey = monthKey(
+          scanTimestamp.getMonth(),
+          scanTimestamp.getFullYear()
+        );
 
         // --- ATOMIC DATABASE UPDATE ---
         // We perform the atomic increment to update points and scans first.
@@ -193,6 +200,11 @@ export async function POST(req: Request) {
               confirmedPoints: isConfirmed ? pointsEarned : 0,
               unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
               streakProtectors: -streakUpdate.streakProtectorsUsed,
+              // Per-month running counters (Issue #420)
+              [`monthlyStats.${statsKey}.carbon`]: carbonEstimate,
+              [`monthlyStats.${statsKey}.scans`]: 1,
+              [`monthlyStats.${statsKey}.points`]: pointsEarned,
+              lowCarbonScans: carbonEstimate < 1 ? 1 : 0,
             },
             $set: {
               streakCount: streakUpdate.streakCount,
@@ -287,6 +299,8 @@ export async function POST(req: Request) {
                       unconfirmedPoints: isAchievementConfirmed
                         ? 0
                         : record.points,
+                      // Per-month earned-points counter (Issue #420)
+                      [`monthlyStats.${statsKey}.points`]: record.points,
                     },
                   },
                   { new: false }
@@ -336,13 +350,40 @@ export async function POST(req: Request) {
               updatedUser = freshUser;
             }
 
-            // Cap scans to last 500 entries and rewardTransactions to last 1000
+            // Cap `scans` and `rewardTransactions` to bound document size
+            // (Issue #217) WITHOUT losing data the rest of the system relies
+            // on (Issue #420):
+            //  - `scans` keeps the latest 500; exact monthly totals are
+            //    preserved by the `monthlyStats` counters above.
+            //  - `rewardTransactions` keeps every still-unconfirmed entry
+            //    plus the latest 1000 confirmed/redeemed ones, so points
+            //    awaiting confirmation can never be silently dropped.
             await User.updateOne({ email: userEmail }, [
               { $set: { scans: { $slice: ['$scans', -500] } } },
               {
                 $set: {
                   rewardTransactions: {
-                    $slice: ['$rewardTransactions', -1000],
+                    $concatArrays: [
+                      {
+                        $slice: [
+                          {
+                            $filter: {
+                              input: { $ifNull: ['$rewardTransactions', []] },
+                              as: 't',
+                              cond: { $ne: ['$$t.pointsType', 'unconfirmed'] },
+                            },
+                          },
+                          -1000,
+                        ],
+                      },
+                      {
+                        $filter: {
+                          input: { $ifNull: ['$rewardTransactions', []] },
+                          as: 't',
+                          cond: { $eq: ['$$t.pointsType', 'unconfirmed'] },
+                        },
+                      },
+                    ],
                   },
                 },
               },

@@ -54,6 +54,7 @@ export interface RewardUser {
   confirmedPoints?: number;
   unconfirmedPoints?: number;
   scans?: IScan[];
+  lowCarbonScans?: number;
   achievements?: IAchievement[];
   purchasedItems?: IPurchasedItem[];
   rewardTransactions?: IRewardTransaction[];
@@ -297,9 +298,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: 'Low Carbon Specialist',
     description: 'Scan 25 products with less than 1kg CO2',
     condition: (user) => {
-      const lowCarbonScans = (user.scans || []).filter(
-        (scan) => scan.carbonEstimate < 1
-      ).length;
+      // Prefer the lifetime counter (Issue #420): it survives `$slice`-based
+      // caps on the `scans` array, so early low-carbon scans are not lost
+      // from achievement progress.
+      const lowCarbonScans =
+        user.lowCarbonScans ??
+        (user.scans || []).filter((scan) => scan.carbonEstimate < 1).length;
       return lowCarbonScans >= 25;
     },
     points: 400,
@@ -307,7 +311,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     category: 'Carbon',
     currentProgress: (user) =>
       Math.min(
-        (user.scans || []).filter((s) => s.carbonEstimate < 1).length,
+        user.lowCarbonScans ??
+          (user.scans || []).filter((s) => s.carbonEstimate < 1).length,
         25
       ),
     maxProgress: 25,
