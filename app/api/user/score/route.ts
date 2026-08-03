@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
+import User, { IScan, IAchievement } from '@/models/User';
 import mongoose from 'mongoose';
 import {
   calculateLevel,
@@ -167,8 +167,8 @@ export async function POST(req: Request) {
     let pointsEarned = 0;
     let oldLevel = 1;
     let levelData = null;
-    let actuallyInsertedAchievements: any[] = [];
-    let finalUser: any = null;
+    let actuallyInsertedAchievements: IAchievement[] = [];
+    let finalUser = null;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       const user = await User.findOne({ email });
@@ -184,7 +184,7 @@ export async function POST(req: Request) {
       // loser retries against fresh state and is caught here instead.
       const duplicateWindowStart = new Date(Date.now() - DUPLICATE_WINDOW_MS);
       const isDuplicate = user.scans?.some(
-        (scan: any) =>
+        (scan: IScan) =>
           scan.productName === productName &&
           scan.carbonEstimate === carbonValue &&
           scan.source === 'Manual Entry' &&
