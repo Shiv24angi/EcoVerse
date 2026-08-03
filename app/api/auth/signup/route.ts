@@ -80,6 +80,9 @@ export async function POST(req: Request) {
       // google auth
       firebaseUid: verified.uid,
 
+      authProvider: password ? 'email' : 'google',
+      authProviders: [password ? 'email' : 'google'],
+
       monthlyCarbon: 0,
       totalScanned: 0,
       joinedAt: new Date().toISOString(),

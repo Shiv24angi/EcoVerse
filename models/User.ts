@@ -61,6 +61,7 @@ export interface IUser extends Document {
   totalScanned: number;
   joinedAt: string;
   authProvider: 'email' | 'google';
+  authProviders: string[];
   firebaseUid?: string;
   // Scan tracking
   scans: IScan[];
@@ -176,6 +177,8 @@ const UserSchema = new mongoose.Schema(
     totalScanned: { type: Number, default: 0 },
     joinedAt: { type: String, default: () => new Date().toISOString() },
     authProvider: { type: String, enum: ['email', 'google'], default: 'email' },
+    // All providers this account has ever authenticated with (Issue #419).
+    authProviders: { type: [String], default: [] },
     firebaseUid: { type: String, sparse: true },
     scans: [ScanSchema],
     lastScanDate: { type: Date, default: null },
