@@ -6,13 +6,12 @@ import dbConnect from '@/lib/mongodb';
 import mongoose from 'mongoose';
 import User, { type IUser } from '@/models/User';
 import { setAuthCookie } from '@/lib/auth';
+import { verifyFirebaseIdToken } from '@/lib/firebase-admin';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
 
 interface GoogleAuthRequestBody {
-  name?: string;
-  email?: string;
-  firebaseUid?: string;
+  idToken?: string;
 }
 
 export async function POST(req: Request) {
@@ -34,33 +33,36 @@ export async function POST(req: Request) {
     );
   }
 
-  const { name, email, firebaseUid } = body as GoogleAuthRequestBody;
+  const { idToken } = body as GoogleAuthRequestBody;
 
-  if (
-    typeof name !== 'string' ||
-    typeof email !== 'string' ||
-    typeof firebaseUid !== 'string' ||
-    !name.trim() ||
-    !email.trim() ||
-    !firebaseUid.trim()
-  ) {
+  if (typeof idToken !== 'string' || !idToken.trim()) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  const trimmedName = name.trim();
-  const trimmedEmail = email.trim();
-  const trimmedFirebaseUid = firebaseUid.trim();
+  // SECURITY: Verify the Firebase ID token server-side. The client can no
+  // longer supply a trusted email/firebaseUid pair — identity is derived
+  // from the verified token only.
+  const verified = await verifyFirebaseIdToken(idToken.trim());
+
+  if (!verified) {
+    return NextResponse.json(
+      { error: 'Invalid or expired authentication token' },
+      { status: 401 }
+    );
+  }
+
+  const { email, name, uid } = verified;
 
   let userDoc: LeanUser | null = null;
   try {
     await dbConnect();
     userDoc = await User.findOneAndUpdate(
-      { email: trimmedEmail },
+      { email },
       {
         $setOnInsert: {
-          email: trimmedEmail,
-          name: trimmedName,
-          firebaseUid: trimmedFirebaseUid,
+          email,
+          name,
+          firebaseUid: uid,
           authProvider: 'google',
           avatarId: 'avatar-1',
           monthlyCarbon: 0,

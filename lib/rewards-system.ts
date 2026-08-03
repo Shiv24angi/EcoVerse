@@ -670,6 +670,13 @@ export async function confirmAgedPoints(email: string): Promise<number> {
   );
   const { default: User } = await import('@/models/User');
 
+  // Read the current confirmedPoints BEFORE the update so we can compute the delta.
+  const preDoc = await User.findOne(
+    { email, unconfirmedPoints: { $gt: 0 } },
+    { confirmedPoints: 1 }
+  ).lean();
+  const oldConfirmed = preDoc?.confirmedPoints ?? 0;
+
   const result = await User.findOneAndUpdate(
     {
       email,
@@ -747,7 +754,9 @@ export async function confirmAgedPoints(email: string): Promise<number> {
   );
 
   if (!result) return 0;
-  return (result as any)._eligiblePoints ?? 0;
+
+  const newConfirmed = (result as any).confirmedPoints ?? 0;
+  return newConfirmed - oldConfirmed;
 }
 
 export function getUserPointsSummary(user: RewardUser): {
