@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
+import User, { IScan, IAchievement } from '@/models/User';
 import mongoose from 'mongoose';
 import {
   calculateLevel,
@@ -111,9 +111,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let payload: unknown;
   try {
-    const payload: unknown = await req.json();
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
+  try {
     if (typeof payload !== 'object' || payload === null) {
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
@@ -154,18 +162,40 @@ export async function POST(req: Request) {
     // scan endpoint's compare-and-set pattern to prevent double-counting
     // when two concurrent manual entries arrive.
     const MAX_RETRIES = 5;
+    const DUPLICATE_WINDOW_MS = 10_000;
     let finalUpdate = null;
     let pointsEarned = 0;
     let oldLevel = 1;
     let levelData = null;
-    let actuallyInsertedAchievements: any[] = [];
-    let finalUser: any = null;
+    let actuallyInsertedAchievements: IAchievement[] = [];
+    let finalUser = null;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       const user = await User.findOne({ email });
 
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // Reject identical manual entries submitted within a short window
+      // (double-clicks, page refreshes). Checked against the snapshot
+      // fetched for this attempt, so if two concurrent requests race past
+      // this check the CAS guard below lets only one of them write; the
+      // loser retries against fresh state and is caught here instead.
+      const duplicateWindowStart = new Date(Date.now() - DUPLICATE_WINDOW_MS);
+      const isDuplicate = user.scans?.some(
+        (scan: IScan) =>
+          scan.productName === productName &&
+          scan.carbonEstimate === carbonValue &&
+          scan.source === 'Manual Entry' &&
+          new Date(scan.date) >= duplicateWindowStart
+      );
+
+      if (isDuplicate) {
+        return NextResponse.json(
+          { error: 'This activity was already submitted a moment ago' },
+          { status: 409 }
+        );
       }
 
       // Confirm any aged unconfirmed points before recording new scan
@@ -353,9 +383,17 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let payload: unknown;
   try {
-    const payload: unknown = await req.json();
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
+  try {
     if (typeof payload !== 'object' || payload === null) {
       return NextResponse.json(
         { error: 'Invalid JSON payload' },

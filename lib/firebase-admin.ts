@@ -1,40 +1,68 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
-function getServiceAccount() {
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+let adminApp: App | null = null;
 
-  if (!clientEmail || !privateKey || !projectId) {
-    throw new Error(
-      'Firebase Admin SDK requires FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, ' +
-        'and NEXT_PUBLIC_FIREBASE_PROJECT_ID environment variables.'
-    );
+function getAdminApp(): App {
+  if (adminApp && getApps().includes(adminApp)) {
+    return adminApp;
   }
 
-  return {
-    projectId,
-    clientEmail,
-    privateKey: privateKey.replace(/\\n/g, '\n'),
-  };
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    undefined;
+
+  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+  if (serviceAccount && serviceAccount !== 'your_service_account_json') {
+    try {
+      const parsed = JSON.parse(serviceAccount);
+      adminApp = initializeApp({
+        credential: cert(parsed),
+        projectId: parsed.project_id || projectId,
+      });
+      return adminApp;
+    } catch (error) {
+      console.error(
+        '[Firebase Admin] Failed to initialize with FIREBASE_SERVICE_ACCOUNT, falling back:',
+        error
+      );
+    }
+  }
+
+  adminApp = initializeApp({ projectId });
+  return adminApp;
 }
 
-function getFirebaseAdminAuth() {
-  if (getApps().length === 0) {
-    const serviceAccount = getServiceAccount();
-    initializeApp({
-      credential: cert(serviceAccount),
-      projectId: serviceAccount.projectId,
-    });
-  }
-
-  return getAuth();
+export interface VerifiedFirebaseUser {
+  uid: string;
+  email: string;
+  name: string;
 }
 
 export async function verifyFirebaseIdToken(
   idToken: string
-) {
-  const auth = getFirebaseAdminAuth();
-  return auth.verifyIdToken(idToken);
+): Promise<VerifiedFirebaseUser | null> {
+  try {
+    const decoded = await getAuth(getAdminApp()).verifyIdToken(idToken, true);
+
+    if (!decoded.uid || !decoded.email) {
+      return null;
+    }
+
+    return {
+      uid: decoded.uid,
+      email: decoded.email.toLowerCase(),
+      name:
+        (typeof decoded.name === 'string' && decoded.name.trim()
+          ? decoded.name.trim()
+          : undefined) ||
+        decoded.email.split('@')[0] ||
+        'User',
+    };
+  } catch (error) {
+    console.warn('[Firebase Admin] ID token verification failed:', error);
+    return null;
+  }
 }

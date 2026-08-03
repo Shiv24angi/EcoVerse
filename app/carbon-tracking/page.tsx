@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
@@ -41,6 +41,28 @@ export default function CarbonTrackingPage() {
   const [goalInput, setGoalInput] = useState('');
   const [savingGoal, setSavingGoal] = useState(false);
   const { user } = useAuth();
+
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (isEditingGoal) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        editButtonRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditingGoal]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -244,6 +266,7 @@ export default function CarbonTrackingPage() {
               </div>
               {!isEditingGoal && (
                 <Button
+                  ref={editButtonRef}
                   variant="ghost"
                   size="sm"
                   className="text-indigo-700"
@@ -260,6 +283,7 @@ export default function CarbonTrackingPage() {
             {isEditingGoal && (
               <div className="flex items-center gap-2 mt-2">
                 <Input
+                  ref={inputRef}
                   type="number"
                   min={1}
                   max={10000}
@@ -269,6 +293,15 @@ export default function CarbonTrackingPage() {
                   onChange={(e) => setGoalInput(e.target.value)}
                   className="w-32"
                   disabled={savingGoal}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveGoal();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setIsEditingGoal(false);
+                    }
+                  }}
                 />
                 <span className="text-sm text-gray-600">kg CO₂ / month</span>
                 <Button

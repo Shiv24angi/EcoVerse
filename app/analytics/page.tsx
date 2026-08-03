@@ -21,8 +21,6 @@ import {
   Award,
 } from 'lucide-react';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface MonthlyDataPoint {
   month: string;
   year: number;
@@ -45,10 +43,19 @@ interface WeeklyDataPoint {
   target: number;
 }
 
+interface SustainabilityTip {
+  title: string;
+  description: string;
+  impact: string;
+  difficulty: string;
+  icon: string;
+}
+
 interface AnalyticsData {
   monthlyData: MonthlyDataPoint[];
   categoryBreakdown: CategoryDataPoint[];
   weeklyProgress: WeeklyDataPoint[];
+  tips: SustainabilityTip[];
   currentMonth: {
     carbon: number;
     scanned: number;
@@ -57,9 +64,8 @@ interface AnalyticsData {
     year: number;
   };
   totalCarbonSaved: number;
+  averagePerScan: number;
 }
-
-// ─── Category colour palette ──────────────────────────────────────────────────
 
 const CATEGORY_COLORS = [
   'bg-red-500',
@@ -72,41 +78,6 @@ const CATEGORY_COLORS = [
   'bg-pink-500',
 ];
 
-// ─── Sustainability tips (static) ─────────────────────────────────────────────
-
-const sustainabilityTips = [
-  {
-    title: 'Reduce Meat Consumption',
-    description: 'Try plant-based alternatives 2–3 times per week',
-    impact: 'Could save 12 kg CO₂/month',
-    difficulty: 'Medium',
-    icon: '🥦',
-  },
-  {
-    title: 'Choose Local Produce',
-    description: 'Buy fruits and vegetables from local farmers',
-    impact: 'Could save 3 kg CO₂/month',
-    difficulty: 'Easy',
-    icon: '🌿',
-  },
-  {
-    title: 'Minimise Packaging',
-    description: 'Choose products with less plastic packaging',
-    impact: 'Could save 2 kg CO₂/month',
-    difficulty: 'Easy',
-    icon: '♻️',
-  },
-  {
-    title: 'Seasonal Shopping',
-    description: 'Buy seasonal fruits and vegetables',
-    impact: 'Could save 4 kg CO₂/month',
-    difficulty: 'Easy',
-    icon: '🍎',
-  },
-];
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -117,7 +88,7 @@ export default function AnalyticsPage() {
     const fetchAnalytics = async () => {
       if (!user?.email) return;
       try {
-        const res = await fetch('/api/user/analytics');
+        const res = await fetch('/api/analytics');
         if (!res.ok) throw new Error('Failed to load analytics');
         const json: AnalyticsData = await res.json();
         setData(json);
@@ -148,7 +119,7 @@ export default function AnalyticsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading analytics…</div>
+          <div className="text-gray-600">Loading analytics\u2026</div>
         </div>
       </DashboardLayout>
     );
@@ -166,11 +137,14 @@ export default function AnalyticsPage() {
     monthlyData,
     categoryBreakdown,
     weeklyProgress,
+    tips,
     currentMonth,
     totalCarbonSaved,
+    averagePerScan,
   } = data;
+  const currentMonthIdx = monthlyData.findIndex((m) => m.isCurrentMonth);
   const previousMonth =
-    monthlyData.length > 1 ? monthlyData[monthlyData.length - 2] : null;
+    currentMonthIdx > 0 ? monthlyData[currentMonthIdx - 1] : null;
   const carbonChange = previousMonth
     ? currentMonth.carbon - previousMonth.carbon
     : 0;
@@ -189,12 +163,11 @@ export default function AnalyticsPage() {
           </p>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-teal-700">
-                Total CO₂ Saved
+                Total CO\u2082 Saved
               </CardTitle>
               <Leaf className="h-4 w-4 text-green-400" />
             </CardHeader>
@@ -243,13 +216,28 @@ export default function AnalyticsPage() {
           <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-teal-700">
+                Avg per Scan
+              </CardTitle>
+              <Target className="h-4 w-4 text-green-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-teal-800">
+                {averagePerScan} kg
+              </div>
+              <p className="text-xs text-teal-700">CO\u2082 per product</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-teal-100 border-none shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-teal-700">
                 Goal Achievement
               </CardTitle>
               <Target className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-teal-800">
-                {currentMonth.carbon < currentMonth.goal ? '✅' : '❌'}
+                {currentMonth.carbon < currentMonth.goal ? '\u2705' : '\u274C'}
               </div>
               <p className="text-xs text-teal-700">
                 {currentMonth.carbon < currentMonth.goal
@@ -260,7 +248,6 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        {/* Monthly Trends + Weekly Progress */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-teal-100 border-none shadow-md">
             <CardHeader>
@@ -269,13 +256,14 @@ export default function AnalyticsPage() {
                 Carbon Footprint Trend
               </CardTitle>
               <CardDescription className="text-teal-500">
-                Monthly CO₂ emissions over time
+                Monthly CO\u2082 emissions over time
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {monthlyData.length === 0 ? (
+              {monthlyData.every((m) => m.scanned === 0) ? (
                 <p className="text-teal-600 text-sm py-4 text-center">
-                  No historical data yet — start scanning to build your trend!
+                  No historical data yet \u2014 start scanning to build your
+                  trend!
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -298,7 +286,9 @@ export default function AnalyticsPage() {
                             (Goal: {d.goal} kg)
                           </span>
                           {d.bonusAwarded && (
-                            <span title="Eco bonus awarded">🏆</span>
+                            <span title="Eco bonus awarded">
+                              {'\uD83C\uDFC6'}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -335,7 +325,7 @@ export default function AnalyticsPage() {
                 Weekly Progress
               </CardTitle>
               <CardDescription className="text-teal-700">
-                {currentMonth.month} {currentMonth.year} — weekly breakdown
+                {currentMonth.month} {currentMonth.year} \u2014 weekly breakdown
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -352,7 +342,7 @@ export default function AnalyticsPage() {
                         </span>
                         {week.carbon <= week.target && week.carbon > 0 && (
                           <Badge className="bg-green-400/50 text-green-600 border-green-500">
-                            ✓
+                            {'\u2713'}
                           </Badge>
                         )}
                       </div>
@@ -370,7 +360,6 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        {/* Category Breakdown */}
         <Card className="bg-teal-100 border-none shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-teal-700">
@@ -378,14 +367,15 @@ export default function AnalyticsPage() {
               Carbon Footprint by Category
             </CardTitle>
             <CardDescription className="text-teal-500">
-              Breakdown of your CO₂ emissions by product category this month
+              Breakdown of your CO\u2082 emissions by product category this
+              month
             </CardDescription>
           </CardHeader>
           <CardContent>
             {categoryBreakdown.length === 0 ? (
               <p className="text-teal-600 text-sm py-4 text-center">
-                No scans this month yet — start scanning to see your category
-                breakdown!
+                No scans this month yet \u2014 start scanning to see your
+                category breakdown!
               </p>
             ) : (
               <div className="space-y-4">
@@ -417,7 +407,6 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Sustainability Tips */}
         <Card className="bg-teal-100 border-none shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-teal-700">
@@ -431,7 +420,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {sustainabilityTips.map((tip, index) => (
+              {tips.map((tip, index) => (
                 <div
                   key={index}
                   className="p-4 rounded-lg bg-teal-200/50 border border-teal-600"
@@ -461,7 +450,6 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Environmental Impact Comparison */}
         <Card className="bg-teal-100 border-none shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-teal-900">
@@ -475,7 +463,7 @@ export default function AnalyticsPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
-                <div className="text-2xl mb-2">🚗</div>
+                <div className="text-2xl mb-2">{'\uD83D\uDE97'}</div>
                 <div className="text-lg font-bold text-teal-900">
                   {(currentMonth.carbon * 2.3).toFixed(0)} km
                 </div>
@@ -484,16 +472,16 @@ export default function AnalyticsPage() {
                 </div>
               </div>
               <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
-                <div className="text-2xl mb-2">🌳</div>
+                <div className="text-2xl mb-2">{'\uD83C\uDF33'}</div>
                 <div className="text-lg font-bold text-teal-900">
                   {Math.ceil(currentMonth.carbon / 22)} trees
                 </div>
                 <div className="text-sm text-teal-700">
-                  Needed to offset CO₂
+                  Needed to offset CO\u2082
                 </div>
               </div>
               <div className="text-center p-4 rounded-lg bg-teal-200/50 border border-teal-700">
-                <div className="text-2xl mb-2">💡</div>
+                <div className="text-2xl mb-2">{'\uD83D\uDCA1'}</div>
                 <div className="text-lg font-bold text-teal-900">
                   {(currentMonth.carbon * 1.2).toFixed(0)} hours
                 </div>

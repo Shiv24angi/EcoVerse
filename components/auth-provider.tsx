@@ -100,14 +100,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password
       );
 
+      const idToken = await userCredential.user.getIdToken();
+
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          email,
           password,
-          firebaseUid: userCredential.user.uid,
+          idToken,
         }),
       });
 
@@ -198,7 +199,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({
+          idToken,
+        }),
       });
 
       if (response.ok) {

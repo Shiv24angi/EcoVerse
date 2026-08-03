@@ -35,44 +35,33 @@ export async function POST(req: Request) {
   const { idToken } = body as GoogleAuthRequestBody;
 
   if (typeof idToken !== 'string' || !idToken.trim()) {
-    return NextResponse.json(
-      { error: 'Missing Firebase ID token' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  let decodedToken;
-  try {
-    decodedToken = await verifyFirebaseIdToken(idToken.trim());
-  } catch {
+  // SECURITY: Verify the Firebase ID token server-side. The client can no
+  // longer supply a trusted email/firebaseUid pair — identity is derived
+  // from the verified token only.
+  const verified = await verifyFirebaseIdToken(idToken.trim());
+
+  if (!verified) {
     return NextResponse.json(
-      { error: 'Invalid or expired Firebase ID token' },
+      { error: 'Invalid or expired authentication token' },
       { status: 401 }
     );
   }
 
-  const verifiedUid = decodedToken.uid;
-  const verifiedEmail = decodedToken.email;
-  const verifiedName =
-    decodedToken.name || verifiedEmail?.split('@')[0] || 'Google User';
-
-  if (!verifiedEmail) {
-    return NextResponse.json(
-      { error: 'Firebase account has no email' },
-      { status: 400 }
-    );
-  }
+  const { email, name, uid } = verified;
 
   let userDoc: LeanUser | null = null;
   try {
     await dbConnect();
     userDoc = await User.findOneAndUpdate(
-      { email: verifiedEmail },
+      { email },
       {
         $setOnInsert: {
-          email: verifiedEmail,
-          name: verifiedName,
-          firebaseUid: verifiedUid,
+          email,
+          name,
+          firebaseUid: uid,
           authProvider: 'google',
           avatarId: 'avatar-1',
           monthlyCarbon: 0,
