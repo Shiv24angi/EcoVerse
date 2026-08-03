@@ -6,21 +6,15 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { setAuthCookie } from '@/lib/auth';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
-  const { limited, resetIn } = checkRateLimit(req, {
+  const tooMany = enforceRateLimit(req, {
     windowMs: 60_000,
     max: 5,
   });
-  if (limited) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(resetIn / 1000)) },
-      }
-    );
+  if (tooMany) {
+    return tooMany;
   }
 
   try {

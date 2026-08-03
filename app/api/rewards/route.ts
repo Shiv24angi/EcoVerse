@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import {
   calculateLevel,
   ACHIEVEMENTS,
@@ -23,18 +23,12 @@ const REPEATABLE_ITEMS = ['streak_protector', 'double_points'];
  * items in the available items list even after purchase.
  */
 export async function GET(req: Request) {
-  const { limited, resetIn } = checkRateLimit(req, {
+  const tooMany = enforceRateLimit(req, {
     windowMs: 60_000,
     max: 30,
   });
-  if (limited) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(resetIn / 1000)) },
-      }
-    );
+  if (tooMany) {
+    return tooMany;
   }
 
   const { searchParams } = new URL(req.url);
@@ -245,18 +239,12 @@ export async function GET(req: Request) {
  * omitted from the unique constraint query in the atomic update.
  */
 export async function POST(req: Request) {
-  const { limited, resetIn } = checkRateLimit(req, {
+  const tooMany = enforceRateLimit(req, {
     windowMs: 60_000,
     max: 10,
   });
-  if (limited) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(resetIn / 1000)) },
-      }
-    );
+  if (tooMany) {
+    return tooMany;
   }
 
   const email = req.headers.get('x-user-email');

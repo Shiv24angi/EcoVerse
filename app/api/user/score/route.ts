@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import mongoose from 'mongoose';
 import {
   calculateLevel,
@@ -18,18 +18,12 @@ import {
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
 export async function GET(req: Request) {
-  const { limited, resetIn } = checkRateLimit(req, {
+  const tooMany = enforceRateLimit(req, {
     windowMs: 60_000,
     max: 30,
   });
-  if (limited) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(resetIn / 1000)) },
-      }
-    );
+  if (tooMany) {
+    return tooMany;
   }
 
   const email = req.headers.get('x-user-email');
@@ -120,18 +114,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { limited, resetIn } = checkRateLimit(req, {
+  const tooMany = enforceRateLimit(req, {
     windowMs: 60_000,
     max: 20,
   });
-  if (limited) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please slow down.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(resetIn / 1000)) },
-      }
-    );
+  if (tooMany) {
+    return tooMany;
   }
 
   const email = req.headers.get('x-user-email');
@@ -376,18 +364,12 @@ export async function POST(req: Request) {
 
 // PATCH /api/user/score - Set or clear the user's personal monthly carbon goal
 export async function PATCH(req: Request) {
-  const { limited, resetIn } = checkRateLimit(req, {
+  const tooMany = enforceRateLimit(req, {
     windowMs: 60_000,
     max: 30,
   });
-  if (limited) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(resetIn / 1000)) },
-      }
-    );
+  if (tooMany) {
+    return tooMany;
   }
 
   const email = req.headers.get('x-user-email');

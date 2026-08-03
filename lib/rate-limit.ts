@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server';
+
 export interface RateLimitConfig {
   windowMs: number;
   max: number;
@@ -50,4 +52,28 @@ export function checkRateLimit(req: Request, config: RateLimitConfig) {
   const resetIn = record.resetAt - now;
 
   return { limited, remaining, resetIn };
+}
+
+/**
+ * Enforce a rate limit and return a 429 Too Many Requests response when the
+ * caller has exceeded the configured window, or null when the request may
+ * proceed.
+ */
+export function enforceRateLimit(
+  req: Request,
+  config: RateLimitConfig
+): NextResponse | null {
+  const { limited, resetIn } = checkRateLimit(req, config);
+
+  if (!limited) {
+    return null;
+  }
+
+  return NextResponse.json(
+    { error: 'Too many requests. Please try again later.' },
+    {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil(resetIn / 1000)) },
+    }
+  );
 }

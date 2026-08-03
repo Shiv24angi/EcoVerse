@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import mongoose from 'mongoose';
 import { getCarbonFootprint } from '@/lib/climatiq';
 import {
@@ -37,18 +37,12 @@ type OpenFoodFactsResponse = {
 };
 
 export async function POST(req: Request) {
-  const { limited, resetIn } = checkRateLimit(req, {
+  const tooMany = enforceRateLimit(req, {
     windowMs: 60_000,
     max: 20,
   });
-  if (limited) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please slow down.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(resetIn / 1000)) },
-      }
-    );
+  if (tooMany) {
+    return tooMany;
   }
 
   const userEmail = req.headers.get('x-user-email');
