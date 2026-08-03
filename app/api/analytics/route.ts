@@ -44,8 +44,6 @@ export async function GET(req: Request) {
       monthTotals[i] = { carbon: 0, scanned: 0 };
     }
 
-    let currentMonthScanned = 0;
-
     for (const scan of scans) {
       if (!scan.date) continue;
       const d = new Date(scan.date);
@@ -56,14 +54,6 @@ export async function GET(req: Request) {
         monthTotals[scanMonth].carbon += scan.carbonEstimate || 0;
         monthTotals[scanMonth].scanned += 1;
       }
-
-      if (scanYear === currentYear && scanMonth === currentMonthIndex) {
-        currentMonthScanned += 1;
-      }
-    }
-
-    if (monthTotals[currentMonthIndex]) {
-      currentMonthScanned = monthTotals[currentMonthIndex].scanned;
     }
 
     const monthlyData = MONTHS.map((month, i) => ({
@@ -147,7 +137,7 @@ export async function GET(req: Request) {
       tips,
       currentMonth: {
         carbon: parseFloat(monthTotals[currentMonthIndex].carbon.toFixed(2)),
-        scanned: currentMonthScanned,
+        scanned: monthTotals[currentMonthIndex].scanned,
         goal: monthlyCarbonGoal,
         month: MONTHS[currentMonthIndex],
         year: currentYear,
