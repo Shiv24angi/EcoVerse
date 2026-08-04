@@ -156,7 +156,7 @@ Data is stored in MongoDB and modelled with Mongoose schemas in `/models`.
 3. On every request, `middleware.ts` checks the cookie:
    - If the route is protected (`/dashboard`, `/scan`, `/rewards`, `/carbon-tracking`, and any others added) and no valid token exists, the user is redirected to `/signin`.
    - If a token exists, `verifyToken()` validates it. On success the verified email is set as the `x-user-email` request header; any client-supplied `x-user-email` is stripped first to prevent spoofing.
-4. API route handlers read `x-user-email` to load the correct `User` document.
+4. API route handlers read `x-user-email` to load the correct `User` document.- Account deletion is handled by a protected `DELETE /api/user` route that removes the MongoDB user record, clears the session cookie, and attempts to delete the linked Firebase Auth account.
 
 ### Folder Structure Explanation
 

@@ -27,6 +27,7 @@
 - [Project Structure](#project-structure)
 - [Application Routes](#application-routes)
 - [API Endpoints](#api-endpoints)
+- [Account Management](#account-management)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Clone the Repository](#clone-the-repository)
@@ -44,6 +45,14 @@ EcoVerse is a sustainability-focused web application designed to encourage envir
 Built with modern web technologies and AI powered analysis, EcoVerse combines education, gamification, and data-driven sustainability tracking into a single platform.
 
 ---
+
+## Features
+
+### Account Management
+
+- Users can delete their EcoVerse account from the dashboard.
+- Account deletion removes the MongoDB user record and attempts to delete the linked Firebase Auth account.
+- The delete action is available through the dashboard account-management section and is protected by the existing authenticated session flow.
 
 ## Features
 
