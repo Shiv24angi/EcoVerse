@@ -7,6 +7,7 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { setAuthCookie } from '@/lib/auth';
 import { verifyFirebaseIdToken } from '@/lib/firebase-admin';
+import { normalizeEmail } from '@/lib/normalize-email';
 
 export async function POST(req: Request) {
   try {
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const email = verified.email;
+    const email = normalizeEmail(verified.email);
 
     const existingUser = await User.findOne({ email });
 

@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   if (token) {
     const payload = await verifyToken(token);
     if (payload && payload.email) {
-      requestHeaders.set('x-user-email', payload.email);
+      requestHeaders.set('x-user-email', payload.email.toLowerCase());
     } else if (isProtectedRoute) {
       // Invalid token on a protected route
       return NextResponse.redirect(new URL('/signin', request.url));

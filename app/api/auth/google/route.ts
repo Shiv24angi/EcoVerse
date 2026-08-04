@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import User, { type IUser } from '@/models/User';
 import { setAuthCookie } from '@/lib/auth';
 import { verifyFirebaseIdToken } from '@/lib/firebase-admin';
+import { normalizeEmail } from '@/lib/normalize-email';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
 
@@ -51,19 +52,21 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email, name, uid } = verified;
+  const normalizedEmail = normalizeEmail(verified.email);
 
   let userDoc: LeanUser | null = null;
   try {
     await dbConnect();
     userDoc = await User.findOneAndUpdate(
-      { email },
+      { email: normalizedEmail },
       {
-        $setOnInsert: {
-          email,
-          name,
-          firebaseUid: uid,
+        $set: {
+          firebaseUid: verified.uid,
           authProvider: 'google',
+        },
+        $setOnInsert: {
+          email: normalizedEmail,
+          name: verified.name,
           avatarId: 'avatar-1',
           monthlyCarbon: 0,
           totalScanned: 0,

@@ -211,22 +211,20 @@ const UserSchema = new mongoose.Schema(
 // Index for auth token verification: look up by firebaseUid directly.
 UserSchema.index({ firebaseUid: 1 }, { sparse: true });
 
+UserSchema.index({ email: 1 }, { collation: { locale: 'en', strength: 2 } });
+
 // Index for sync query path: look up by email with firebaseUid population.
 UserSchema.index({ email: 1, firebaseUid: 1 });
 
 // Schema-level validators to guard against reward-point corruption.
 UserSchema.path('unconfirmedPoints').validate(
-  function (this: IUser, value: number) {
-    return value >= 0;
-  },
+  (value: number) => value >= 0,
   'unconfirmedPoints must not be negative',
   'validate-unconfirmed-points'
 );
 
 UserSchema.path('confirmedPoints').validate(
-  function (this: IUser, value: number) {
-    return value >= 0;
-  },
+  (value: number) => value >= 0,
   'confirmedPoints must not be negative',
   'validate-confirmed-points'
 );
