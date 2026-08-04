@@ -54,8 +54,6 @@ Built with modern web technologies and AI powered analysis, EcoVerse combines ed
 - Account deletion removes the MongoDB user record and attempts to delete the linked Firebase Auth account.
 - The delete action is available through the dashboard account-management section and is protected by the existing authenticated session flow.
 
-## Features
-
 ### Barcode Scanning
 
 - Real-time barcode scanning
