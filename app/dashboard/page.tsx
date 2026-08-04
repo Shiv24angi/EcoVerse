@@ -4,7 +4,6 @@ import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
-import { useAuth } from '@/components/auth-provider';
 import {
   Card,
   CardContent,
