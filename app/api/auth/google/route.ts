@@ -79,7 +79,16 @@ export async function POST(req: Request) {
         lean: true,
       }
     );
-  } catch (err) {
+  } catch (err: any) {
+    if (
+      err?.code === 11000 ||
+      (err?.name === 'MongoServerError' && err?.code === 11000)
+    ) {
+      return NextResponse.json(
+        { error: 'An account with this email already exists' },
+        { status: 409 }
+      );
+    }
     // FIX: Suppress linting rule for tracking low-level operational failures
     console.error('Failed to upsert user in google route:', err);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });

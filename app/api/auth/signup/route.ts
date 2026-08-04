@@ -98,7 +98,17 @@ export async function POST(req: Request) {
     await setAuthCookie(createdUser.email, createdUser._id.toString());
 
     return NextResponse.json({ user }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
+    if (
+      error?.code === 11000 ||
+      (error?.name === 'MongoServerError' && error?.code === 11000)
+    ) {
+      return NextResponse.json(
+        { error: 'User already exists' },
+        { status: 400 }
+      );
+    }
+
     const message =
       error instanceof Error ? error.message : 'Unknown server error';
 

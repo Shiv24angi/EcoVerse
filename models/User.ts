@@ -211,7 +211,10 @@ const UserSchema = new mongoose.Schema(
 // Index for auth token verification: look up by firebaseUid directly.
 UserSchema.index({ firebaseUid: 1 }, { sparse: true });
 
-UserSchema.index({ email: 1 }, { collation: { locale: 'en', strength: 2 } });
+UserSchema.index(
+  { email: 1 },
+  { unique: true, collation: { locale: 'en', strength: 2 } }
+);
 
 // Index for sync query path: look up by email with firebaseUid population.
 UserSchema.index({ email: 1, firebaseUid: 1 });
