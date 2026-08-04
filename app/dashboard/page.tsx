@@ -4,6 +4,7 @@ import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
+import { useAuth } from '@/components/auth-provider';
 import {
   Card,
   CardContent,
@@ -49,10 +50,11 @@ interface LeaderboardUser {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUserStats = useCallback(async () => {
     try {
@@ -108,6 +110,29 @@ export default function Dashboard() {
       fetchUserStats();
     }
   }, [user, router, fetchUserStats]);
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Delete your account and all associated data?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const res = await fetch('/api/user', { method: 'DELETE' });
+      if (!res.ok) {
+        throw new Error('Account deletion failed');
+      }
+
+      await logout();
+      router.push('/auth/signin');
+    } catch (error) {
+      console.error('Delete account failed:', error);
+      alert('Could not delete your account right now. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (!user) {
     return null;
@@ -472,6 +497,24 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-700">Delete account</CardTitle>
+            <CardDescription>
+              This removes your EcoVerse account and associated personal data.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete my account'}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
