@@ -6,14 +6,17 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { setAuthCookie } from '@/lib/auth';
+import { normalizeEmail } from '@/lib/normalize-email';
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
 
     const { email, password } = await req.json();
+    const normalizedEmail =
+      typeof email === 'string' ? normalizeEmail(email) : '';
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
