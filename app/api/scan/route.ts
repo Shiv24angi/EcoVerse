@@ -20,6 +20,7 @@ import {
 import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
 import { validateBarcode, validateBarcodeFormat } from '@/lib/input-validation';
+import { normalizeEmail } from '@/lib/normalize-email';
 
 type OpenFoodFactsResponse = {
   product: {
@@ -40,11 +41,13 @@ function getUtcDayKey(date: Date) {
 }
 
 export async function POST(req: Request) {
-  const userEmail = req.headers.get('x-user-email');
+  const rawUserEmail = req.headers.get('x-user-email');
 
-  if (!userEmail) {
+  if (!rawUserEmail) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const userEmail = normalizeEmail(rawUserEmail);
 
   const { barcode } = await req.json();
 
