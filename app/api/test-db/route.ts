@@ -44,63 +44,17 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('❌ MongoDB connection test failed:', error);
+    // Log detailed error server-side only (contains sensitive info like hostnames)
+    console.error('MongoDB connection test failed:', error instanceof Error ? error.message : 'Unknown error');
 
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    const nodeError =
-      error instanceof Error
-        ? (error as NodeJS.ErrnoException & { hostname?: string })
-        : undefined;
-
-    // Note: code/errno/syscall/hostname are safe to include unconditionally
-    // here because the whole endpoint already returns 403 in production
-    // before reaching this point (see the guard at the top of GET).
-    const errorInfo: {
-      status: string;
-      error: string;
-      code?: string;
-      errno?: number;
-      syscall?: string;
-      hostname?: string;
-      timestamp: string;
-      message?: string;
-      suggestions?: string[];
-    } = {
-      status: 'failed',
-      error: message,
-      code: nodeError?.code,
-      errno: nodeError?.errno,
-      syscall: nodeError?.syscall,
-      hostname: nodeError?.hostname,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Provide specific guidance based on error type
-    if (nodeError?.code === 'EREFUSED') {
-      errorInfo.message =
-        'Connection refused - check network/firewall settings';
-      errorInfo.suggestions = [
-        'Check if your IP is whitelisted in MongoDB Atlas',
-        'Verify the connection string is correct',
-        'Try connecting from a different network',
-        'Check if MongoDB Atlas cluster is running',
-      ];
-    } else if (nodeError?.code === 'ENOTFOUND') {
-      errorInfo.message = 'DNS resolution failed - check hostname';
-      errorInfo.suggestions = [
-        'Verify the cluster hostname in your connection string',
-        'Check your DNS settings',
-        'Try using a different DNS server (8.8.8.8)',
-      ];
-    } else if (message.includes('authentication')) {
-      errorInfo.message = 'Authentication failed - check credentials';
-      errorInfo.suggestions = [
-        'Verify your username and password',
-        'Check if the database user exists',
-        'Ensure the user has proper permissions',
-      ];
-    }
-
-    return NextResponse.json(errorInfo, { status: 500 });
+    // Return sanitized error to client - don't expose internal details
+    return NextResponse.json(
+      {
+        status: 'failed',
+        error: 'Database connection failed',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }
