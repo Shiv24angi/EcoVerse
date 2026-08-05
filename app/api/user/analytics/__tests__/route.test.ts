@@ -73,8 +73,6 @@ function baseUser() {
         bonusAwarded: true,
       },
     ],
-    // The `scans` array below was capped to its latest 500 entries, so the
-    // exact current-month totals come from `monthlyStats` (Issue #420).
     monthlyStats: { '2026-1': { carbon: 40, scans: 610, points: 5400 } },
     scans: [
       { carbonEstimate: 3, category: 'Beverages', date: new Date(2026, 1, 3) },
@@ -87,7 +85,6 @@ describe('GET /api/user/analytics', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    // Now is the middle of February 2026.
     jest.setSystemTime(new Date(2026, 1, 10, 12, 0, 0));
   });
 
@@ -112,8 +109,6 @@ describe('GET /api/user/analytics', () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
-
-    // Exact current-month figures from the running counters.
     expect(json.currentMonth.carbon).toBe(40);
     expect(json.currentMonth.scanned).toBe(610);
 
@@ -122,20 +117,14 @@ describe('GET /api/user/analytics', () => {
     );
     expect(current.carbon).toBe(40);
     expect(current.scanned).toBe(610);
-
-    // Per-scan breakdowns still come from the (latest-500) array.
     expect(json.categoryBreakdown).toEqual([
       { category: 'Beverages', carbon: 3, percentage: 60 },
       { category: 'Snacks', carbon: 2, percentage: 40 },
     ]);
-    // Both scans fall in the first week of February (days 3 and 5).
     expect(
       json.weeklyProgress.find((w: { week: string }) => w.week === 'Week 1')
         .carbon
     ).toBe(5);
-
-    // totalCarbonSaved uses the counter carbon for the current month:
-    // (40-20) + (40-25) + (40-40) = 35.
     expect(json.totalCarbonSaved).toBe(35);
   });
 

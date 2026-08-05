@@ -1,4 +1,3 @@
-// Opt out of static generation - all handlers connect to MongoDB at request time.
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -52,8 +51,6 @@ export async function POST(req: Request) {
   if (!barcode) {
     return NextResponse.json({ error: 'Barcode missing' }, { status: 400 });
   }
-
-  // Validate barcode input (Issue #409: prevent unbounded queries)
   const barcodeValidation = validateBarcode(barcode);
   if (!barcodeValidation.valid) {
     return NextResponse.json(
@@ -63,8 +60,6 @@ export async function POST(req: Request) {
   }
 
   const sanitizedBarcode = barcodeValidation.sanitized!;
-
-  // Additional validation for standard barcode formats
   const formatValidation = validateBarcodeFormat(sanitizedBarcode);
   if (!formatValidation.valid) {
     return NextResponse.json(
@@ -102,26 +97,12 @@ export async function POST(req: Request) {
 
     try {
       await dbConnect();
-
-      // Resolve carbon footprint using Climatiq with fallback
       const carbonData = await getCarbonFootprint(
         product.product_name,
         product.brands
       );
       const carbonEstimate = carbonData.carbonFootprint;
-
-      // Run monthly rollover if the month has changed before any scan
-      // computations so monthlyCarbon is reset to 0 for the new month.
       await checkAndRunMonthlyRollover(userEmail);
-
-      // The streak/points calculation depends on a snapshot of the user
-      // document (lastScanDate, streakCount, streakProtectors), but two
-      // concurrent scan requests could both read the same snapshot and both
-      // decide to consume the same streak protector, or both compute the
-      // same streak increment. To prevent that, the write is gated on
-      // lastScanDate still matching what we read (compare-and-set): if
-      // another request wrote first, the filter won't match, and we retry
-      // the whole read-compute-write cycle against the fresh state.
       const MAX_RETRIES = 5;
       let initialUpdate = null;
       let streakUpdate = null;
@@ -136,8 +117,6 @@ export async function POST(req: Request) {
 
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         const user = await User.findOne({ email: userEmail });
-
-        // Confirm any aged unconfirmed points before computing the response
         agedPointsConfirmed = (await confirmAgedPoints(userEmail)) > 0;
 
         if (!user) {
@@ -180,21 +159,10 @@ export async function POST(req: Request) {
         isConfirmed = pointsData.isConfirmed;
         pointsEarned = pointsData.points;
         scanTimestamp = new Date();
-        // Bucket for the per-month running counters (Issue #420) — the
-        // archive/analytics totals come from these instead of the capped
-        // `scans`/`rewardTransactions` arrays.
         const statsKey = monthKey(
           scanTimestamp.getMonth(),
           scanTimestamp.getFullYear()
         );
-
-        // --- ATOMIC DATABASE UPDATE ---
-        // We perform the atomic increment to update points and scans first.
-        // We also push a new reward transaction record so it can be referenced later.
-        // The lastScanDate match in the filter is the compare-and-set guard:
-        // it only succeeds if the document is still in the state we read it
-        // in, so a concurrent scan can't cause this one to double-consume a
-        // streak protector or double-increment the streak.
         initialUpdate = await User.findOneAndUpdate(
           {
             email: userEmail,
@@ -211,7 +179,6 @@ export async function POST(req: Request) {
               confirmedPoints: isConfirmed ? pointsEarned : 0,
               unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
               streakProtectors: -streakUpdate.streakProtectorsUsed,
-              // Per-month running counters (Issue #420)
               [`monthlyStats.${statsKey}.carbon`]: carbonEstimate,
               [`monthlyStats.${statsKey}.scans`]: 1,
               [`monthlyStats.${statsKey}.points`]: pointsEarned,
@@ -245,19 +212,13 @@ export async function POST(req: Request) {
             },
           },
           {
-            new: true, // IMPORTANT: Returns the ground-truth updated document from the DB
+            new: true,
             runValidators: true,
           }
         );
 
         if (initialUpdate) {
-          // Compare-and-set succeeded — now process achievements and
-          // level-up within the same retry scope. If any post-scan write
-          // fails, the next retry iteration re-reads fresh state and
-          // re-computes everything (achievement dedup via $ne and level
-          // $max are both idempotent).
           try {
-            // --- ACHIEVEMENTS ---
             const computedAchievements = checkAchievements
               ? checkAchievements(initialUpdate)
               : [];
@@ -310,7 +271,6 @@ export async function POST(req: Request) {
                       unconfirmedPoints: isAchievementConfirmed
                         ? 0
                         : record.points,
-                      // Per-month earned-points counter (Issue #420)
                       [`monthlyStats.${statsKey}.points`]: record.points,
                     },
                   },
@@ -324,8 +284,6 @@ export async function POST(req: Request) {
                 }
               }
             }
-
-            // --- LEVEL-UP ---
             const latestForLevel = await User.findOne({ email: userEmail });
             const levelData = calculateLevel
               ? calculateLevel(latestForLevel?.totalPointsEarned || 0)
@@ -340,9 +298,6 @@ export async function POST(req: Request) {
                 }
               );
             }
-
-            // All post-scan writes succeeded — exit the retry loop.
-            // Re-fetch the user if achievements or level changed.
             if (
               levelData.level > oldLevel ||
               actuallyInsertedAchievements.length > 0
@@ -360,15 +315,6 @@ export async function POST(req: Request) {
               }
               updatedUser = freshUser;
             }
-
-            // Cap `scans` and `rewardTransactions` to bound document size
-            // (Issue #217) WITHOUT losing data the rest of the system relies
-            // on (Issue #420):
-            //  - `scans` keeps the latest 500; exact monthly totals are
-            //    preserved by the `monthlyStats` counters above.
-            //  - `rewardTransactions` keeps every still-unconfirmed entry
-            //    plus the latest 1000 confirmed/redeemed ones, so points
-            //    awaiting confirmation can never be silently dropped.
             await User.updateOne({ email: userEmail }, [
               { $set: { scans: { $slice: ['$scans', -500] } } },
               {
@@ -399,14 +345,9 @@ export async function POST(req: Request) {
                 },
               },
             ]);
-
-            // Store final state for response and break retry loop
             initialUpdate = updatedUser;
             break;
           } catch (_postError) {
-            // Post-scan write failed (achievement or level-up). Log and
-            // retry the entire cycle from fresh state — the compare-and-set
-            // guard on lastScanDate ensures we don't double-count the scan.
             console.warn(
               `Post-scan write failed, retry ${attempt + 1}/${MAX_RETRIES}:`,
               _postError
@@ -414,8 +355,6 @@ export async function POST(req: Request) {
             initialUpdate = null;
           }
         }
-        // Filter didn't match (another request updated lastScanDate) or
-        // post-scan writes failed — retry against fresh state.
       }
 
       if (!initialUpdate || !streakUpdate || !pointsData) {
@@ -428,9 +367,6 @@ export async function POST(req: Request) {
           : 'Scan could not be recorded due to concurrent updates. Please try again.';
         return NextResponse.json({ error: reason }, { status: 409 });
       }
-
-      // Refresh user snapshot if confirmAgedPoints made changes
-      // and achievements/level-up didn't already re-fetch
       if (agedPointsConfirmed && updatedUser) {
         const freshUser = await User.findOne({ email: userEmail });
         if (freshUser) updatedUser = freshUser;
@@ -439,9 +375,6 @@ export async function POST(req: Request) {
       const monthlyBonus = calculateMonthlyBonus
         ? calculateMonthlyBonus(initialUpdate)
         : 0;
-
-      // We use the ground-truth data from 'updatedUser' for the final response.
-      // This ensures the UI is always in sync with the actual database state.
       const pointsSummary = getUserPointsSummary(updatedUser);
 
       const productImage =

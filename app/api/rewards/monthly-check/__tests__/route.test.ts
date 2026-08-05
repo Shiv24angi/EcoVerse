@@ -45,9 +45,6 @@ function authRequest() {
     },
   });
 }
-
-// User.findOne is called twice by POST: once without .lean() (existence check)
-// and once with .lean() (to read the archive after the rollover).
 function mockFindOne(doc: unknown, leanDoc?: unknown) {
   return (User.findOne as jest.Mock).mockReturnValue({
     lean: jest.fn().mockReturnValue(leanDoc ?? doc),
@@ -91,7 +88,6 @@ describe('POST /api/rewards/monthly-check', () => {
     expect(res.status).toBe(200);
     expect(json.bonusAwarded).toBe(false);
     expect(checkAndRunMonthlyRollover).toHaveBeenCalledWith('test@example.com');
-    // The rollover is the only award path — no direct awarding update here.
     expect(User.findOneAndUpdate).not.toHaveBeenCalled();
   });
 

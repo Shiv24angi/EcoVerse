@@ -1,4 +1,3 @@
-// Opt out of static generation - all handlers connect to MongoDB at request time.
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -31,15 +30,11 @@ export async function GET(req: Request) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    // Calculate current level data
     const levelData = calculateLevel(user.totalPointsEarned || 0);
     const tierData = getSustainabilityTier(
       user.monthlyCarbon || 0,
       user.totalScanned || 0
     );
-
-    // FIX: Extracted and normalized monthlyCarbon value to prevent ternary misclassification
     const monthlyCarbon = user.monthlyCarbon || 0;
 
     const sustainabilityLevel =
@@ -53,17 +48,12 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       monthlyCarbon,
-      // Falls back to the app's existing default (40kg) when the user
-      // hasn't set a personal goal yet, so this is backward-compatible
-      // with the previously-hardcoded constant on the frontend.
       monthlyCarbonGoal: user.monthlyCarbonGoal ?? 40,
       totalScanned: user.totalScanned || 0,
       streakCount: user.streakCount || 0,
       bestStreakCount: user.bestStreakCount || 0,
       scans: user.scans || [],
       sustainabilityLevel,
-
-      // Enhanced rewards data
       rewards: {
         points: user.rewardPoints || 0,
         totalPointsEarned: user.totalPointsEarned || 0,
@@ -73,13 +63,9 @@ export async function GET(req: Request) {
         recentTransactions: (user.rewardTransactions || []).slice(-10),
         achievements: user.achievements || [],
         achievementCount: (user.achievements || []).length,
-
-        // Sustainability tier
         tier: tierData.tier,
         tierColor: tierData.color,
         tierDescription: tierData.description,
-
-        // Special features
         activeBadges: user.activeBadges || [],
         purchasedItems: user.purchasedItems || [],
         specialFeatures: {
@@ -88,8 +74,6 @@ export async function GET(req: Request) {
           hasAdvancedAnalytics: user.hasAdvancedAnalytics || false,
           customAvatar: user.customAvatar || null,
         },
-
-        // Monthly bonus tracking
         monthlyBonusesEarned: user.monthlyBonusesEarned || 0,
         lastMonthlyBonusCheck: user.lastMonthlyBonusCheck,
       },
@@ -157,10 +141,6 @@ export async function POST(req: Request) {
 
     await dbConnect();
     await checkAndRunMonthlyRollover(email);
-
-    // Retry loop with CAS guard on lastScanDate — mirrors the barcode
-    // scan endpoint's compare-and-set pattern to prevent double-counting
-    // when two concurrent manual entries arrive.
     const MAX_RETRIES = 5;
     const DUPLICATE_WINDOW_MS = 10_000;
     let finalUpdate = null;
@@ -176,12 +156,6 @@ export async function POST(req: Request) {
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
-
-      // Reject identical manual entries submitted within a short window
-      // (double-clicks, page refreshes). Checked against the snapshot
-      // fetched for this attempt, so if two concurrent requests race past
-      // this check the CAS guard below lets only one of them write; the
-      // loser retries against fresh state and is caught here instead.
       const duplicateWindowStart = new Date(Date.now() - DUPLICATE_WINDOW_MS);
       const isDuplicate = user.scans?.some(
         (scan: IScan) =>
@@ -197,16 +171,12 @@ export async function POST(req: Request) {
           { status: 409 }
         );
       }
-
-      // Confirm any aged unconfirmed points before recording new scan
       await confirmAgedPoints(email);
 
       const isFirstScan = (user.totalScanned || 0) === 0;
       const totalScans = user.totalScanned || 0;
       const previousLastScanDate = user.lastScanDate;
       oldLevel = user.level || 1;
-
-      // Use shared streak calculation instead of inline logic
       const streakUpdate = calculateStreakUpdate(
         user.lastScanDate,
         user.streakCount ?? 0,
@@ -215,8 +185,6 @@ export async function POST(req: Request) {
       );
 
       const streakCount = streakUpdate.streakCount;
-
-      // Calculate points for this manual entry
       const pointsData = calculateScanPoints(
         carbonValue,
         isFirstScan,
@@ -226,8 +194,6 @@ export async function POST(req: Request) {
 
       pointsEarned = pointsData.points;
       const isConfirmed = pointsData.isConfirmed;
-
-      // Bucket for the per-month running counters (Issue #420).
       const statsTimestamp = new Date();
       const statsKey = monthKey(
         statsTimestamp.getMonth(),
@@ -236,9 +202,6 @@ export async function POST(req: Request) {
 
       const newTotalPoints = (user.totalPointsEarned || 0) + pointsEarned;
       levelData = calculateLevel(newTotalPoints);
-
-      // CAS guard: filter includes lastScanDate to prevent double-counting.
-      // If another request wrote first, the filter won't match and we retry.
       finalUpdate = await User.findOneAndUpdate(
         {
           email,
@@ -253,7 +216,6 @@ export async function POST(req: Request) {
             confirmedPoints: isConfirmed ? pointsEarned : 0,
             unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
             streakProtectors: -streakUpdate.streakProtectorsUsed,
-            // Per-month running counters (Issue #420)
             [`monthlyStats.${statsKey}.carbon`]: carbonValue,
             [`monthlyStats.${statsKey}.scans`]: 1,
             [`monthlyStats.${statsKey}.points`]: pointsEarned,
@@ -295,11 +257,8 @@ export async function POST(req: Request) {
       );
 
       if (!finalUpdate) {
-        // CAS guard failed — another request updated lastScanDate. Retry.
         continue;
       }
-
-      // Simulate user state for achievement check
       const simulatedUser = {
         ...finalUpdate.toObject(),
         totalPointsEarned: (user.totalPointsEarned || 0) + pointsEarned,
@@ -339,8 +298,6 @@ export async function POST(req: Request) {
           actuallyInsertedAchievements.push(record);
         }
       }
-
-      // Recompute level if achievements were inserted
       let finalLevel = levelData.level;
       if (actuallyInsertedAchievements.length > 0) {
         const freshUser = await User.findOne({ email });
@@ -386,8 +343,6 @@ export async function POST(req: Request) {
     );
   }
 }
-
-// PATCH /api/user/score - Set or clear the user's personal monthly carbon goal
 export async function PATCH(req: Request) {
   const email = req.headers.get('x-user-email');
 
@@ -414,9 +369,6 @@ export async function PATCH(req: Request) {
     }
 
     const { monthlyCarbonGoal } = payload as { monthlyCarbonGoal?: unknown };
-
-    // Allow null explicitly, to let a user clear their goal and revert to
-    // the app default (40kg) rather than forcing them to always have one.
     if (monthlyCarbonGoal !== null) {
       const goalValue = Number(monthlyCarbonGoal);
 

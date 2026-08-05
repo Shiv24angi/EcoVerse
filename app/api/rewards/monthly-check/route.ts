@@ -1,4 +1,3 @@
-// Opt out of static generation - all handlers connect to MongoDB at request time.
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -10,18 +9,12 @@ import { verifyCookieAuth } from '@/lib/auth';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
-
-// POST /api/rewards/monthly-check - Trigger the monthly rollover. This endpoint
-// no longer awards points itself: `checkAndRunMonthlyRollover` is the single
-// guarded path that may credit the monthly eco-bonus (exactly once per month).
 export async function POST(req: Request) {
   const email = req.headers.get('x-user-email');
 
   if (!email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  // Defense-in-depth: verify the auth_token cookie matches the x-user-email header
   const authError = await verifyCookieAuth(req, email);
   if (authError) return authError;
 
@@ -65,16 +58,12 @@ export async function POST(req: Request) {
     );
   }
 }
-
-// GET /api/rewards/monthly-check - Get monthly bonus status
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
 
   if (!email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  // Defense-in-depth: verify the auth_token cookie matches the x-user-email header
   const authError = await verifyCookieAuth(req, email);
   if (authError) return authError;
 
