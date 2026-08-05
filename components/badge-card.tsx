@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Share2, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export interface BadgeProps {
   id: string;
@@ -19,6 +20,8 @@ export interface BadgeProps {
 }
 
 export function BadgeCard({ badge }: { badge: BadgeProps }) {
+  const { toast } = useToast();
+
   const handleShare = async () => {
     const text = `I just earned the ${badge.name} badge in EcoVerse! 🌍✨`;
     if (navigator.share) {
@@ -32,7 +35,10 @@ export function BadgeCard({ badge }: { badge: BadgeProps }) {
       }
     } else {
       navigator.clipboard.writeText(text);
-      alert('Copied to clipboard!');
+      toast({
+        title: 'Copied',
+        description: 'Copied to clipboard!',
+      });
     }
   };
 

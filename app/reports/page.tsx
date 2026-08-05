@@ -4,6 +4,7 @@ import { useAuth } from '@/components/auth-provider';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import {
   Download,
   Share2,
@@ -43,6 +44,7 @@ interface AnalyticsResponse {
 export default function ReportsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [data, setData] = useState<MonthlyDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonthIdx, setSelectedMonthIdx] = useState<number>(0);
@@ -100,7 +102,10 @@ export default function ReportsPage() {
       }
     } else {
       await navigator.clipboard.writeText(text);
-      alert('Copied to clipboard!');
+      toast({
+        title: 'Copied',
+        description: 'Copied to clipboard!',
+      });
     }
   };
 

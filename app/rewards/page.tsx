@@ -3,6 +3,7 @@
 import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
   Card,
@@ -96,6 +97,7 @@ interface RewardsData {
 export default function RewardsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [rewardsData, setRewardsData] = useState<RewardsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
@@ -145,21 +147,34 @@ export default function RewardsPage() {
 
       if (response.ok) {
         // Show success message and refresh data
-        alert(`${result.purchasedItem.name} purchased successfully!`);
+        toast({
+          title: 'Success',
+          description: `${result.purchasedItem.name} purchased successfully!`,
+        });
         fetchRewardsData();
       } else {
         // Handle insufficient confirmed points error with more detail
         if (result.error === 'Insufficient confirmed points') {
-          alert(
-            `Insufficient confirmed points!\n\nRequired: ${result.required} points\nYou have: ${result.confirmedPoints} confirmed points\nUnconfirmed: ${result.unconfirmedPoints} points\n\n${result.message}`
-          );
+          toast({
+            variant: 'destructive',
+            title: 'Insufficient confirmed points!',
+            description: `Required: ${result.required} points. You have: ${result.confirmedPoints} confirmed points. Unconfirmed: ${result.unconfirmedPoints} points. ${result.message}`,
+          });
         } else {
-          alert(result.error || 'Failed to purchase item');
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: result.error || 'Failed to purchase item',
+          });
         }
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('Failed to purchase item');
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to purchase item',
+      });
     } finally {
       setPurchasing(false);
     }
