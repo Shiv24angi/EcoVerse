@@ -20,6 +20,15 @@ export async function GET(req: Request) {
     );
   }
 
+  // Require admin authentication for debug endpoints
+  const adminKey = req.headers.get('x-admin-key');
+  if (adminKey !== process.env.ADMIN_SECRET_KEY) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
 
@@ -29,6 +38,12 @@ export async function GET(req: Request) {
 
   if (typeof email !== 'string') {
     return NextResponse.json({ error: 'Invalid input type' }, { status: 400 });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
   }
 
   try {
