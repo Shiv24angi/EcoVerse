@@ -28,6 +28,7 @@ export async function GET() {
     const payload = (await verifyToken(token)) as JWTPayload | null;
 
     if (!payload || !payload.email) {
+      cookieStore.delete('auth_token');
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
@@ -35,6 +36,7 @@ export async function GET() {
     const user = await User.findOne({ email: normalizeEmail(payload.email) });
 
     if (!user) {
+      cookieStore.delete('auth_token');
       return NextResponse.json({ error: 'User not found' }, { status: 401 });
     }
 
