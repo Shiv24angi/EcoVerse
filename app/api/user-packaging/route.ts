@@ -12,17 +12,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { barcode, material } = await req.json();
+  try {
+    const { barcode, material } = await req.json();
 
-  if (!barcode || !material) {
-    return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+    if (!barcode || !material) {
+      return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+    }
+
+    // Log without exposing user email
+    console.warn(`Packaging report: barcode=${barcode}, material=${material}`);
+
+    // Optionally: Save to MongoDB here
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Packaging report error:', error instanceof Error ? error.message : 'Unknown error');
+    return NextResponse.json({ error: 'Failed to process packaging report' }, { status: 500 });
   }
-
-  console.warn(
-    `User ${userEmail} reported packaging for ${barcode}: ${material}`
-  );
-
-  // Optionally: Save to MongoDB here
-
-  return NextResponse.json({ success: true });
 }
