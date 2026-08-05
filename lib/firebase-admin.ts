@@ -26,7 +26,7 @@ function getAdminApp(): App {
     } catch (error) {
       console.error(
         '[Firebase Admin] Failed to initialize with FIREBASE_SERVICE_ACCOUNT, falling back:',
-        error
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }
