@@ -8,6 +8,8 @@ export interface IScan {
   barcode: string;
   date: Date;
   source?: string;
+  recyclabilityScore?: number;
+  ecoPoints?: number;
 }
 
 export interface IRewardTransaction {
@@ -111,6 +113,8 @@ const ScanSchema = new mongoose.Schema({
   },
   date: { type: Date, default: Date.now },
   source: { type: String, default: 'Local Calculator' },
+  recyclabilityScore: { type: Number, default: null },
+  ecoPoints: { type: Number, default: null },
 });
 
 const RewardTransactionSchema = new mongoose.Schema({
