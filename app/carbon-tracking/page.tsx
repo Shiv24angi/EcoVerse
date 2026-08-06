@@ -157,9 +157,17 @@ export default function CarbonTrackingPage() {
 
   const monthlyGoal = userData.monthlyCarbonGoal ?? 40;
   const progressPercentage = (userData.monthlyCarbon / monthlyGoal) * 100;
+  const now = new Date();
+  const currentMonthScans = userData.scans.filter((scan) => {
+    const scanDate = new Date(scan.date);
+    return (
+      scanDate.getMonth() === now.getMonth() &&
+      scanDate.getFullYear() === now.getFullYear()
+    );
+  });
   const dailyAverage =
-    userData.scans.length > 0
-      ? userData.monthlyCarbon / userData.scans.length
+    currentMonthScans.length > 0
+      ? userData.monthlyCarbon / currentMonthScans.length
       : 0;
 
   // Group scans by date for better display
