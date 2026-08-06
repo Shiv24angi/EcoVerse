@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
+import { resolveRequestId } from './lib/request-id';
 
 const protectedRoutes = [
   '/dashboard',
@@ -20,13 +21,25 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
+  // Resolve a stable request ID for tracing (Issue #461): adopt a well-formed
+  // inbound value so traces span services, otherwise generate a fresh one.
+  const requestId = resolveRequestId(request.headers.get('x-request-id'));
+
   // If missing token on protected route, redirect to signin
   if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/auth/signin', request.url));
+    const redirect = NextResponse.redirect(
+      new URL('/auth/signin', request.url)
+    );
+    redirect.headers.set('X-Request-Id', requestId);
+    return redirect;
   }
 
   // Clone headers to modify them
   const requestHeaders = new Headers(request.headers);
+
+  // Propagate the request ID to API route handlers so their logs can be
+  // correlated with the same trace.
+  requestHeaders.set('x-request-id', requestId);
 
   // ALWAYS remove any client-supplied identity header to prevent spoofing
   requestHeaders.delete('x-user-email');
@@ -38,7 +51,11 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-user-email', payload.email.toLowerCase());
     } else if (isProtectedRoute) {
       // Invalid token on a protected route
-      return NextResponse.redirect(new URL('/auth/signin', request.url));
+      const redirect = NextResponse.redirect(
+        new URL('/auth/signin', request.url)
+      );
+      redirect.headers.set('X-Request-Id', requestId);
+      return redirect;
     }
   }
 
@@ -49,6 +66,10 @@ export async function middleware(request: NextRequest) {
       headers: requestHeaders,
     },
   });
+
+  // Echo the request ID back to the client so it can be referenced in
+  // support/bug reports and correlated with server-side logs.
+  response.headers.set('X-Request-Id', requestId);
 
   // Add security headers to prevent XSS and restrict permissions (Issue #408)
   response.headers.set(
