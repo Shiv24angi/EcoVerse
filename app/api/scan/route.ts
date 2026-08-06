@@ -75,7 +75,8 @@ export async function POST(req: Request) {
     let product;
     try {
       const productRes = await axios.get<OpenFoodFactsResponse>(
-        `https://world.openfoodfacts.org/api/v0/product/${sanitizedBarcode}.json`
+        `https://world.openfoodfacts.org/api/v0/product/${sanitizedBarcode}.json`,
+        { timeout: 10000 } // 10 second timeout
       );
       product = productRes.data.product;
     } catch (offError) {
@@ -435,11 +436,17 @@ export async function POST(req: Request) {
         },
       });
     } catch (dbError) {
-      console.error('Database error during scan:', dbError instanceof Error ? dbError.message : 'Unknown database error');
+      console.error(
+        'Database error during scan:',
+        dbError instanceof Error ? dbError.message : 'Unknown database error'
+      );
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
   } catch (error) {
-    console.error('Scan API error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Scan API error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Failed to scan product' },
       { status: 500 }

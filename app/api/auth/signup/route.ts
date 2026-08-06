@@ -31,14 +31,28 @@ export async function POST(req: Request) {
     }
 
     const { name, password, idToken } = body as {
-      name?: string;
-      password?: string;
-      idToken?: string;
+      name?: unknown;
+      password?: unknown;
+      idToken?: unknown;
     };
 
-    if (!name || !password || typeof idToken !== 'string' || !idToken.trim()) {
+    if (typeof name !== 'string' || !name.trim()) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Name is required and must be a non-empty string' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof password !== 'string' || password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password is required and must be at least 6 characters' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof idToken !== 'string' || !idToken.trim()) {
+      return NextResponse.json(
+        { error: 'ID token is required and must be a non-empty string' },
         { status: 400 }
       );
     }

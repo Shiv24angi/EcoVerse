@@ -12,33 +12,57 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { email, password } = await req.json();
-    const normalizedEmail =
-      typeof email === 'string' ? normalizeEmail(email) : '';
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = body as { email?: unknown; password?: unknown };
+
+    if (typeof email !== 'string' || !email) {
+      return NextResponse.json(
+        { error: 'Email is required and must be a string' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof password !== 'string' || !password) {
+      return NextResponse.json(
+        { error: 'Password is required and must be a string' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+
+    // Generic error to prevent user enumeration
+    const genericError = { error: 'Invalid credentials' };
 
     const user = await User.findOne({ email: normalizedEmail });
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    if (!user.password) {
-      return NextResponse.json(
-        {
-          error:
-            'This account uses Google Sign-In. Please continue with Google.',
-        },
-        { status: 400 }
-      );
+    // Return generic error for any auth failure
+    if (!user || !user.password) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return NextResponse.json(genericError, { status: 401 });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return NextResponse.json(genericError, { status: 401 });
     }
 
     const userData = {
@@ -59,7 +83,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ user: userData }, { status: 200 });
   } catch (error) {
-    console.error('Signin error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Signin error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
 
     return NextResponse.json(
       { error: 'Internal server error' },
