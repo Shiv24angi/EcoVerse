@@ -96,7 +96,7 @@ export async function verifyCookieAuth(
   const authToken = cookies
     .split(';')
     .find((c) => c.trim().startsWith('auth_token='))
-    ?.split('=')[1];
+    ?.replace(/^auth_token=/, '');
 
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
