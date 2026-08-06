@@ -176,7 +176,7 @@ const UserSchema = new mongoose.Schema(
     lowCarbonScans: { type: Number, default: 0 },
     joinedAt: { type: String, default: () => new Date().toISOString() },
     authProvider: { type: String, enum: ['email', 'google'], default: 'email' },
-    firebaseUid: { type: String, sparse: true },
+    firebaseUid: { type: String },
     scans: [ScanSchema],
     lastScanDate: { type: Date, default: null },
     streakCount: { type: Number, default: 0 },
