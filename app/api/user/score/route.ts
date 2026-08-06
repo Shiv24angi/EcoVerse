@@ -173,6 +173,7 @@ export async function POST(req: Request) {
       }
       await confirmAgedPoints(email);
 
+      const manualBarcode = `${Date.now()}${attempt}`.slice(0, 14);
       const isFirstScan = (user.totalScanned || 0) === 0;
       const totalScans = user.totalScanned || 0;
       const previousLastScanDate = user.lastScanDate;
@@ -235,7 +236,7 @@ export async function POST(req: Request) {
               carbonEstimate: carbonValue,
               category: 'Manual Entry',
               confidence: 'medium',
-              barcode: `MANUAL-${Date.now()}`,
+              barcode: manualBarcode,
               date: new Date(),
               source: 'Manual Entry',
             },
