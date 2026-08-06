@@ -20,20 +20,31 @@ export async function GET(req: Request) {
     );
   }
 
+  // SECURITY: Require authentication to access debug endpoint
+  // Only authenticated users can view their own debug info
+  const authenticatedEmail = req.headers.get('x-user-email');
   const { searchParams } = new URL(req.url);
-  const email = searchParams.get('email');
+  const requestedEmail = searchParams.get('email');
 
-  if (!email) {
+  if (!authenticatedEmail) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!requestedEmail) {
     return NextResponse.json({ error: 'Email required' }, { status: 400 });
   }
 
-  if (typeof email !== 'string') {
-    return NextResponse.json({ error: 'Invalid input type' }, { status: 400 });
+  // SECURITY: Users can only view their own debug info
+  if (authenticatedEmail.toLowerCase() !== requestedEmail.toLowerCase()) {
+    return NextResponse.json(
+      { error: 'Access denied: can only view your own data' },
+      { status: 403 }
+    );
   }
 
   try {
     await dbConnect();
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: requestedEmail });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
