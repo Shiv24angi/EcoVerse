@@ -215,7 +215,10 @@ export async function GET(req: Request) {
           : null,
     });
   } catch (error) {
-    console.error('Error fetching rewards data:', error);
+    console.error(
+      'Error fetching rewards data:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Failed to fetch rewards data' },
       { status: 500 }
@@ -414,7 +417,10 @@ export async function POST(req: Request) {
       message: `${shopItem.name} redeemed successfully!`,
     });
   } catch (error) {
-    console.error('Error redeeming reward:', error);
+    console.error(
+      'Error redeeming reward:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Failed to redeem reward' },
       { status: 500 }

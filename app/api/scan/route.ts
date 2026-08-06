@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     } catch (offError) {
       console.warn(
         'Open Food Facts API failed, using barcode as fallback:',
-        offError
+        offError instanceof Error ? offError.message : String(offError)
       );
       product = {
         product_name: `Product ${sanitizedBarcode}`,
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
         agedPointsConfirmed = (await confirmAgedPoints(userEmail)) > 0;
 
         if (!user) {
-          console.error('❌ No user found with email:', userEmail);
+          // User not found is a normal flow, no need to log email
           return NextResponse.json(
             { error: 'User not found' },
             { status: 404 }
@@ -307,10 +307,7 @@ export async function POST(req: Request) {
             ) {
               const freshUser = await User.findOne({ email: userEmail });
               if (!freshUser) {
-                console.error(
-                  '❌ User document missing after scan update:',
-                  userEmail
-                );
+                // User document missing is a critical error but we don't expose user info
                 return NextResponse.json(
                   { error: 'User account no longer exists' },
                   { status: 404 }
@@ -350,10 +347,10 @@ export async function POST(req: Request) {
             ]);
             initialUpdate = updatedUser;
             break;
-          } catch (_postError) {
+          } catch (postError) {
             console.warn(
               `Post-scan write failed, retry ${attempt + 1}/${MAX_RETRIES}:`,
-              _postError
+              postError instanceof Error ? postError.message : String(postError)
             );
             initialUpdate = null;
           }
@@ -438,11 +435,17 @@ export async function POST(req: Request) {
         },
       });
     } catch (dbError) {
-      console.error('🔥 Failed to update user stats:', dbError);
+      console.error(
+        'Database error during scan:',
+        dbError instanceof Error ? dbError.message : 'Unknown database error'
+      );
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
   } catch (error) {
-    console.error('🔥 Error in scan API:', error);
+    console.error(
+      'Scan API error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Failed to scan product' },
       { status: 500 }

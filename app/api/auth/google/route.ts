@@ -90,7 +90,10 @@ export async function POST(req: Request) {
       );
     }
     // FIX: Suppress linting rule for tracking low-level operational failures
-    console.error('Failed to upsert user in google route:', err);
+    console.error(
+      'Failed to upsert user in google route:',
+      err instanceof Error ? err.message : 'Unknown error'
+    );
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 
