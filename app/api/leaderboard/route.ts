@@ -100,14 +100,14 @@ export async function GET(request: NextRequest) {
       .sort({ totalPointsEarned: -1, level: -1, totalScanned: -1, _id: -1 })
       .limit(limit + 1)
       .lean()
-      .allowDiskUse();
+      .allowDiskUse(true);
 
     const hasMore = users.length > limit;
     if (hasMore) users.pop();
 
     const nextCursor =
       hasMore && users.length > 0
-        ? (users[users.length - 1]._id as string).toString()
+        ? users[users.length - 1]._id.toString()
         : null;
 
     const leaderboardData = users.map((user) => {
