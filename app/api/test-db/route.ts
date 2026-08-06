@@ -45,7 +45,10 @@ export async function GET() {
     });
   } catch (error) {
     // Log detailed error server-side only (contains sensitive info like hostnames)
-    console.error('MongoDB connection test failed:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'MongoDB connection test failed:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
 
     // Return sanitized error to client - don't expose internal details
     return NextResponse.json(
