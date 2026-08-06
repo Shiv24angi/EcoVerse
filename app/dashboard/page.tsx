@@ -48,6 +48,12 @@ interface LeaderboardUser {
   achievementCount?: number;
 }
 
+interface UserScoreData {
+  monthlyCarbon: number;
+  totalScanned: number;
+  streakCount: number;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
@@ -56,26 +62,33 @@ export default function Dashboard() {
 
   const fetchUserStats = useCallback(async () => {
     try {
-      // Fetch leaderboard data to get user rank and stats
-      const [leaderboardResponse, rewardsResponse] = await Promise.all([
-        fetch('/api/leaderboard', { cache: 'no-store' }),
-        fetch(`/api/rewards?email=${encodeURIComponent(user?.email || '')}`, {
-          cache: 'no-store',
-        }),
-      ]);
+      // Fetch personal stats directly so users outside the first
+      // leaderboard page still see their own dashboard data.
+      const [leaderboardResponse, rewardsResponse, scoreResponse] =
+        await Promise.all([
+          fetch(
+            `/api/leaderboard?userId=${encodeURIComponent(user?._id || '')}`,
+            { cache: 'no-store' }
+          ),
+          fetch(`/api/rewards?email=${encodeURIComponent(user?.email || '')}`, {
+            cache: 'no-store',
+          }),
+          fetch('/api/user/score', { cache: 'no-store' }),
+        ]);
 
-      if (leaderboardResponse.ok) {
+      if (leaderboardResponse.ok && scoreResponse.ok) {
         const leaderboardData = await leaderboardResponse.json();
+        const scoreData: UserScoreData = await scoreResponse.json();
         const currentUser = leaderboardData.leaderboard.find(
           (u: LeaderboardUser) => u.id === user?._id
         );
 
         const stats: UserStats = {
-          monthlyCarbon: currentUser?.monthlyCarbon || 0,
-          totalScanned: currentUser?.totalScanned || 0,
-          rank: currentUser?.rank || 0,
+          monthlyCarbon: scoreData.monthlyCarbon || 0,
+          totalScanned: scoreData.totalScanned || 0,
+          rank: leaderboardData.currentUserRank || currentUser?.rank || 0,
           totalUsers: leaderboardData.stats.totalUsers,
-          streakCount: currentUser?.streakCount || 0,
+          streakCount: scoreData.streakCount || 0,
           rewardPoints: currentUser?.rewardPoints || 0,
           level: currentUser?.level || 1,
           achievementCount: currentUser?.achievementCount || 0,
