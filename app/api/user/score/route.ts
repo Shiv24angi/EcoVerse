@@ -79,7 +79,7 @@ export async function GET(req: Request) {
       },
     });
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('Error fetching user data:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       { error: 'Failed to fetch user data' },
@@ -335,7 +335,7 @@ export async function POST(req: Request) {
       leveledUp: levelData.level > oldLevel,
     });
   } catch (error) {
-    console.error('Error updating score:', error);
+    console.error('Error updating score:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       { error: 'Failed to update score' },
@@ -405,7 +405,7 @@ export async function PATCH(req: Request) {
       monthlyCarbonGoal: updatedUser.monthlyCarbonGoal ?? 40,
     });
   } catch (error) {
-    console.error('Error updating monthly carbon goal:', error);
+    console.error('Error updating monthly carbon goal:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       { error: 'Failed to update monthly carbon goal' },

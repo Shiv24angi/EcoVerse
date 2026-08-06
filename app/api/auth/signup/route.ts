@@ -114,7 +114,7 @@ export async function POST(req: Request) {
 
     // Safely wrap critical runtime tracing with explicit rule suppression
 
-    console.error('🔥 Signup API error:', message);
+    console.error('Signup API error:', message);
 
     // FIX: Do not expose low-level database or system diagnostics directly to downstream clients
     return NextResponse.json({ error: 'Signup failed' }, { status: 500 });
