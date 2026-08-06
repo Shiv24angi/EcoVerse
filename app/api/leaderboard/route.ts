@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { getUserPointsSummary } from '@/lib/rewards-system';
+import mongoose from 'mongoose';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -24,6 +25,14 @@ export async function GET(request: NextRequest) {
       100
     );
     const userId = searchParams.get('userId');
+
+    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+      return NextResponse.json({ error: 'Invalid userId' }, { status: 400 });
+    }
+
+    if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
+      return NextResponse.json({ error: 'Invalid cursor' }, { status: 400 });
+    }
 
     // Compute global stats once via aggregation.
     const [statsResult] = await User.aggregate([
