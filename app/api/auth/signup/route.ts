@@ -7,6 +7,7 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { setAuthCookie } from '@/lib/auth';
 import { verifyFirebaseIdToken } from '@/lib/firebase-admin';
+import { normalizeEmail } from '@/lib/normalize-email';
 
 export async function POST(req: Request) {
   try {
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const email = verified.email;
+    const email = normalizeEmail(verified.email);
 
     const existingUser = await User.findOne({ email });
 
@@ -97,13 +98,23 @@ export async function POST(req: Request) {
     await setAuthCookie(createdUser.email, createdUser._id.toString());
 
     return NextResponse.json({ user }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
+    if (
+      error?.code === 11000 ||
+      (error?.name === 'MongoServerError' && error?.code === 11000)
+    ) {
+      return NextResponse.json(
+        { error: 'User already exists' },
+        { status: 400 }
+      );
+    }
+
     const message =
       error instanceof Error ? error.message : 'Unknown server error';
 
     // Safely wrap critical runtime tracing with explicit rule suppression
 
-    console.error('🔥 Signup API error:', message);
+    console.error('Signup API error:', message);
 
     // FIX: Do not expose low-level database or system diagnostics directly to downstream clients
     return NextResponse.json({ error: 'Signup failed' }, { status: 500 });
