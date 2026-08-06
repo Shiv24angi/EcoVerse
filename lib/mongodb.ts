@@ -46,7 +46,10 @@ async function dbConnect(): Promise<Mongoose> {
       console.warn('✅ MongoDB connected successfully!');
       return cached!.conn;
     } catch (error) {
-      console.error('❌ MongoDB connection failed:', error);
+      console.error(
+        'MongoDB connection failed:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
       cached!.promise = null;
       throw error;
     }
@@ -56,7 +59,10 @@ async function dbConnect(): Promise<Mongoose> {
     cached!.conn = await cached!.promise;
     return cached!.conn;
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
+    console.error(
+      'MongoDB connection error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     cached!.promise = null;
     throw error;
   }
