@@ -575,10 +575,15 @@ export function confirmPendingPoints(user: UserPointsData): {
         (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60);
 
       if (hoursElapsed >= POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS) {
-        transaction.pointsType = 'confirmed';
-        transaction.confirmedAt = now;
+        // Create a NEW transaction object instead of mutating the original
+        // This ensures API responses reflect actual database state, not in-memory mutations
+        const confirmedTransaction: IRewardTransaction = {
+          ...transaction,
+          pointsType: 'confirmed',
+          confirmedAt: now,
+        };
         confirmedPoints += transaction.points;
-        confirmedTransactions.push(transaction);
+        confirmedTransactions.push(confirmedTransaction);
       }
     }
   }
