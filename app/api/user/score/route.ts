@@ -15,6 +15,12 @@ import {
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 
+/**
+ * GET /api/user/score - Get user's carbon score data (READ-ONLY)
+ *
+ * This endpoint is idempotent - it only reads data without performing writes.
+ * Monthly rollover is now handled by POST /api/user/score/rollover
+ */
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
 
@@ -24,7 +30,6 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
-    await checkAndRunMonthlyRollover(email);
     const user = await User.findOne({ email }).lean();
 
     if (!user) {
