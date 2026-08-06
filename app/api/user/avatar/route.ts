@@ -13,9 +13,26 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { avatarId } = await req.json();
+    let payload: unknown;
+    try {
+      payload = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
 
-    if (!avatarId) {
+    if (typeof payload !== 'object' || payload === null) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const { avatarId } = payload as { avatarId?: unknown };
+
+    if (typeof avatarId !== 'string' || !avatarId.trim()) {
       return NextResponse.json({ error: 'Missing avatarId' }, { status: 400 });
     }
 
@@ -23,15 +40,13 @@ export async function PUT(req: Request) {
 
     const updatedUser = await User.findOneAndUpdate(
       { email },
-      { $set: { avatarId } },
+      { $set: { avatarId: avatarId.trim() } },
       { new: true }
     );
 
     if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    console.warn('User from DB:', updatedUser?.avatarId);
 
     return NextResponse.json(
       { success: true, user: updatedUser },
@@ -41,6 +56,9 @@ export async function PUT(req: Request) {
     const message =
       error instanceof Error ? error.message : 'Unknown server error';
     console.error('🔥 Avatar update error:', message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update avatar' },
+      { status: 500 }
+    );
   }
 }
