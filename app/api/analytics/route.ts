@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
+import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
 const MONTHS = [
   'Jan',
@@ -26,6 +27,8 @@ export async function GET(req: Request) {
 
   try {
     await dbConnect();
+    await checkAndRunMonthlyRollover(userEmail);
+
     const user = await User.findOne({ email: userEmail }).lean();
 
     if (!user) {
