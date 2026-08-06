@@ -38,9 +38,13 @@ export async function PUT(req: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unknown server error';
-    console.error('🔥 Avatar update error:', message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(
+      'Avatar update error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+    return NextResponse.json(
+      { error: 'Failed to update avatar' },
+      { status: 500 }
+    );
   }
 }
