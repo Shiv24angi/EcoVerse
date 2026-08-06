@@ -23,13 +23,18 @@ export async function getCarbonFootprint(
   const normalizedName = productName.trim().toLowerCase();
   const normalizedBrand = brand?.trim().toLowerCase() || '';
   const queryKey = `${normalizedName}|${normalizedBrand}`;
+  const apiKey = process.env.CLIMATIQ_API_KEY;
+  const canUseClimatiq = !!apiKey && apiKey !== 'your_climatiq_api_key_here';
 
   try {
     await dbConnect();
 
     // 1. Check cache first
     const cached = await CarbonCache.findOne({ queryKey }).lean();
-    if (cached) {
+    const isFallbackCache =
+      cached?.source?.toLowerCase().includes('fallback') ||
+      cached?.confidence === 'low';
+    if (cached && !(canUseClimatiq && isFallbackCache)) {
       return {
         carbonFootprint: cached.carbonEstimate,
         category: cached.category,
@@ -42,10 +47,8 @@ export async function getCarbonFootprint(
     console.warn('[CarbonCache] Database error check:', dbError);
   }
 
-  const apiKey = process.env.CLIMATIQ_API_KEY;
-
   // 2. Query Climatiq if API key is configured
-  if (apiKey && apiKey !== 'your_climatiq_api_key_here') {
+  if (canUseClimatiq) {
     // Validate external API URLs before making requests
     const climatiqUrl = 'https://api.climatiq.io/data/v1/search';
     try {
@@ -125,14 +128,20 @@ export async function getCarbonFootprint(
 
           // Cache the result
           try {
-            await CarbonCache.create({
-              queryKey,
-              carbonEstimate: result.carbonFootprint,
-              category: result.category,
-              confidence: result.confidence,
-              calculation: result.calculation,
-              source: result.source,
-            });
+            await CarbonCache.updateOne(
+              { queryKey },
+              {
+                $set: {
+                  carbonEstimate: result.carbonFootprint,
+                  category: result.category,
+                  confidence: result.confidence,
+                  calculation: result.calculation,
+                  source: result.source,
+                  createdAt: new Date(),
+                },
+              },
+              { upsert: true }
+            );
           } catch (cacheWriteError) {
             console.warn(
               '[CarbonCache] Failed to save cache record:',
@@ -162,14 +171,20 @@ export async function getCarbonFootprint(
 
     // Cache fallback results to avoid checking Climatiq repeatedly
     try {
-      await CarbonCache.create({
-        queryKey,
-        carbonEstimate: result.carbonFootprint,
-        category: result.category,
-        confidence: result.confidence,
-        calculation: result.calculation,
-        source: result.source,
-      });
+      await CarbonCache.updateOne(
+        { queryKey },
+        {
+          $set: {
+            carbonEstimate: result.carbonFootprint,
+            category: result.category,
+            confidence: result.confidence,
+            calculation: result.calculation,
+            source: result.source,
+            createdAt: new Date(),
+          },
+        },
+        { upsert: true }
+      );
     } catch (cacheWriteError) {
       console.warn(
         '[CarbonCache] Failed to save fallback cache record:',
