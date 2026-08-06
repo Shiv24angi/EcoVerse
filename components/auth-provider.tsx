@@ -15,7 +15,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { auth, googleProvider } from '@/lib/firebase';
+import { auth, googleProvider, hasValidConfig } from '@/lib/firebase';
 import { toast } from '@/components/ui/use-toast';
 import type { AvatarId } from './ui/avatar';
 
@@ -93,6 +93,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string
   ): Promise<boolean> => {
+    if (!auth) {
+      toast({
+        title: 'Firebase not configured',
+        description: 'Please set up Firebase credentials.',
+        variant: 'destructive',
+      });
+      return false;
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -154,6 +162,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    if (!auth) {
+      console.error('❌ Firebase not configured');
+      return false;
+    }
     try {
       // First authenticate with Firebase
       await signInWithEmailAndPassword(auth, email, password);
@@ -186,8 +198,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async (): Promise<boolean> => {
     try {
-      if (!auth || !googleProvider) {
+      if (!hasValidConfig || !auth || !googleProvider) {
         console.error('❌ Firebase not available');
+        toast({
+          title: 'Firebase not configured',
+          description: 'Please set up Firebase credentials.',
+          variant: 'destructive',
+        });
         return false;
       }
 
@@ -221,7 +238,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      if (auth) {
+        await signOut(auth);
+      }
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch (err) {
       console.error('Logout error:', err);

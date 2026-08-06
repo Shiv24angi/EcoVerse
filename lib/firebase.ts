@@ -12,12 +12,23 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const app =
-  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
+// Only initialize Firebase if we have valid config (prevents build failures with placeholder keys)
+const hasValidConfig = Boolean(
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey !== 'undefined' &&
+  !firebaseConfig.apiKey.includes('Dummy')
+);
+
+const app = hasValidConfig
+  ? getApps().length === 0
+    ? initializeApp(firebaseConfig)
+    : getApps()[0]
+  : null;
+
+const auth = app ? getAuth(app) : null;
 const googleProvider = new GoogleAuthProvider();
 
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-export { auth, googleProvider };
+export { auth, googleProvider, hasValidConfig };
 export default app;
