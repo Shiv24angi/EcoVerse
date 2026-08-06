@@ -4,6 +4,8 @@ export const dynamic = 'force-dynamic';
 // app/api/user-packaging/route.ts
 
 import { NextResponse } from 'next/server';
+import dbConnect from '@/lib/mongodb';
+import PackagingReport from '@/models/PackagingReport';
 
 export async function POST(req: Request) {
   const userEmail = req.headers.get('x-user-email');
@@ -14,15 +16,33 @@ export async function POST(req: Request) {
 
   const { barcode, material } = await req.json();
 
-  if (!barcode || !material) {
+  if (typeof barcode !== 'string' || typeof material !== 'string') {
     return NextResponse.json({ error: 'Missing data' }, { status: 400 });
   }
 
-  console.warn(
-    `User ${userEmail} reported packaging for ${barcode}: ${material}`
-  );
+  const normalizedBarcode = barcode.trim();
+  const normalizedMaterial = material.trim();
 
-  // Optionally: Save to MongoDB here
+  if (!/^\d{8,14}$/.test(normalizedBarcode)) {
+    return NextResponse.json(
+      { error: 'Invalid barcode format' },
+      { status: 400 }
+    );
+  }
 
-  return NextResponse.json({ success: true });
+  if (!normalizedMaterial) {
+    return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+  }
+
+  await dbConnect();
+  const report = await PackagingReport.create({
+    userEmail,
+    barcode: normalizedBarcode,
+    material: normalizedMaterial,
+  });
+
+  return NextResponse.json({
+    success: true,
+    reportId: report._id,
+  });
 }
