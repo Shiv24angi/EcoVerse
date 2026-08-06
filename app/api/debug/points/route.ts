@@ -80,7 +80,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({
-      userEmail: email,
+      userEmail: requestedEmail,
       rawData: {
         confirmedPoints: user.confirmedPoints,
         unconfirmedPoints: user.unconfirmedPoints,
