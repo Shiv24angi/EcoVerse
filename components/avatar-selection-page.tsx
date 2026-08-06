@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -22,7 +22,13 @@ export default function AvatarSelectionPage() {
   const [selected, setSelected] = useState<AvatarId | null>(null);
   const router = useRouter();
 
-  const { updateAvatar } = useAuth();
+  const { isLoading, updateAvatar, user } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/auth/signin');
+    }
+  }, [isLoading, router, user]);
 
   const handleSave = async () => {
     if (selected) {
@@ -35,6 +41,16 @@ export default function AvatarSelectionPage() {
       // retry instead of being redirected as though the save succeeded.
     }
   };
+
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-muted/20 py-12 px-6 md:px-16">
+        <div className="max-w-3xl mx-auto text-center text-muted-foreground">
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/20 py-12 px-6 md:px-16">
