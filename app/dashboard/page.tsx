@@ -23,6 +23,7 @@ interface UserStats {
   rank: number;
   totalUsers: number;
   streakCount: number;
+  monthlyCarbonGoal?: number;
   // Rewards data
   rewardPoints?: number;
   pointsSummary?: {
@@ -57,15 +58,18 @@ export default function Dashboard() {
   const fetchUserStats = useCallback(async () => {
     try {
       // Fetch leaderboard data to get user rank and stats
-      const [leaderboardResponse, rewardsResponse] = await Promise.all([
-        fetch('/api/leaderboard', { cache: 'no-store' }),
-        fetch(`/api/rewards?email=${encodeURIComponent(user?.email || '')}`, {
-          cache: 'no-store',
-        }),
-      ]);
+      const [leaderboardResponse, rewardsResponse, scoreResponse] =
+        await Promise.all([
+          fetch('/api/leaderboard', { cache: 'no-store' }),
+          fetch(`/api/rewards?email=${encodeURIComponent(user?.email || '')}`, {
+            cache: 'no-store',
+          }),
+          fetch('/api/user/score', { cache: 'no-store' }),
+        ]);
 
       if (leaderboardResponse.ok) {
         const leaderboardData = await leaderboardResponse.json();
+        const scoreData = scoreResponse.ok ? await scoreResponse.json() : null;
         const currentUser = leaderboardData.leaderboard.find(
           (u: LeaderboardUser) => u.id === user?._id
         );
@@ -76,6 +80,7 @@ export default function Dashboard() {
           rank: currentUser?.rank || 0,
           totalUsers: leaderboardData.stats.totalUsers,
           streakCount: currentUser?.streakCount || 0,
+          monthlyCarbonGoal: scoreData?.monthlyCarbonGoal,
           rewardPoints: currentUser?.rewardPoints || 0,
           level: currentUser?.level || 1,
           achievementCount: currentUser?.achievementCount || 0,
@@ -113,7 +118,7 @@ export default function Dashboard() {
     return null;
   }
 
-  const monthlyGoal = 40; // kg CO₂
+  const monthlyGoal = userStats?.monthlyCarbonGoal ?? 40; // kg CO₂
   const progressPercentage = userStats
     ? (userStats.monthlyCarbon / monthlyGoal) * 100
     : 0;
