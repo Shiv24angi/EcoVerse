@@ -6,14 +6,7 @@ const FALLBACK_SECRET = 'fallback_secret_for_development_only';
 
 function getSecretKey(): Uint8Array {
   const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error(
-      'JWT_SECRET environment variable is required. ' +
-        'Generate one with: opessl rand -base64 32'
-    );
-  }
-  if (secret === FALLBACK_SECRET) {
-    throw new Error(
+  iw Error(
       'JWT_SECRET must not use the known insecure fallback value. ' +
         'Generate one with: openssl rand -base64 32'
     );
