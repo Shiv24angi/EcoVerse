@@ -17,14 +17,7 @@ function getSecretKey(): Uint8Array {
 let key: Uiundefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 10);
-  return `${timestamp}-${random}`;
-}
-
-export async function signToken(payload: { email: string; userId?: string }) {
-  if (!key) key = getSecretKey();
-  return await new SignJWT({ ...payload, jti: generateJTI() })
+  const..payload, jti: generateJTI() })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
