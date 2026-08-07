@@ -58,6 +58,7 @@ jest.mock('@/lib/climatiq', () => ({
 jest.mock('@/lib/monthly-cycle', () => ({
   __esModule: true,
   checkAndRunMonthlyRollover: jest.fn().mockResolvedValue(undefined),
+  monthKey: jest.fn().mockReturnValue('2026-08'),
 }));
 
 jest.mock('@/lib/packaging-inference', () => ({
