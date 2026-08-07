@@ -41,7 +41,7 @@ function matchesFilter(
     ) {
       const ops = condition as Record<string, unknown>;
       return Object.entries(ops).every(([op, val]) => {
-        const docVal = doc[key];
+        const docVal = doc[key] as number | string;
         switch (op) {
           case '$gt':
             return docVal > (val as number | string);
