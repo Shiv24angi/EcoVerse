@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Scan, Search, AlertTriangle, CheckCircle, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import BarcodeScanner from '@/components/barcode-scanner';
+import AlternativeProductsCard from '@/components/alternative-products';
 import RewardsNotification, {
   useRewardsNotification,
 } from '@/components/rewards-notification';
@@ -43,6 +44,14 @@ interface ProductData {
     inferred?: boolean;
   };
   source?: string;
+  alternatives?:
+    | {
+        productName: string;
+        avgCarbonEstimate: number;
+        sampleCount: number;
+        percentLower: number;
+      }[]
+    | null;
 }
 
 export default function ScanPage() {
@@ -135,6 +144,7 @@ export default function ScanPage() {
           recyclable: false,
           biodegradable: false,
         },
+        alternatives: data.alternatives || null,
         transportDistance: 'Unknown',
         source: data.source || 'Local Calculator',
       });
@@ -443,6 +453,10 @@ export default function ScanPage() {
                 <h4 className="font-medium mb-2 text-cyan-900">Description</h4>
                 <p className="text-cyan-800">{product.description}</p>
               </div>
+
+              <AlternativeProductsCard
+                alternatives={product.alternatives ?? null}
+              />
             </CardContent>
           </Card>
         )}
