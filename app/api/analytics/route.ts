@@ -146,7 +146,10 @@ export async function GET(req: Request) {
       averagePerScan,
     });
   } catch (error) {
-    console.error('Analytics API error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Analytics API error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }

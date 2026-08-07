@@ -190,7 +190,10 @@ export async function GET(req: Request) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error fetching analytics:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Error fetching analytics:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }

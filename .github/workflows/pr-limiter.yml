@@ -1,0 +1,59 @@
+name: Auto-Close PRs Over Limit
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  enforce-limit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get author's open PRs
+        id: prs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          DATA=$(gh pr list --repo "$REPO" --author "$AUTHOR" --state open --json number,title --jq '
+            {
+              count: length,
+              list: map("- #\(.number): \(.title)") | join("\n")
+            }
+          ')
+          COUNT=$(echo "$DATA" | jq -r '.count')
+          LIST=$(echo "$DATA" | jq -r '.list')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "list<<EOF" >> $GITHUB_OUTPUT
+          echo "$LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Close PR if over limit
+        if: steps.prs.outputs.count > 3
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          COUNT: ${{ steps.prs.outputs.count }}
+          LIST: ${{ steps.prs.outputs.list }}
+        run: |
+          COMMENT=$(cat << EOF
+          Hi @$AUTHOR 👋
+
+          You currently have **$COUNT open PRs**, but our Policy allows a maximum of **3** at a time.
+
+          Your currently open PRs:
+          $LIST
+
+          This PR has been automatically closed. Please close or wait to get merge some of your existing PRs first, then feel free to raise another one.
+
+          ---
+          *Automated by PR Limit Enforcer*
+          EOF
+          )
+
+          gh pr close "$PR_NUMBER" --repo "$REPO" --comment "$COMMENT"

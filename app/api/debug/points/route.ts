@@ -105,7 +105,10 @@ export async function GET(req: Request) {
       },
     });
   } catch (error) {
-    console.error('Error debugging points:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Error debugging points:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Failed to debug points' },
       { status: 500 }
