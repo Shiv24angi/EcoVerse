@@ -17,8 +17,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
+          CURRENT_PR: ${{ github.event.pull_request.number }}
         run: |
-          DATA=$(gh pr list --repo "$REPO" --author "$AUTHOR" --state open --json number,title --jq '
+          DATA=$(gh pr list --repo "$REPO" --author "$AUTHOR" --state open --json number,title | jq --argjson current "$CURRENT_PR" '
+            map(select(.number != $current)) |
             {
               count: length,
               list: map("- #\(.number): \(.title)") | join("\n")
@@ -32,7 +34,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Close PR if over limit
-        if: steps.prs.outputs.count > 3
+        if: steps.prs.outputs.count >= 3
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -44,12 +46,12 @@ jobs:
           COMMENT=$(cat << EOF
           Hi @$AUTHOR 👋
 
-          You currently have **$COUNT open PRs**, but our Policy allows a maximum of **3** at a time.
+          You currently have **$COUNT other open PRs**, but our policy allows a maximum of **3** open PRs at a time.
 
-          Your currently open PRs:
+          Your other currently open PRs:
           $LIST
 
-          This PR has been automatically closed. Please close or wait to get merge some of your existing PRs first, then feel free to raise another one.
+          This PR has been automatically closed. Please close or wait to merge some of your existing PRs first, then feel free to re-open or submit a new one.
 
           ---
           *Automated by PR Limit Enforcer*
