@@ -220,3 +220,36 @@ def evaluate_and_award_badges(user_id: str, db: Session):
                 except IntegrityError:
                     # Catch race conditions if the user double-clicks the scan button
                     db.rollback()
+
+ # --- ENDPOINT 6: User Analytics (Category Aggregation) ---
+@app.get("/api/users/{user_id}/analytics")
+def get_user_analytics(user_id: str, db: Session = Depends(get_db), x_caller_id: str = Header(None)):
+    
+    # 1. SECURITY CHECK: Ensure users can only view their own data
+    if x_caller_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this data.")
+        
+    # 2. THE AGGREGATION QUERY: Group by category and sum the emissions
+    results = (
+        db.query(
+            models.Scan.category, 
+            func.sum(models.Scan.carbon_footprint_kg).label("total_emissions")
+        )
+        .filter(models.Scan.user_id == user_id)
+        .group_by(models.Scan.category)
+        .all()
+    )
+    
+    # 3. FORMAT THE RESPONSE: Turn the database tuples into a clean dictionary
+    # Example output: {"Food": 45.2, "Electronics": 120.5, "Uncategorized": 10.0}
+    category_breakdown = {
+        # Fall back to "Uncategorized" if category is None
+        row.category or "Uncategorized": round(row.total_emissions or 0.0, 2) 
+        for row in results
+    }
+    
+    return {
+        "success": True,
+        "user_id": user_id,
+        "analytics": category_breakdown
+    }

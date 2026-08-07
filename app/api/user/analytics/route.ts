@@ -1,16 +1,13 @@
-// Opt out of static generation - connects to MongoDB at request time.
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
-import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
+import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 import { verifyCookieAuth } from '@/lib/auth';
 
-// ─── Types returned to the client ───────────────────────────────────────────
-
 interface MonthlyDataPoint {
-  month: string; // e.g. "Jan"
+  month: string;
   year: number;
   carbon: number;
   scanned: number;
@@ -45,8 +42,6 @@ interface AnalyticsResponse {
   totalCarbonSaved: number;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 const MONTH_LABELS = [
   'Jan',
   'Feb',
@@ -61,8 +56,6 @@ const MONTH_LABELS = [
   'Nov',
   'Dec',
 ];
-
-/** Returns the week label for a day-of-month (1-indexed). */
 function weekLabel(day: number): string {
   if (day <= 7) return 'Week 1';
   if (day <= 14) return 'Week 2';
@@ -70,31 +63,17 @@ function weekLabel(day: number): string {
   return 'Week 4';
 }
 
-/**
- * GET /api/user/analytics
- *
- * Returns:
- *  - monthlyData: up to 12 months of history + current month
- *  - categoryBreakdown: carbon by product category for current month
- *  - weeklyProgress: carbon per week for current month
- *  - currentMonth: summary card stats
- *  - totalCarbonSaved: sum of (goal - carbon) for months where goal was met
- */
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
 
   if (!email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  // Defense-in-depth: verify the auth_token cookie matches the x-user-email header
   const authError = await verifyCookieAuth(req, email);
   if (authError) return authError;
 
   try {
     await dbConnect();
-
-    // Run rollover first so the data we read is current-month accurate.
     await checkAndRunMonthlyRollover(email);
 
     const user = await User.findOne({ email }).lean();
@@ -107,12 +86,10 @@ export async function GET(req: Request) {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     const monthlyGoal = user.monthlyCarbonGoal ?? 40;
-
-    // ── Historical data from archive ─────────────────────────────────────
     const history = (user.monthlyCarbonHistory ?? [])
-      .slice() // don't mutate the original
+      .slice()
       .sort((a, b) => a.year - b.year || a.month - b.month)
-      .slice(-11); // keep at most 11 past months (+ current = 12 total)
+      .slice(-11);
 
     const monthlyData: MonthlyDataPoint[] = history.map((h) => ({
       month: MONTH_LABELS[h.month],
@@ -123,28 +100,27 @@ export async function GET(req: Request) {
       isCurrentMonth: false,
       bonusAwarded: h.bonusAwarded,
     }));
-
-    // ── Current month data from live scans ───────────────────────────────
     const currentMonthScans = (user.scans ?? []).filter((s) => {
       const d = new Date(s.date);
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
+    const currentMonthStats =
+      user.monthlyStats?.[monthKey(currentMonth, currentYear)] ?? {};
 
-    const currentMonthCarbon = currentMonthScans.reduce(
-      (acc, s) => acc + (s.carbonEstimate ?? 0),
-      0
-    );
+    const currentMonthCarbon =
+      currentMonthStats.carbon ??
+      currentMonthScans.reduce((acc, s) => acc + (s.carbonEstimate ?? 0), 0);
+    const currentMonthScanCount =
+      currentMonthStats.scans ?? currentMonthScans.length;
 
     monthlyData.push({
       month: MONTH_LABELS[currentMonth],
       year: currentYear,
       carbon: parseFloat(currentMonthCarbon.toFixed(2)),
-      scanned: currentMonthScans.length,
+      scanned: currentMonthScanCount,
       goal: monthlyGoal,
       isCurrentMonth: true,
     });
-
-    // ── Category breakdown (current month only) ──────────────────────────
     const categoryMap: Record<string, number> = {};
     for (const scan of currentMonthScans) {
       const cat = scan.category || 'Other';
@@ -166,9 +142,7 @@ export async function GET(req: Request) {
             : 0,
       }))
       .sort((a, b) => b.carbon - a.carbon)
-      .slice(0, 8); // top 8 categories
-
-    // ── Weekly progress (current month) ─────────────────────────────────
+      .slice(0, 8);
     const weekMap: Record<string, number> = {
       'Week 1': 0,
       'Week 2': 0,
@@ -189,8 +163,6 @@ export async function GET(req: Request) {
         target: weeklyTarget,
       })
     );
-
-    // ── Total carbon saved across all history ────────────────────────────
     const totalCarbonSaved = [
       ...history,
       {
@@ -208,7 +180,7 @@ export async function GET(req: Request) {
       weeklyProgress,
       currentMonth: {
         carbon: parseFloat(currentMonthCarbon.toFixed(2)),
-        scanned: currentMonthScans.length,
+        scanned: currentMonthScanCount,
         goal: monthlyGoal,
         month: MONTH_LABELS[currentMonth],
         year: currentYear,
@@ -218,7 +190,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error fetching analytics:', error);
+    console.error('Error fetching analytics:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }

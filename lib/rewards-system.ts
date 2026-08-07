@@ -1,5 +1,3 @@
-// Rewards System Configuration and Logic
-
 import type {
   IScan,
   IAchievement,
@@ -39,12 +37,6 @@ export interface RewardShopItem {
   category: 'badge' | 'feature' | 'cosmetic';
   available: boolean;
 }
-
-// Minimal shape of a user document that the rewards-system functions need.
-// Fields are optional and reuse the real Mongoose interfaces from
-// models/User.ts (rather than redeclaring the shape inline) so this type
-// can't drift out of sync with the actual schema, and so callers — including
-// tests — can construct partial user objects without supplying every field.
 export interface RewardUser {
   totalScanned?: number;
   streakCount?: number;
@@ -54,26 +46,17 @@ export interface RewardUser {
   confirmedPoints?: number;
   unconfirmedPoints?: number;
   scans?: IScan[];
+  lowCarbonScans?: number;
   achievements?: IAchievement[];
   purchasedItems?: IPurchasedItem[];
   rewardTransactions?: IRewardTransaction[];
 }
-
-// Alias kept for backwards compatibility with code/tests written against
-// the earlier name for this type.
 export type UserPointsData = RewardUser;
-
-// Point confirmation system configuration
 export const POINT_CONFIRMATION = {
-  // Points that are immediately confirmed
   IMMEDIATE_CONFIRMATION: ['first_scan', 'achievement', 'level_up'],
-  // Points that require confirmation (default 7 days)
-  CONFIRMATION_DELAY_HOURS: 24 * 7, // 7 days
-  // Minimum scans required for auto-confirmation
+  CONFIRMATION_DELAY_HOURS: 24 * 7,
   MIN_SCANS_FOR_AUTO_CONFIRMATION: 3,
 };
-
-// Points earning rules
 export const POINT_REWARDS = {
   FIRST_SCAN: 50,
   DAILY_SCAN: 10,
@@ -87,27 +70,10 @@ export const POINT_REWARDS = {
   SOCIAL_SHARE: 20,
   REFERRAL: 100,
 };
-
-// Level system - points needed for each level
 export const LEVEL_THRESHOLDS = [
-  0, // Level 1
-  100, // Level 2
-  250, // Level 3
-  500, // Level 4
-  1000, // Level 5
-  2000, // Level 6
-  3500, // Level 7
-  5500, // Level 8
-  8000, // Level 9
-  12000, // Level 10
-  18000, // Level 11
-  25000, // Level 12
-  35000, // Level 13
-  50000, // Level 14
-  75000, // Level 15 (Max Level)
+  0, 100, 250, 500, 1000, 2000, 3500, 5500, 8000, 12000, 18000, 25000, 35000,
+  50000, 75000,
 ];
-
-// Reward shop items
 export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
   {
     id: 'eco_hero_badge',
@@ -165,8 +131,6 @@ export const REWARD_SHOP_ITEMS: RewardShopItem[] = [
     available: true,
   },
 ];
-
-// Enhanced Achievement definitions
 export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first_scan',
@@ -297,9 +261,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: 'Low Carbon Specialist',
     description: 'Scan 25 products with less than 1kg CO2',
     condition: (user) => {
-      const lowCarbonScans = (user.scans || []).filter(
-        (scan) => scan.carbonEstimate < 1
-      ).length;
+      const lowCarbonScans =
+        user.lowCarbonScans ??
+        (user.scans || []).filter((scan) => scan.carbonEstimate < 1).length;
       return lowCarbonScans >= 25;
     },
     points: 400,
@@ -307,7 +271,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     category: 'Carbon',
     currentProgress: (user) =>
       Math.min(
-        (user.scans || []).filter((s) => s.carbonEstimate < 1).length,
+        user.lowCarbonScans ??
+          (user.scans || []).filter((s) => s.carbonEstimate < 1).length,
         25
       ),
     maxProgress: 25,
@@ -360,9 +325,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'early_adopter',
     name: 'Early Adopter',
     description: 'One of the first 100 users to join',
-    // TODO: Implement condition based on user creation timestamp or user ID range
-    // Should check: user.createdAt < LAUNCH_DATE + 30days || user.id <= 100
-    condition: () => false, // Disabled until user creation tracking is implemented
+    condition: () => false,
     points: 200,
     icon: '🏃',
     category: 'Special',
@@ -370,26 +333,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     maxProgress: 1,
   },
 ];
-
-// Calculate points for a scan.
-// isFirstScanOfDay (default true) gates daily/streak bonuses — prevents
-// unlimited point farming when a user scans multiple products in one day.
-// Calculates the next streak state for a scan happening "now", given the
-// user's last scan date and current streak. Pure function — no DB access —
-// so the route layer can compute the values to persist atomically.
-//
-// Rules:
-// - Same calendar day as the last scan: streak unchanged (no double-counting
-//   multiple scans in one day).
-// - Exactly one calendar day after the last scan: streak continues, +1.
-// - More than one day gap: if the user has a streak protector available, it
-//   is consumed to bridge the gap and the streak continues, +1. Otherwise
-//   the streak resets to 1 (today's scan starts a new streak).
-// - No previous scan at all: streak starts at 1.
-//
-// Uses UTC, not the server's local timezone, to compute calendar-day
-// boundaries, so the streak cutoff doesn't shift depending on what TZ the
-// server process happens to run under.
 export function calculateStreakUpdate(
   lastScanDate: Date | null,
   currentStreak: number,
@@ -420,7 +363,6 @@ export function calculateStreakUpdate(
   const dayGap = Math.round((today - lastDay) / (1000 * 60 * 60 * 24));
 
   if (dayGap === 0) {
-    // Already scanned today — streak unchanged.
     return {
       streakCount: currentStreak,
       bestStreakCount: bestStreak,
@@ -438,10 +380,6 @@ export function calculateStreakUpdate(
       streakBroken: false,
     };
   }
-
-  // Gap of more than one day: try to bridge with streak protectors.
-  // Each protector covers one missed day. If the user has enough
-  // protectors for all missed days, the streak is preserved.
   if (dayGap > 1) {
     const missedDays = dayGap - 1;
     if (streakProtectors >= missedDays) {
@@ -454,8 +392,6 @@ export function calculateStreakUpdate(
       };
     }
   }
-
-  // Streak broken — today's scan starts a fresh streak.
   return {
     streakCount: 1,
     bestStreakCount: Math.max(bestStreak, 1),
@@ -489,8 +425,6 @@ export function calculateScanPoints(
     points += POINT_REWARDS.DAILY_SCAN;
     reasons.push(`Daily scan: +${POINT_REWARDS.DAILY_SCAN} points`);
   }
-
-  // Carbon footprint bonuses (always awarded regardless of scan-of-day status)
   if (carbonEstimate < 0.5) {
     points += POINT_REWARDS.VERY_LOW_CARBON_SCAN;
     reasons.push(
@@ -502,15 +436,11 @@ export function calculateScanPoints(
       `Low carbon product (<1kg): +${POINT_REWARDS.LOW_CARBON_SCAN} points`
     );
   }
-
-  // Streak bonus — gated behind isFirstScanOfDay to prevent farming
   if (isFirstScanOfDay && streakCount > 1) {
     const streakBonus = Math.min(streakCount * POINT_REWARDS.STREAK_BONUS, 100);
     points += streakBonus;
     reasons.push(`${streakCount}-day streak bonus: +${streakBonus} points`);
   }
-
-  // Weekly milestone bonus — gated behind isFirstScanOfDay
   if (isFirstScanOfDay && streakCount === 7) {
     points += POINT_REWARDS.WEEKLY_GOAL;
     reasons.push(
@@ -520,8 +450,6 @@ export function calculateScanPoints(
 
   return { points, reasons, isConfirmed };
 }
-
-// Enhanced level calculation
 export function calculateLevel(totalPoints: number): {
   level: number;
   nextLevelPoints: number;
@@ -625,8 +553,6 @@ export function getSustainabilityTier(
     description: 'Room for improvement',
   };
 }
-
-// Confirm pending points that meet the confirmation threshold
 export function confirmPendingPoints(user: UserPointsData): {
   confirmedPoints: number;
   confirmedTransactions: IRewardTransaction[];
@@ -669,6 +595,11 @@ export async function confirmAgedPoints(email: string): Promise<number> {
     Date.now() - POINT_CONFIRMATION.CONFIRMATION_DELAY_HOURS * 60 * 60 * 1000
   );
   const { default: User } = await import('@/models/User');
+  const preDoc = await User.findOne(
+    { email, unconfirmedPoints: { $gt: 0 } },
+    { confirmedPoints: 1 }
+  ).lean();
+  const oldConfirmed = preDoc?.confirmedPoints ?? 0;
 
   const result = await User.findOneAndUpdate(
     {
@@ -747,7 +678,9 @@ export async function confirmAgedPoints(email: string): Promise<number> {
   );
 
   if (!result) return 0;
-  return (result as any)._eligiblePoints ?? 0;
+
+  const newConfirmed = (result as any).confirmedPoints ?? 0;
+  return newConfirmed - oldConfirmed;
 }
 
 export function getUserPointsSummary(user: RewardUser): {

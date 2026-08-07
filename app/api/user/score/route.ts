@@ -1,9 +1,8 @@
-// Opt out of static generation - all handlers connect to MongoDB at request time.
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
+import User, { IScan, IAchievement } from '@/models/User';
 import mongoose from 'mongoose';
 import {
   calculateLevel,
@@ -14,7 +13,7 @@ import {
   shouldConfirmImmediately,
   calculateStreakUpdate,
 } from '@/lib/rewards-system';
-import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
+import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
@@ -31,15 +30,11 @@ export async function GET(req: Request) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    // Calculate current level data
     const levelData = calculateLevel(user.totalPointsEarned || 0);
     const tierData = getSustainabilityTier(
       user.monthlyCarbon || 0,
       user.totalScanned || 0
     );
-
-    // FIX: Extracted and normalized monthlyCarbon value to prevent ternary misclassification
     const monthlyCarbon = user.monthlyCarbon || 0;
 
     const sustainabilityLevel =
@@ -53,17 +48,12 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       monthlyCarbon,
-      // Falls back to the app's existing default (40kg) when the user
-      // hasn't set a personal goal yet, so this is backward-compatible
-      // with the previously-hardcoded constant on the frontend.
       monthlyCarbonGoal: user.monthlyCarbonGoal ?? 40,
       totalScanned: user.totalScanned || 0,
       streakCount: user.streakCount || 0,
       bestStreakCount: user.bestStreakCount || 0,
       scans: user.scans || [],
       sustainabilityLevel,
-
-      // Enhanced rewards data
       rewards: {
         points: user.rewardPoints || 0,
         totalPointsEarned: user.totalPointsEarned || 0,
@@ -73,13 +63,9 @@ export async function GET(req: Request) {
         recentTransactions: (user.rewardTransactions || []).slice(-10),
         achievements: user.achievements || [],
         achievementCount: (user.achievements || []).length,
-
-        // Sustainability tier
         tier: tierData.tier,
         tierColor: tierData.color,
         tierDescription: tierData.description,
-
-        // Special features
         activeBadges: user.activeBadges || [],
         purchasedItems: user.purchasedItems || [],
         specialFeatures: {
@@ -88,14 +74,12 @@ export async function GET(req: Request) {
           hasAdvancedAnalytics: user.hasAdvancedAnalytics || false,
           customAvatar: user.customAvatar || null,
         },
-
-        // Monthly bonus tracking
         monthlyBonusesEarned: user.monthlyBonusesEarned || 0,
         lastMonthlyBonusCheck: user.lastMonthlyBonusCheck,
       },
     });
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('Error fetching user data:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       { error: 'Failed to fetch user data' },
@@ -111,9 +95,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let payload: unknown;
   try {
-    const payload: unknown = await req.json();
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
+  try {
     if (typeof payload !== 'object' || payload === null) {
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
@@ -149,17 +141,14 @@ export async function POST(req: Request) {
 
     await dbConnect();
     await checkAndRunMonthlyRollover(email);
-
-    // Retry loop with CAS guard on lastScanDate — mirrors the barcode
-    // scan endpoint's compare-and-set pattern to prevent double-counting
-    // when two concurrent manual entries arrive.
     const MAX_RETRIES = 5;
+    const DUPLICATE_WINDOW_MS = 10_000;
     let finalUpdate = null;
     let pointsEarned = 0;
     let oldLevel = 1;
     let levelData = null;
-    let actuallyInsertedAchievements: any[] = [];
-    let finalUser: any = null;
+    let actuallyInsertedAchievements: IAchievement[] = [];
+    let finalUser = null;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       const user = await User.findOne({ email });
@@ -167,16 +156,27 @@ export async function POST(req: Request) {
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
+      const duplicateWindowStart = new Date(Date.now() - DUPLICATE_WINDOW_MS);
+      const isDuplicate = user.scans?.some(
+        (scan: IScan) =>
+          scan.productName === productName &&
+          scan.carbonEstimate === carbonValue &&
+          scan.source === 'Manual Entry' &&
+          new Date(scan.date) >= duplicateWindowStart
+      );
 
-      // Confirm any aged unconfirmed points before recording new scan
+      if (isDuplicate) {
+        return NextResponse.json(
+          { error: 'This activity was already submitted a moment ago' },
+          { status: 409 }
+        );
+      }
       await confirmAgedPoints(email);
 
       const isFirstScan = (user.totalScanned || 0) === 0;
       const totalScans = user.totalScanned || 0;
       const previousLastScanDate = user.lastScanDate;
       oldLevel = user.level || 1;
-
-      // Use shared streak calculation instead of inline logic
       const streakUpdate = calculateStreakUpdate(
         user.lastScanDate,
         user.streakCount ?? 0,
@@ -185,8 +185,6 @@ export async function POST(req: Request) {
       );
 
       const streakCount = streakUpdate.streakCount;
-
-      // Calculate points for this manual entry
       const pointsData = calculateScanPoints(
         carbonValue,
         isFirstScan,
@@ -196,12 +194,14 @@ export async function POST(req: Request) {
 
       pointsEarned = pointsData.points;
       const isConfirmed = pointsData.isConfirmed;
+      const statsTimestamp = new Date();
+      const statsKey = monthKey(
+        statsTimestamp.getMonth(),
+        statsTimestamp.getFullYear()
+      );
 
       const newTotalPoints = (user.totalPointsEarned || 0) + pointsEarned;
       levelData = calculateLevel(newTotalPoints);
-
-      // CAS guard: filter includes lastScanDate to prevent double-counting.
-      // If another request wrote first, the filter won't match and we retry.
       finalUpdate = await User.findOneAndUpdate(
         {
           email,
@@ -216,6 +216,10 @@ export async function POST(req: Request) {
             confirmedPoints: isConfirmed ? pointsEarned : 0,
             unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
             streakProtectors: -streakUpdate.streakProtectorsUsed,
+            [`monthlyStats.${statsKey}.carbon`]: carbonValue,
+            [`monthlyStats.${statsKey}.scans`]: 1,
+            [`monthlyStats.${statsKey}.points`]: pointsEarned,
+            lowCarbonScans: carbonValue < 1 ? 1 : 0,
           },
           $set: {
             streakCount: streakUpdate.streakCount,
@@ -253,11 +257,8 @@ export async function POST(req: Request) {
       );
 
       if (!finalUpdate) {
-        // CAS guard failed — another request updated lastScanDate. Retry.
         continue;
       }
-
-      // Simulate user state for achievement check
       const simulatedUser = {
         ...finalUpdate.toObject(),
         totalPointsEarned: (user.totalPointsEarned || 0) + pointsEarned,
@@ -297,8 +298,6 @@ export async function POST(req: Request) {
           actuallyInsertedAchievements.push(record);
         }
       }
-
-      // Recompute level if achievements were inserted
       let finalLevel = levelData.level;
       if (actuallyInsertedAchievements.length > 0) {
         const freshUser = await User.findOne({ email });
@@ -336,7 +335,7 @@ export async function POST(req: Request) {
       leveledUp: levelData.level > oldLevel,
     });
   } catch (error) {
-    console.error('Error updating score:', error);
+    console.error('Error updating score:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       { error: 'Failed to update score' },
@@ -344,8 +343,6 @@ export async function POST(req: Request) {
     );
   }
 }
-
-// PATCH /api/user/score - Set or clear the user's personal monthly carbon goal
 export async function PATCH(req: Request) {
   const email = req.headers.get('x-user-email');
 
@@ -353,9 +350,17 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let payload: unknown;
   try {
-    const payload: unknown = await req.json();
+    payload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
+  try {
     if (typeof payload !== 'object' || payload === null) {
       return NextResponse.json(
         { error: 'Invalid JSON payload' },
@@ -364,9 +369,6 @@ export async function PATCH(req: Request) {
     }
 
     const { monthlyCarbonGoal } = payload as { monthlyCarbonGoal?: unknown };
-
-    // Allow null explicitly, to let a user clear their goal and revert to
-    // the app default (40kg) rather than forcing them to always have one.
     if (monthlyCarbonGoal !== null) {
       const goalValue = Number(monthlyCarbonGoal);
 
@@ -403,7 +405,7 @@ export async function PATCH(req: Request) {
       monthlyCarbonGoal: updatedUser.monthlyCarbonGoal ?? 40,
     });
   } catch (error) {
-    console.error('Error updating monthly carbon goal:', error);
+    console.error('Error updating monthly carbon goal:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       { error: 'Failed to update monthly carbon goal' },
