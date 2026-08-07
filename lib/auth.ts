@@ -14,10 +14,7 @@ function getSecretKey(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-let key: Uint8Array | null = null;
-
-function generateJTI(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+let key: Uiundefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   const timestamp = Date.now().toString(36);
