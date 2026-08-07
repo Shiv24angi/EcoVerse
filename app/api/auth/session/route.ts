@@ -77,7 +77,10 @@ export async function GET() {
 
     return NextResponse.json({ user: userData }, { status: 200 });
   } catch (error) {
-    console.error('Session route error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Session route error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
