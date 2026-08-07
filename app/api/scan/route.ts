@@ -2,9 +2,11 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import axios from 'axios';
+import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import mongoose from 'mongoose';
+import { verifyToken } from '@/lib/auth';
 import { getCarbonFootprint } from '@/lib/climatiq';
 import {
   calculateScanPoints,
@@ -19,6 +21,7 @@ import {
 } from '@/lib/rewards-system';
 import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
+import { checkScanRateLimit } from '@/lib/rate-limit';
 import { validateBarcode, validateBarcodeFormat } from '@/lib/input-validation';
 import { normalizeEmail } from '@/lib/normalize-email';
 
@@ -41,13 +44,37 @@ function getUtcDayKey(date: Date) {
 }
 
 export async function POST(req: Request) {
-  const rawUserEmail = req.headers.get('x-user-email');
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('auth_token')?.value;
 
-  if (!rawUserEmail) {
+  if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userEmail = normalizeEmail(rawUserEmail);
+  const authPayload = (await verifyToken(authToken)) as
+    | { email?: string; userId?: string }
+    | null;
+
+  if (!authPayload?.email || !authPayload.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimitResult = checkScanRateLimit(authPayload.userId);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      {
+        error: 'Too many scans. Please wait a moment before scanning again.',
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil(rateLimitResult.retryAfterMs / 1000).toString(),
+        },
+      }
+    );
+  }
+
+  const userEmail = normalizeEmail(authPayload.email);
 
   const { barcode } = await req.json();
 

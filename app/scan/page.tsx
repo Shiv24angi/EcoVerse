@@ -113,7 +113,35 @@ export default function ScanPage() {
         }),
       });
 
+      if (res.status === 429) {
+        const rateLimitData = await res.json().catch(() => ({}));
+        toast({
+          title: 'Slow down!',
+          description:
+            rateLimitData.error ||
+            'Too many scans. Please wait a moment before scanning again.',
+          variant: 'destructive',
+        });
+        setProduct(null);
+        return;
+      }
+
       const data = await res.json();
+
+      if (res.status === 429) {
+        const retryAfterSeconds = Number(res.headers.get('Retry-After') || '0');
+        const retryMessage = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+          ? `Please wait ${retryAfterSeconds} second${retryAfterSeconds === 1 ? '' : 's'} before scanning again.`
+          : 'Please wait a moment before scanning again.';
+
+        toast({
+          title: 'Slow down!',
+          description: retryMessage,
+          variant: 'destructive',
+        });
+        setProduct(null);
+        return;
+      }
 
       if (!res.ok || data.error || !data.productName)
         throw new Error('Product not found in API');
