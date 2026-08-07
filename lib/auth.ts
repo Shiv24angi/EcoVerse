@@ -9,7 +9,7 @@ function getSecretKey(): Uint8Array {
   if (!secret) {
     throw new Error(
       'JWT_SECRET environment variable is required. ' +
-        'Generate one with: openssl rand -base64 32'
+        'Generate one with: opessl rand -base64 32'
     );
   }
   if (secret === FALLBACK_SECRET) {
