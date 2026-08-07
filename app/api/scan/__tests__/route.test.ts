@@ -181,7 +181,9 @@ describe('Scan API Route', () => {
 
     const response = await POST(createScanRequest());
     expect(response.status).toBe(429);
-    expect(response.headers.get('Retry-After')).toBeTruthy();
+    const retryAfterHeader = response.headers.get('Retry-After');
+    expect(retryAfterHeader).not.toBeNull();
+    expect(Number(retryAfterHeader)).toBeGreaterThan(0);
     expect((User.findOne as jest.Mock).mock.calls.length).toBe(findOneCallCount);
     expect((User.findOneAndUpdate as jest.Mock).mock.calls.length).toBe(updateCallCount);
     expect(jest.requireMock('@/lib/mongodb').default.mock.calls.length).toBe(dbConnectCallCount);

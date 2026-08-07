@@ -1,5 +1,21 @@
 export const SCAN_RATE_LIMIT_WINDOW_MS = 60_000;
 export const SCAN_RATE_LIMIT_MAX_REQUESTS = 10;
+/**
+ * Maximum number of distinct identities tracked at once, to bound memory
+ * usage. When exceeded, the least recently used identity is evicted.
+ *
+ * Trade-offs (acceptable for a single-instance deployment, worth revisiting
+ * before horizontal scaling):
+ * - Eviction resets that identity's window: if traffic from more than
+ *   MAX_RATE_LIMIT_KEYS distinct identities arrives while a throttled
+ *   identity is idle, it can be evicted and its quota effectively reset
+ *   early.
+ * - This limiter is per process. Each server instance keeps its own
+ *   requestLog, so the effective limit across a multi-instance deployment
+ *   becomes SCAN_RATE_LIMIT_MAX_REQUESTS × instance count. Moving to a
+ *   shared store (e.g. Redis with a sorted set per identity) would fix
+ *   both of these before scaling horizontally.
+ */
 export const MAX_RATE_LIMIT_KEYS = 1_000;
 
 type RateLimitEntry = {
