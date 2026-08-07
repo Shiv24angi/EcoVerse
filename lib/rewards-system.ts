@@ -747,7 +747,7 @@ export async function confirmAgedPoints(email: string): Promise<number> {
   );
 
   if (!result) return 0;
-  return result._eligiblePoints ?? 0;
+  return (result as any)._eligiblePoints ?? 0;
 }
 
 export function getUserPointsSummary(user: RewardUser): {

@@ -214,6 +214,23 @@ UserSchema.index({ firebaseUid: 1 }, { sparse: true });
 // Index for sync query path: look up by email with firebaseUid population.
 UserSchema.index({ email: 1, firebaseUid: 1 });
 
+// Schema-level validators to guard against reward-point corruption.
+UserSchema.path('unconfirmedPoints').validate(
+  function (this: IUser, value: number) {
+    return value >= 0;
+  },
+  'unconfirmedPoints must not be negative',
+  'validate-unconfirmed-points'
+);
+
+UserSchema.path('confirmedPoints').validate(
+  function (this: IUser, value: number) {
+    return value >= 0;
+  },
+  'confirmedPoints must not be negative',
+  'validate-confirmed-points'
+);
+
 // Index for analytics aggregation: scans grouped by month.
 UserSchema.index({ email: 1, 'scans.date': 1 });
 
