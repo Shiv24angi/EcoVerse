@@ -40,7 +40,7 @@ export default function CarbonTrackingPage() {
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
   const [savingGoal, setSavingGoal] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,9 +65,14 @@ export default function CarbonTrackingPage() {
   }, [isEditingGoal]);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user?.email) return;
+    if (isLoading) return;
 
+    if (!user?.email) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchUserData = async () => {
       try {
         const res = await fetch('/api/user/score');
         if (res.ok) {
@@ -82,7 +87,7 @@ export default function CarbonTrackingPage() {
     };
 
     fetchUserData();
-  }, [user?.email]);
+  }, [user?.email, isLoading]);
 
   const persistGoal = async (value: number | null) => {
     setSavingGoal(true);
@@ -157,10 +162,10 @@ export default function CarbonTrackingPage() {
 
   const monthlyGoal = userData.monthlyCarbonGoal ?? 40;
   const progressPercentage = (userData.monthlyCarbon / monthlyGoal) * 100;
-  const dailyAverage =
-    userData.scans.length > 0
-      ? userData.monthlyCarbon / userData.scans.length
-      : 0;
+
+  const now = new Date();
+  const daysInMonth = now.getDate();
+  const dailyAverage = userData.monthlyCarbon / daysInMonth;
 
   // Group scans by date for better display
   const scansByDate = userData.scans.reduce(
