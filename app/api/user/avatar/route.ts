@@ -12,13 +12,21 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let avatarId;
   try {
-    const { avatarId } = await req.json();
+    ({ avatarId } = await req.json());
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
-    if (!avatarId) {
-      return NextResponse.json({ error: 'Missing avatarId' }, { status: 400 });
-    }
+  if (!avatarId) {
+    return NextResponse.json({ error: 'Missing avatarId' }, { status: 400 });
+  }
 
+  try {
     await dbConnect();
 
     const updatedUser = await User.findOneAndUpdate(
@@ -30,8 +38,6 @@ export async function PUT(req: Request) {
     if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    console.warn('User from DB:', updatedUser?.avatarId);
 
     return NextResponse.json(
       { success: true, user: updatedUser },
