@@ -21,6 +21,7 @@ import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
 import { validateBarcode, validateBarcodeFormat } from '@/lib/input-validation';
 import { normalizeEmail } from '@/lib/normalize-email';
+import { sanitizeProductImageUrl } from '@/lib/url-sanitization';
 
 type OpenFoodFactsResponse = {
   product: {
@@ -377,11 +378,12 @@ export async function POST(req: Request) {
         : 0;
       const pointsSummary = getUserPointsSummary(updatedUser);
 
-      const productImage =
+      const productImage = sanitizeProductImageUrl(
         product.image_front_url ||
-        product.image_url ||
-        product.image_front_small_url ||
-        null;
+          product.image_url ||
+          product.image_front_small_url ||
+          null
+      );
 
       return NextResponse.json({
         productName: product.product_name,
