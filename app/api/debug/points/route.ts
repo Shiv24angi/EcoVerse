@@ -6,6 +6,7 @@ import {
   confirmPendingPoints,
   POINT_CONFIRMATION,
 } from '@/lib/rewards-system';
+import { verifyCookieAuth } from '@/lib/auth';
 
 // Force dynamic rendering — this route connects to MongoDB at request time
 // and must never be statically generated during `next build`.
@@ -30,6 +31,13 @@ export async function GET(req: Request) {
   if (typeof email !== 'string') {
     return NextResponse.json({ error: 'Invalid input type' }, { status: 400 });
   }
+
+  // Require the caller to be authenticated as the queried user. Without this,
+  // anyone in dev/staging could enumerate arbitrary users' point data by
+  // varying the email query param (#436). verifyCookieAuth returns a 401
+  // response if there is no valid auth_token cookie for this email.
+  const authError = await verifyCookieAuth(req, email);
+  if (authError) return authError;
 
   try {
     await dbConnect();
