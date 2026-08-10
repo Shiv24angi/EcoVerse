@@ -1,30 +1,40 @@
 import type { NextConfig } from 'next';
+import { getContentSecurityPolicy, getReportingEndpoints } from './lib/csp';
 
 const nextConfig: NextConfig = {
   typedRoutes: true,
   async headers() {
+    const securityHeaders: { key: string; value: string }[] = [
+      {
+        key: 'Content-Security-Policy',
+        value: getContentSecurityPolicy(),
+      },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(self), microphone=(self), geolocation=(self)',
+      },
+      {
+        key: 'X-Frame-Options',
+        value: 'DENY',
+      },
+      {
+        key: 'X-Content-Type-Options',
+        value: 'nosniff',
+      },
+    ];
+
+    const reportingEndpoints = getReportingEndpoints();
+    if (reportingEndpoints) {
+      securityHeaders.push({
+        key: 'Reporting-Endpoints',
+        value: reportingEndpoints,
+      });
+    }
+
     return [
       {
         source: '/:path*',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value:
-              "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(self), geolocation=(self)',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-        ],
+        headers: securityHeaders,
       },
     ];
   },

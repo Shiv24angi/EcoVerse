@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
+import { getContentSecurityPolicy, getReportingEndpoints } from './lib/csp';
 
 const protectedRoutes = [
   '/dashboard',
@@ -50,11 +51,14 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Add security headers to prevent XSS and restrict permissions (Issue #408)
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; media-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-  );
+  // Add security headers to prevent XSS and restrict permissions (Issue #408).
+  // The CSP is built centrally in lib/csp so it stays in sync with next.config.ts
+  // and includes a report-uri/report-to directive when CSP_REPORT_URI is set (#457).
+  response.headers.set('Content-Security-Policy', getContentSecurityPolicy());
+  const reportingEndpoints = getReportingEndpoints();
+  if (reportingEndpoints) {
+    response.headers.set('Reporting-Endpoints', reportingEndpoints);
+  }
   response.headers.set(
     'Permissions-Policy',
     'camera=(self), microphone=(self), geolocation=(self)'
