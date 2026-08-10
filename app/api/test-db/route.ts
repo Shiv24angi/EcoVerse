@@ -13,28 +13,21 @@ export async function GET() {
   }
 
   try {
-    console.warn('🔍 Testing MongoDB connection...');
-
-    // Test environment variable
+    // Test environment variable without echoing its value back.
     const mongoUri = process.env.MONGODB_URI;
     if (!mongoUri) {
       return NextResponse.json(
         {
-          error: 'MONGODB_URI environment variable not found',
           status: 'failed',
+          error: 'MONGODB_URI environment variable not found',
         },
         { status: 500 }
       );
     }
 
-    console.warn('✅ MONGODB_URI found');
-
-    // Test database connection
+    // Test database connection. Only the readyState and database name are safe
+    // to surface; the connection string itself must never be returned.
     const mongoose = await dbConnect();
-
-    console.warn('✅ MongoDB connection successful!');
-    console.warn('Connection state:', mongoose.connection.readyState);
-    console.warn('Database name:', mongoose.connection.db?.databaseName);
 
     return NextResponse.json({
       status: 'success',
@@ -44,63 +37,45 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
+    // Log the full error server-side only. The raw Error.message, hostname,
+    // errno, and syscall can reveal infrastructure details (cluster hostname,
+    // network topology) and must not be sent to clients. See #437.
     console.error('❌ MongoDB connection test failed:', error);
 
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    // Map to a coarse, safe client-facing category derived from the error
+    // code, without echoing the original message or low-level fields.
     const nodeError =
       error instanceof Error
         ? (error as NodeJS.ErrnoException & { hostname?: string })
         : undefined;
 
-    // Note: code/errno/syscall/hostname are safe to include unconditionally
-    // here because the whole endpoint already returns 403 in production
-    // before reaching this point (see the guard at the top of GET).
-    const errorInfo: {
-      status: string;
-      error: string;
-      code?: string;
-      errno?: number;
-      syscall?: string;
-      hostname?: string;
-      timestamp: string;
-      message?: string;
-      suggestions?: string[];
-    } = {
-      status: 'failed',
-      error: message,
-      code: nodeError?.code,
-      errno: nodeError?.errno,
-      syscall: nodeError?.syscall,
-      hostname: nodeError?.hostname,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Provide specific guidance based on error type
-    if (nodeError?.code === 'EREFUSED') {
-      errorInfo.message =
-        'Connection refused - check network/firewall settings';
-      errorInfo.suggestions = [
-        'Check if your IP is whitelisted in MongoDB Atlas',
-        'Verify the connection string is correct',
-        'Try connecting from a different network',
-        'Check if MongoDB Atlas cluster is running',
-      ];
-    } else if (nodeError?.code === 'ENOTFOUND') {
-      errorInfo.message = 'DNS resolution failed - check hostname';
-      errorInfo.suggestions = [
-        'Verify the cluster hostname in your connection string',
-        'Check your DNS settings',
-        'Try using a different DNS server (8.8.8.8)',
-      ];
-    } else if (message.includes('authentication')) {
-      errorInfo.message = 'Authentication failed - check credentials';
-      errorInfo.suggestions = [
-        'Verify your username and password',
-        'Check if the database user exists',
-        'Ensure the user has proper permissions',
-      ];
+    const code = nodeError?.code;
+    let category = 'connection_error';
+    let hint = 'Check the server logs for details.';
+    if (code === 'ECONNREFUSED' || code === 'EREFUSED') {
+      category = 'network_refused';
+      hint =
+        'The database refused the connection (network/firewall/IP allowlist).';
+    } else if (code === 'ENOTFOUND') {
+      category = 'dns_resolution_failed';
+      hint = 'The database hostname could not be resolved.';
+    } else if (
+      error instanceof Error &&
+      /authentication/i.test(error.message)
+    ) {
+      category = 'authentication_failed';
+      hint = 'The database credentials were rejected.';
     }
 
-    return NextResponse.json(errorInfo, { status: 500 });
+    return NextResponse.json(
+      {
+        status: 'failed',
+        error: 'MongoDB connection test failed',
+        category,
+        hint,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }
