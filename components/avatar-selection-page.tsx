@@ -5,18 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useAuth } from '@/components/auth-provider';
-import { AvatarId } from './ui/avatar';
+import { avatarImages, type AvatarId } from '@/lib/avatar-options';
 
-const avatarOptions = [
-  { id: 'avatar-1', src: '/avatars/av1.jpg' },
-  { id: 'avatar-2', src: '/avatars/av2.jpg' },
-  { id: 'avatar-3', src: '/avatars/av3.jpg' },
-  { id: 'avatar-4', src: '/avatars/av4.jpg' },
-  { id: 'avatar-5', src: '/avatars/av5.jpg' },
-  { id: 'avatar-6', src: '/avatars/av6.jpg' },
-  { id: 'avatar-7', src: '/avatars/av7.jpg' },
-  { id: 'avatar-8', src: '/avatars/av8.jpg' },
-];
+const avatarOptions = Object.entries(avatarImages).map(([id, src]) => ({
+  id: id as AvatarId,
+  src,
+}));
 
 export default function AvatarSelectionPage() {
   const [selected, setSelected] = useState<AvatarId | null>(null);

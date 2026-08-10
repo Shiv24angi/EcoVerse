@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
+import { isAvatarId } from '@/lib/avatar-options';
 
 export async function PUT(req: Request) {
   const email = req.headers.get('x-user-email');
@@ -17,6 +18,13 @@ export async function PUT(req: Request) {
 
     if (!avatarId) {
       return NextResponse.json({ error: 'Missing avatarId' }, { status: 400 });
+    }
+
+    if (!isAvatarId(avatarId)) {
+      return NextResponse.json(
+        { error: 'Unsupported avatarId' },
+        { status: 400 }
+      );
     }
 
     await dbConnect();
