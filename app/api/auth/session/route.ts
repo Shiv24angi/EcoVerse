@@ -7,12 +7,17 @@ import { verifyToken, signToken } from '@/lib/auth';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { normalizeEmail } from '@/lib/normalize-email';
+import mongoose from 'mongoose';
 
 // 1. Define an explicit interface for your JWT Payload to avoid 'any'
 interface JWTPayload {
   email: string;
   userId: string;
   exp?: number;
+}
+
+function isValidObjectId(id: unknown): id is string {
+  return typeof id === 'string' && mongoose.isValidObjectId(id);
 }
 
 export async function GET() {
@@ -32,8 +37,26 @@ export async function GET() {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
+    const tokenEmail = normalizeEmail(payload.email);
+
     await dbConnect();
-    const user = await User.findOne({ email: normalizeEmail(payload.email) });
+
+    // The database id is the stable session subject; email is mutable and can
+    // be reused or restored from stale data. Load by the token's userId when
+    // present (validated as an ObjectId) and confirm the document's email
+    // matches the token email before trusting the session. Fall back to an
+    // email lookup only for legacy tokens that predate userId.
+    let user;
+    if (isValidObjectId(payload.userId)) {
+      user = await User.findById(payload.userId);
+      if (user && normalizeEmail(user.email) !== tokenEmail) {
+        cookieStore.delete('auth_token');
+        return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+      }
+    }
+    if (!user) {
+      user = await User.findOne({ email: tokenEmail });
+    }
 
     if (!user) {
       cookieStore.delete('auth_token');
