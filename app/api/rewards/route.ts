@@ -9,6 +9,7 @@ import {
   ACHIEVEMENTS,
   REWARD_SHOP_ITEMS,
   confirmPendingPoints,
+  confirmAgedPoints,
   getUserPointsSummary,
 } from '@/lib/rewards-system';
 
@@ -250,6 +251,7 @@ export async function POST(req: Request) {
 
   try {
     await dbConnect();
+    await confirmAgedPoints(email);
 
     // Step 1: Initial read for validation (gives specific error messages to frontend)
     const user = await User.findOne({ email });
