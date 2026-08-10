@@ -66,3 +66,19 @@ export async function verifyFirebaseIdToken(
     return null;
   }
 }
+
+export async function deleteFirebaseUser(
+  firebaseUid?: string
+): Promise<boolean> {
+  if (!firebaseUid) {
+    return false;
+  }
+
+  try {
+    await getAuth(getAdminApp()).deleteUser(firebaseUid);
+    return true;
+  } catch (error) {
+    console.warn('[Firebase Admin] Failed to delete Firebase user:', error);
+    return false;
+  }
+}
