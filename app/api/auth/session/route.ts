@@ -40,6 +40,12 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 401 });
     }
 
+    // SECURITY: Verify that the userId in the token matches the user's _id
+    if (payload.userId && user._id.toString() !== payload.userId) {
+      cookieStore.delete('auth_token');
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
     // Map the MongoDB document back to the required frontend shape
     const userData = {
       _id: user._id,

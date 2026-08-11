@@ -142,13 +142,21 @@ export async function checkAndRunMonthlyRollover(
   if (!result) {
     return false;
   }
-  await User.updateOne({ email: userEmail }, [
+  // Atomic update to sync rewardPoints with confirmedPoints + unconfirmedPoints
+  // Only update if lastMonthlyReset was successfully updated in the previous step
+  await User.updateOne(
     {
-      $set: {
-        rewardPoints: { $add: ['$confirmedPoints', '$unconfirmedPoints'] },
-      },
+      email: userEmail,
+      lastMonthlyReset: now, // Only update if rollover was successful
     },
-  ]);
+    [
+      {
+        $set: {
+          rewardPoints: { $add: ['$confirmedPoints', '$unconfirmedPoints'] },
+        },
+      },
+    ]
+  );
 
   return true;
 }
