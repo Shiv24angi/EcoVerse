@@ -109,7 +109,6 @@ export default function ScanPage() {
         },
         body: JSON.stringify({
           barcode: actualBarcode,
-          timezoneOffset: new Date().getTimezoneOffset(),
         }),
       });
 
