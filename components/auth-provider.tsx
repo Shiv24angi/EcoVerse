@@ -68,8 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
     } catch (err) {
-      // Keep existing state on network error
       console.error('Session fetch failed:', err);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
