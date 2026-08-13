@@ -51,6 +51,7 @@ describe('CarbonTrackingPage', () => {
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/auth/signin');
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
     });
   });
 
