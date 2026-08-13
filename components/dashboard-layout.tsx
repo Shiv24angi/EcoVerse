@@ -14,6 +14,7 @@ import {
   TrendingDown,
   LogOut,
   Medal,
+  FileText,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -36,6 +37,7 @@ const navigation = [
   { name: 'Carbon Tracking', href: '/carbon-tracking', icon: TrendingDown },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Rewards', href: '/rewards', icon: Gift },
   { name: 'Badges', href: '/badges', icon: Medal },
 ];
