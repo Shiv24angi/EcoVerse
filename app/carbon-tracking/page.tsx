@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
@@ -41,6 +42,7 @@ export default function CarbonTrackingPage() {
   const [goalInput, setGoalInput] = useState('');
   const [savingGoal, setSavingGoal] = useState(false);
   const { user, isLoading } = useAuth();
+  const router = useRouter();
 
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +69,13 @@ export default function CarbonTrackingPage() {
   useEffect(() => {
     if (isLoading) return;
 
-    if (!user?.email) {
+    if (!user) {
+      setLoading(false);
+      router.push('/auth/signin');
+      return;
+    }
+
+    if (!user.email) {
       setLoading(false);
       return;
     }
@@ -87,7 +95,7 @@ export default function CarbonTrackingPage() {
     };
 
     fetchUserData();
-  }, [user?.email, isLoading]);
+  }, [user, isLoading, router]);
 
   const persistGoal = async (value: number | null) => {
     setSavingGoal(true);
@@ -142,7 +150,7 @@ export default function CarbonTrackingPage() {
     await persistGoal(null);
   };
 
-  if (loading) {
+  if (isLoading || loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
@@ -151,6 +159,8 @@ export default function CarbonTrackingPage() {
       </DashboardLayout>
     );
   }
+
+  if (!user) return null;
 
   if (!userData) {
     return (
