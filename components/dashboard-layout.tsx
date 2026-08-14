@@ -14,6 +14,7 @@ import {
   TrendingDown,
   LogOut,
   Medal,
+  Target,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -35,6 +36,7 @@ const navigation = [
   { name: 'Scan Product', href: '/scan', icon: Scan },
   { name: 'Carbon Tracking', href: '/carbon-tracking', icon: TrendingDown },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
+  { name: 'Challenges', href: '/challenges', icon: Target },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Rewards', href: '/rewards', icon: Gift },
   { name: 'Badges', href: '/badges', icon: Medal },

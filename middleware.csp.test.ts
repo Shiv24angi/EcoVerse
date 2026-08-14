@@ -1,5 +1,3 @@
-import { describe, it, expect } from 'vitest';
-
 /**
  * Tests for Content-Security-Policy header implementation (Issue #408)
  * Verifies that CSP header prevents XSS attacks that could silently access camera

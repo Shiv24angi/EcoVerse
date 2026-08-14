@@ -50,6 +50,15 @@ export interface IPurchasedItem {
   active: boolean;
 }
 
+export interface IUserChallengeRecord {
+  challengeId: string;
+  name?: string;
+  icon?: string;
+  category?: string;
+  completedAt: Date;
+  pointsEarned: number;
+}
+
 export interface IUser extends Document {
   name: string;
   username: string | null;
@@ -92,6 +101,8 @@ export interface IUser extends Document {
   monthlyCarbonHistory: IMonthlyCarbonArchive[];
   avatarId: string;
   avatarCustomization: Record<string, unknown>;
+  // Sustainability Challenges (Issue #332)
+  completedChallenges: IUserChallengeRecord[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -163,6 +174,15 @@ const PurchasedItemSchema = new mongoose.Schema({
   active: { type: Boolean, default: true },
 });
 
+const UserChallengeRecordSchema = new mongoose.Schema({
+  challengeId: { type: String, required: true },
+  name: { type: String },
+  icon: { type: String },
+  category: { type: String },
+  completedAt: { type: Date, default: Date.now },
+  pointsEarned: { type: Number, required: true },
+});
+
 const UserSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -202,6 +222,8 @@ const UserSchema = new mongoose.Schema(
     monthlyCarbonHistory: { type: [MonthlyCarbonArchiveSchema], default: [] },
     avatarId: { type: String, default: 'avatar-1' },
     avatarCustomization: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // Sustainability Challenges (Issue #332)
+    completedChallenges: { type: [UserChallengeRecordSchema], default: [] },
   },
   {
     timestamps: true,
@@ -230,6 +252,7 @@ function hydrateMissingFields(doc: any) {
     achievements: [],
     purchasedItems: [],
     monthlyCarbonHistory: [],
+    completedChallenges: [],
     activeBadges: [],
     streakProtectors: 0,
     doublePointsDays: 0,

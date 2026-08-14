@@ -16,6 +16,9 @@ jest.mock('@/lib/monthly-cycle', () => {
   return {
     __esModule: true,
     checkAndRunMonthlyRollover: jest.fn().mockResolvedValue(undefined),
+    monthKey: jest
+      .fn()
+      .mockImplementation((m: number, y: number) => `${y}-${m}`),
   };
 });
 

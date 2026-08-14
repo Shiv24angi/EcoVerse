@@ -4,17 +4,21 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import mongoose from 'mongoose';
 import User, { type IUser } from '@/models/User';
-import { calculateMonthlyBonus } from '@/lib/rewards-system';
+import { calculateMonthlyBonus, calculateLevel } from '@/lib/rewards-system';
 import { verifyCookieAuth } from '@/lib/auth';
 import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
+
+// POST /api/rewards/monthly-check - Check and award monthly bonuses
 export async function POST(req: Request) {
   const email = req.headers.get('x-user-email');
 
   if (!email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // Defense-in-depth: verify the auth_token cookie matches the x-user-email header
   const authError = await verifyCookieAuth(req, email);
   if (authError) return authError;
 
@@ -37,6 +41,13 @@ export async function POST(req: Request) {
       if (archive && archive.bonusAwarded) {
         const confirmedPoints = updated?.confirmedPoints ?? 0;
         const unconfirmedPoints = updated?.unconfirmedPoints ?? 0;
+
+        // Recalculate level if rollover bonus awarded
+        const levelData = calculateLevel(updated?.totalPointsEarned || 0);
+        if (levelData.level > (updated?.level || 1)) {
+          await User.updateOne({ email }, { $max: { level: levelData.level } });
+        }
+
         return NextResponse.json({
           bonusAwarded: true,
           bonus: { points: archive.bonusPoints },
@@ -58,6 +69,7 @@ export async function POST(req: Request) {
     );
   }
 }
+
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
 
@@ -81,8 +93,8 @@ export async function GET(req: Request) {
       : null;
     const eligibleForBonus =
       !lastCheck ||
-      lastCheck.getMonth() !== currentDate.getMonth() ||
-      lastCheck.getFullYear() !== currentDate.getFullYear();
+      lastCheck.getUTCMonth() !== currentDate.getUTCMonth() ||
+      lastCheck.getUTCFullYear() !== currentDate.getUTCFullYear();
 
     const monthlyBonus = calculateMonthlyBonus(user);
 
