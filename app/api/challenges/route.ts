@@ -139,7 +139,15 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
-    const challenge = findChallengeById(challengeId);
+
+    // Restrict eligible challenges to current-week and previous-week grace window (matching GET)
+    const activeChallenges = getActiveChallenges(now);
+    const pastWeekDate = new Date(now);
+    pastWeekDate.setUTCDate(pastWeekDate.getUTCDate() - 7);
+    const pastChallenges = getActiveChallenges(pastWeekDate);
+
+    const eligibleChallenges = [...activeChallenges, ...pastChallenges];
+    const challenge = eligibleChallenges.find((c) => c.id === challengeId);
 
     if (!challenge) {
       return NextResponse.json(
@@ -172,11 +180,8 @@ export async function POST(req: Request) {
     const oldLevel = user.level || 1;
     const pointsToAward = challenge.rewardPoints;
     const earnedAt = new Date();
-    const levelData = calculateLevel(
-      (user.totalPointsEarned || 0) + pointsToAward
-    );
 
-    // Atomic update to award points, level, transaction, and completed challenge record in a single DB query
+    // Atomic update to award points, transaction, and completed challenge record
     const updatedUser = await User.findOneAndUpdate(
       {
         email,
@@ -187,9 +192,6 @@ export async function POST(req: Request) {
           rewardPoints: pointsToAward,
           totalPointsEarned: pointsToAward,
           confirmedPoints: pointsToAward, // Challenge rewards are immediately confirmed
-        },
-        $max: {
-          level: levelData.level,
         },
         $push: {
           completedChallenges: {
@@ -222,12 +224,25 @@ export async function POST(req: Request) {
       );
     }
 
+    // Derive level from ground-truth post-increment totalPointsEarned
+    const postLevelData = calculateLevel(updatedUser.totalPointsEarned || 0);
+    if (postLevelData.level > (updatedUser.level || 1)) {
+      await User.updateOne(
+        { email },
+        {
+          $max: { level: postLevelData.level },
+          $set: { updatedAt: new Date() },
+        }
+      );
+      updatedUser.level = postLevelData.level;
+    }
+
     return NextResponse.json({
       success: true,
       pointsAwarded: pointsToAward,
       rewardPoints: updatedUser.rewardPoints,
-      leveledUp: levelData.level > oldLevel,
-      newLevel: updatedUser.level,
+      leveledUp: postLevelData.level > oldLevel,
+      newLevel: updatedUser.level || postLevelData.level,
       message: `Congratulations! You earned ${pointsToAward} points for completing "${challenge.name}".`,
     });
   } catch (error) {
