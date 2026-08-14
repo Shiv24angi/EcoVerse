@@ -30,7 +30,7 @@ export interface IAchievement {
 }
 
 export interface IMonthlyCarbonArchive {
-  month: number; // 0-11
+  month: number;
   year: number;
   carbonSpent: number;
   carbonGoal: number;
@@ -68,15 +68,14 @@ export interface IUser extends Document {
   monthlyCarbon: number;
   monthlyCarbonGoal: number | null;
   totalScanned: number;
+  lowCarbonScans: number;
   joinedAt: string;
   authProvider: 'email' | 'google';
   firebaseUid?: string;
-  // Scan tracking
   scans: IScan[];
   lastScanDate: Date | null;
   streakCount: number;
   bestStreakCount: number;
-  // Rewards system - Enhanced with dual point system
   rewardPoints: number;
   confirmedPoints: number;
   unconfirmedPoints: number;
@@ -85,21 +84,21 @@ export interface IUser extends Document {
   achievements: IAchievement[];
   level: number;
   nextLevelPoints: number;
-  // Purchased items from reward shop
   purchasedItems: IPurchasedItem[];
-  // Special features
   streakProtectors: number;
   doublePointsDays: number;
   hasAdvancedAnalytics: boolean;
   customAvatar: string | null;
   activeBadges: string[];
-  // Monthly bonuses tracking
   lastMonthlyBonusCheck: Date | null;
   monthlyBonusesEarned: number;
-  // Monthly carbon cycle — reset + archive history (Issue #122)
   lastMonthlyReset: Date | null;
+
+  monthlyStats: Record<
+    string,
+    { carbon: number; scans: number; points: number }
+  >;
   monthlyCarbonHistory: IMonthlyCarbonArchive[];
-  // Avatar selection and customization foundation (Issue #33)
   avatarId: string;
   avatarCustomization: Record<string, unknown>;
   // Sustainability Challenges (Issue #332)
@@ -133,10 +132,10 @@ const RewardTransactionSchema = new mongoose.Schema({
     enum: ['confirmed', 'unconfirmed'],
     default: 'unconfirmed',
   },
-  reason: { type: String, required: true }, // 'scan', 'streak', 'low_carbon', 'first_scan', etc.
+  reason: { type: String, required: true },
   description: { type: String, required: true },
   date: { type: Date, default: Date.now },
-  confirmedAt: { type: Date, default: null }, // When unconfirmed points were confirmed
+  confirmedAt: { type: Date, default: null },
 });
 
 const AchievementSchema = new mongoose.Schema({
@@ -172,7 +171,7 @@ const PurchasedItemSchema = new mongoose.Schema({
     required: true,
   },
   purchasedAt: { type: Date, default: Date.now },
-  active: { type: Boolean, default: true }, // For items that can be activated/deactivated
+  active: { type: Boolean, default: true },
 });
 
 const UserChallengeRecordSchema = new mongoose.Schema({
@@ -194,6 +193,7 @@ const UserSchema = new mongoose.Schema(
     monthlyCarbon: { type: Number, default: 0 },
     monthlyCarbonGoal: { type: Number, default: null },
     totalScanned: { type: Number, default: 0 },
+    lowCarbonScans: { type: Number, default: 0 },
     joinedAt: { type: String, default: () => new Date().toISOString() },
     authProvider: { type: String, enum: ['email', 'google'], default: 'email' },
     firebaseUid: { type: String, sparse: true },
@@ -217,8 +217,8 @@ const UserSchema = new mongoose.Schema(
     activeBadges: [{ type: String }],
     lastMonthlyBonusCheck: { type: Date, default: null },
     monthlyBonusesEarned: { type: Number, default: 0 },
-    // Monthly carbon cycle (Issue #122)
     lastMonthlyReset: { type: Date, default: null },
+    monthlyStats: { type: mongoose.Schema.Types.Mixed, default: {} },
     monthlyCarbonHistory: { type: [MonthlyCarbonArchiveSchema], default: [] },
     avatarId: { type: String, default: 'avatar-1' },
     avatarCustomization: { type: mongoose.Schema.Types.Mixed, default: {} },
@@ -229,17 +229,21 @@ const UserSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-// Index for auth token verification: look up by firebaseUid directly.
 UserSchema.index({ firebaseUid: 1 }, { sparse: true });
-
-// Index for sync query path: look up by email with firebaseUid population.
 UserSchema.index({ email: 1, firebaseUid: 1 });
+UserSchema.path('unconfirmedPoints').validate(
+  (value: number) => value >= 0,
+  'unconfirmedPoints must not be negative',
+  'validate-unconfirmed-points'
+);
 
-// Schema hydration middleware: fill in missing fields that may be absent
-// on documents inserted by Firebase Cloud Functions (which bypass Mongoose).
-// Runs after findOne / find / findOneAndUpdate so the returned document
-// always has every array/object field populated.
+UserSchema.path('confirmedPoints').validate(
+  (value: number) => value >= 0,
+  'confirmedPoints must not be negative',
+  'validate-confirmed-points'
+);
+UserSchema.index({ email: 1, 'scans.date': 1 });
+UserSchema.index({ email: 1, 'scans.category': 1 });
 function hydrateMissingFields(doc: any) {
   if (!doc) return;
   const defaults: Record<string, unknown> = {
@@ -259,6 +263,7 @@ function hydrateMissingFields(doc: any) {
     monthlyCarbonGoal: null,
     lastMonthlyReset: null,
     lastMonthlyBonusCheck: null,
+    monthlyStats: {},
     monthlyBonusesEarned: 0,
     bestStreakCount: 0,
     nextLevelPoints: 100,
@@ -270,6 +275,7 @@ function hydrateMissingFields(doc: any) {
     streakCount: 0,
     totalScanned: 0,
     monthlyCarbon: 0,
+    lowCarbonScans: 0,
     lastScanDate: null,
   };
   for (const [key, value] of Object.entries(defaults)) {
@@ -287,16 +293,12 @@ UserSchema.post('find', function (docs) {
   if (Array.isArray(docs)) docs.forEach(hydrateMissingFields);
 });
 UserSchema.post('findOneAndUpdate', hydrateMissingFields);
-
-// Virtual for sustainability level
 UserSchema.virtual('sustainabilityLevel').get(function () {
   if (this.monthlyCarbon < 20) return 'Excellent';
   if (this.monthlyCarbon < 35) return 'Good';
   if (this.monthlyCarbon < 50) return 'Average';
   return 'Needs Improvement';
 });
-
-// Virtual for sustainability tier
 UserSchema.virtual('sustainabilityTier').get(function () {
   if (this.monthlyCarbon < 10 && this.totalScanned >= 15) return 'Platinum';
   if (this.monthlyCarbon < 20 && this.totalScanned >= 10) return 'Gold';
@@ -304,23 +306,11 @@ UserSchema.virtual('sustainabilityTier').get(function () {
   if (this.monthlyCarbon < 40) return 'Bronze';
   return 'Beginner';
 });
-
-// In Next.js dev mode, the Node.js process (and Mongoose connection) stays
-// alive across hot-reloads, but the module code re-runs. The standard
-// `mongoose.models.User || mongoose.model(...)` guard would return the old
-// cached model with the stale schema. We force a clean re-registration in
-// development using the official mongoose.deleteModel() API.
 if (process.env.NODE_ENV !== 'production') {
   try {
     mongoose.deleteModel('User');
-  } catch (_) {
-    // Model not registered yet — first load, nothing to delete
-  }
+  } catch (_) {}
 }
-
-// Cast to Model<IUser> to collapse the union type produced by the ternary.
-// Without this, TypeScript raises TS2349 ("not callable") on every
-// .findOne() / .create() / .find() call across all API routes.
 const User: Model<IUser> =
   (mongoose.models.User as Model<IUser>) ||
   mongoose.model<IUser>('User', UserSchema);

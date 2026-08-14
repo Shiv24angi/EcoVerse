@@ -109,14 +109,18 @@ export default function ScanPage() {
         },
         body: JSON.stringify({
           barcode: actualBarcode,
-          timezoneOffset: new Date().getTimezoneOffset(),
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok || data.error || !data.productName)
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Product lookup failed');
+      }
+
+      if (!data.productName) {
         throw new Error('Product not found in API');
+      }
 
       setProduct({
         barcode: actualBarcode,
@@ -150,7 +154,7 @@ export default function ScanPage() {
           pointsType,
           leveledUp,
           newAchievements,
-          streakProtected,
+          streakProtectorUsed,
           milestone,
         } = data.rewards;
         if (pointsEarned > 0) {
@@ -161,7 +165,7 @@ export default function ScanPage() {
             pointsType,
           });
         }
-        if (streakProtected) {
+        if (streakProtectorUsed) {
           setTimeout(() => {
             showNotification({
               type: 'achievement',
@@ -179,7 +183,7 @@ export default function ScanPage() {
                 points: 0,
               });
             },
-            streakProtected ? 3000 : 1500
+            streakProtectorUsed ? 3000 : 1500
           );
         }
         if (leveledUp) {
@@ -191,7 +195,7 @@ export default function ScanPage() {
                 level: data.rewards.level,
               });
             },
-            (streakProtected ? 3000 : 1500) + (milestone ? 1500 : 0) + 500
+            (streakProtectorUsed ? 3000 : 1500) + (milestone ? 1500 : 0) + 500
           );
         }
         if (newAchievements?.length) {
@@ -205,7 +209,7 @@ export default function ScanPage() {
                 });
               },
               3000 +
-                (streakProtected ? 1500 : 0) +
+                (streakProtectorUsed ? 1500 : 0) +
                 (milestone ? 1500 : 0) +
                 index * 1500
             );
@@ -217,7 +221,10 @@ export default function ScanPage() {
     } catch (err) {
       toast({
         title: 'Error',
-        description: 'Could not find product in API or local data.',
+        description:
+          err instanceof Error
+            ? err.message
+            : 'Could not find product in API or local data.',
         variant: 'destructive',
       });
       setProduct(null);
@@ -288,10 +295,18 @@ export default function ScanPage() {
                     e.key === 'Enter' && !scanLock && handleScan()
                   }
                 />
-                <Button onClick={() => setIsScanning(true)} variant="outline">
+                <Button
+                  onClick={() => setIsScanning(true)}
+                  variant="outline"
+                  aria-label="Scan barcode using camera"
+                >
                   <Camera className="h-4 w-4" />
                 </Button>
-                <Button onClick={() => handleScan()} disabled={isLoading}>
+                <Button
+                  onClick={() => handleScan()}
+                  disabled={isLoading}
+                  aria-label="Search barcode"
+                >
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : (

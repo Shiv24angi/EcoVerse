@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
+import { isAvatarId } from '@/lib/avatar-options';
 
 export async function PUT(req: Request) {
   const email = req.headers.get('x-user-email');
@@ -19,22 +20,27 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Missing avatarId' }, { status: 400 });
     }
 
+    if (!isAvatarId(avatarId)) {
+      return NextResponse.json(
+        { error: 'Unsupported avatarId' },
+        { status: 400 }
+      );
+    }
+
     await dbConnect();
 
     const updatedUser = await User.findOneAndUpdate(
       { email },
       { $set: { avatarId } },
       { new: true }
-    );
+    ).select('avatarId');
 
     if (!updatedUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    console.warn('User from DB:', updatedUser?.avatarId);
-
     return NextResponse.json(
-      { success: true, user: updatedUser },
+      { success: true, avatarId: updatedUser.avatarId },
       { status: 200 }
     );
   } catch (error) {

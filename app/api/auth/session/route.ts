@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { verifyToken, signToken } from '@/lib/auth';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
+import { normalizeEmail } from '@/lib/normalize-email';
 
 // 1. Define an explicit interface for your JWT Payload to avoid 'any'
 interface JWTPayload {
@@ -27,13 +28,15 @@ export async function GET() {
     const payload = (await verifyToken(token)) as JWTPayload | null;
 
     if (!payload || !payload.email) {
+      cookieStore.delete('auth_token');
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
     await dbConnect();
-    const user = await User.findOne({ email: payload.email });
+    const user = await User.findOne({ email: normalizeEmail(payload.email) });
 
     if (!user) {
+      cookieStore.delete('auth_token');
       return NextResponse.json({ error: 'User not found' }, { status: 401 });
     }
 
@@ -74,7 +77,10 @@ export async function GET() {
 
     return NextResponse.json({ user: userData }, { status: 200 });
   } catch (error) {
-    console.error('Session route error:', error);
+    console.error(
+      'Session route error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,4 +1,3 @@
-// Opt out of static generation - all handlers connect to MongoDB at request time.
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -7,9 +6,9 @@ import mongoose from 'mongoose';
 import User, { type IUser } from '@/models/User';
 import { calculateMonthlyBonus } from '@/lib/rewards-system';
 import { verifyCookieAuth } from '@/lib/auth';
+import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
-
 // POST /api/rewards/monthly-check - Check and award monthly bonuses
 export async function POST(req: Request) {
   const email = req.headers.get('x-user-email');
@@ -24,118 +23,31 @@ export async function POST(req: Request) {
 
   try {
     await dbConnect();
-    const currentDate = new Date();
-    const bonusMonth = currentDate.getMonth();
-    const bonusYear = currentDate.getFullYear();
+    const user = await User.findOne({ email });
 
-    const notCheckedThisMonthFilter = {
-      $or: [
-        { lastMonthlyBonusCheck: null },
-        {
-          $expr: {
-            $or: [
-              {
-                $ne: [{ $month: '$lastMonthlyBonusCheck' }, bonusMonth + 1],
-              },
-              { $ne: [{ $year: '$lastMonthlyBonusCheck' }, bonusYear] },
-            ],
-          },
-        },
-      ],
-    };
-
-    // Attempt Tier 1 atomic update (Eco Champion: < 20kg monthly carbon & >= 10 scans)
-    let bonusConfig = {
-      points: 1000,
-      reason: 'Eco Champion - Monthly carbon under 20kg',
-    };
-
-    let updatedUser = await User.findOneAndUpdate(
-      {
-        email,
-        monthlyCarbon: { $lt: 20 },
-        totalScanned: { $gte: 10 },
-        ...notCheckedThisMonthFilter,
-      },
-      {
-        $inc: {
-          confirmedPoints: bonusConfig.points,
-          totalPointsEarned: bonusConfig.points,
-          rewardPoints: bonusConfig.points,
-          monthlyBonusesEarned: 1,
-        },
-        $push: {
-          rewardTransactions: {
-            type: 'earned',
-            points: bonusConfig.points,
-            pointsType: 'confirmed',
-            reason: 'monthly_bonus',
-            description: bonusConfig.reason,
-            date: currentDate,
-            confirmedAt: currentDate,
-          },
-        },
-        $set: { lastMonthlyBonusCheck: currentDate },
-      },
-      { new: true }
-    );
-
-    // If not eligible for Tier 1, attempt Tier 2 atomic update (Monthly Goal: < 30kg monthly carbon & >= 5 scans)
-    if (!updatedUser) {
-      bonusConfig = {
-        points: 500,
-        reason: 'Monthly Goal - Carbon under 30kg',
-      };
-
-      updatedUser = await User.findOneAndUpdate(
-        {
-          email,
-          monthlyCarbon: { $lt: 30 },
-          totalScanned: { $gte: 5 },
-          ...notCheckedThisMonthFilter,
-        },
-        {
-          $inc: {
-            confirmedPoints: bonusConfig.points,
-            totalPointsEarned: bonusConfig.points,
-            rewardPoints: bonusConfig.points,
-            monthlyBonusesEarned: 1,
-          },
-          $push: {
-            rewardTransactions: {
-              type: 'earned',
-              points: bonusConfig.points,
-              pointsType: 'confirmed',
-              reason: 'monthly_bonus',
-              description: bonusConfig.reason,
-              date: currentDate,
-              confirmedAt: currentDate,
-            },
-          },
-          $set: { lastMonthlyBonusCheck: currentDate },
-        },
-        { new: true }
-      );
-    }
-
-    if (updatedUser) {
-      const newRewardPoints =
-        (updatedUser.confirmedPoints || 0) +
-        (updatedUser.unconfirmedPoints || 0);
-
-      return NextResponse.json({
-        bonusAwarded: true,
-        bonus: bonusConfig,
-        newTotalPoints: newRewardPoints,
-        confirmedPoints: updatedUser.confirmedPoints,
-        unconfirmedPoints: updatedUser.unconfirmedPoints,
-      });
-    }
-
-    // Check if user exists to distinguish 404 from "No bonus available"
-    const userExists = await User.exists({ email });
-    if (!userExists) {
+    if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const rolledOver = await checkAndRunMonthlyRollover(email);
+
+    if (rolledOver) {
+      const updated = (await User.findOne({ email }).lean()) as LeanUser | null;
+      const history = updated?.monthlyCarbonHistory ?? [];
+      const archive =
+        history.length > 0 ? history[history.length - 1] : undefined;
+
+      if (archive && archive.bonusAwarded) {
+        const confirmedPoints = updated?.confirmedPoints ?? 0;
+        const unconfirmedPoints = updated?.unconfirmedPoints ?? 0;
+        return NextResponse.json({
+          bonusAwarded: true,
+          bonus: { points: archive.bonusPoints },
+          newTotalPoints: confirmedPoints + unconfirmedPoints,
+          confirmedPoints,
+          unconfirmedPoints,
+        });
+      }
     }
 
     return NextResponse.json({
@@ -149,16 +61,12 @@ export async function POST(req: Request) {
     );
   }
 }
-
-// GET /api/rewards/monthly-check - Get monthly bonus status
 export async function GET(req: Request) {
   const email = req.headers.get('x-user-email');
 
   if (!email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  // Defense-in-depth: verify the auth_token cookie matches the x-user-email header
   const authError = await verifyCookieAuth(req, email);
   if (authError) return authError;
 

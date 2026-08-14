@@ -1,4 +1,3 @@
-// Opt out of static generation - all handlers connect to MongoDB at request time.
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -18,8 +17,10 @@ import {
   calculateStreakUpdate,
   shouldConfirmImmediately,
 } from '@/lib/rewards-system';
-import { checkAndRunMonthlyRollover } from '@/lib/monthly-cycle';
+import { checkAndRunMonthlyRollover, monthKey } from '@/lib/monthly-cycle';
 import { inferPackaging } from '@/lib/packaging-inference';
+import { validateBarcode, validateBarcodeFormat } from '@/lib/input-validation';
+import { normalizeEmail } from '@/lib/normalize-email';
 
 type OpenFoodFactsResponse = {
   product: {
@@ -35,27 +36,37 @@ type OpenFoodFactsResponse = {
   code: string;
 };
 
-export async function POST(req: Request) {
-  const userEmail = req.headers.get('x-user-email');
+function getUtcDayKey(date: Date) {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
 
-  if (!userEmail) {
+export async function POST(req: Request) {
+  const rawUserEmail = req.headers.get('x-user-email');
+
+  if (!rawUserEmail) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const userEmail = normalizeEmail(rawUserEmail);
 
   const { barcode } = await req.json();
 
   if (!barcode) {
     return NextResponse.json({ error: 'Barcode missing' }, { status: 400 });
   }
-
-  // Barcode validation: must be 8-14 digit string
-  if (
-    typeof barcode !== 'string' ||
-    !/^\d{8,14}$/.test(barcode) ||
-    barcode.length > 14
-  ) {
+  const barcodeValidation = validateBarcode(barcode);
+  if (!barcodeValidation.valid) {
     return NextResponse.json(
-      { error: 'Invalid barcode format' },
+      { error: barcodeValidation.error || 'Invalid barcode' },
+      { status: 400 }
+    );
+  }
+
+  const sanitizedBarcode = barcodeValidation.sanitized!;
+  const formatValidation = validateBarcodeFormat(sanitizedBarcode);
+  if (!formatValidation.valid) {
+    return NextResponse.json(
+      { error: formatValidation.error || 'Invalid barcode format' },
       { status: 400 }
     );
   }
@@ -64,15 +75,18 @@ export async function POST(req: Request) {
     let product;
     try {
       const productRes = await axios.get<OpenFoodFactsResponse>(
-        `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
+        `https://world.openfoodfacts.org/api/v0/product/${sanitizedBarcode}.json`
       );
       product = productRes.data.product;
     } catch (offError) {
       console.warn(
         'Open Food Facts API failed, using barcode as fallback:',
-        offError
+        offError instanceof Error ? offError.message : String(offError)
       );
-      product = { product_name: `Product ${barcode}`, brands: 'Unknown' };
+      product = {
+        product_name: `Product ${sanitizedBarcode}`,
+        brands: 'Unknown',
+      };
     }
 
     if (!product?.product_name) {
@@ -86,26 +100,12 @@ export async function POST(req: Request) {
 
     try {
       await dbConnect();
-
-      // Resolve carbon footprint using Climatiq with fallback
       const carbonData = await getCarbonFootprint(
         product.product_name,
         product.brands
       );
       const carbonEstimate = carbonData.carbonFootprint;
-
-      // Run monthly rollover if the month has changed before any scan
-      // computations so monthlyCarbon is reset to 0 for the new month.
       await checkAndRunMonthlyRollover(userEmail);
-
-      // The streak/points calculation depends on a snapshot of the user
-      // document (lastScanDate, streakCount, streakProtectors), but two
-      // concurrent scan requests could both read the same snapshot and both
-      // decide to consume the same streak protector, or both compute the
-      // same streak increment. To prevent that, the write is gated on
-      // lastScanDate still matching what we read (compare-and-set): if
-      // another request wrote first, the filter won't match, and we retry
-      // the whole read-compute-write cycle against the fresh state.
       const MAX_RETRIES = 5;
       let initialUpdate = null;
       let streakUpdate = null;
@@ -120,12 +120,10 @@ export async function POST(req: Request) {
 
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         const user = await User.findOne({ email: userEmail });
-
-        // Confirm any aged unconfirmed points before computing the response
         agedPointsConfirmed = (await confirmAgedPoints(userEmail)) > 0;
 
         if (!user) {
-          console.error('❌ No user found with email:', userEmail);
+          // User not found is a normal flow, no need to log email
           return NextResponse.json(
             { error: 'User not found' },
             { status: 404 }
@@ -136,12 +134,18 @@ export async function POST(req: Request) {
         const totalScans = user.totalScanned ?? 0;
         const previousLastScanDate = user.lastScanDate;
         oldLevel = user.level || 1;
+        scanTimestamp = new Date();
+        const isFirstScanOfDay =
+          !previousLastScanDate ||
+          getUtcDayKey(scanTimestamp) !==
+            getUtcDayKey(new Date(previousLastScanDate));
 
         streakUpdate = calculateStreakUpdate(
           user.lastScanDate,
           user.streakCount ?? 0,
           user.bestStreakCount ?? 0,
-          user.streakProtectors ?? 0
+          user.streakProtectors ?? 0,
+          scanTimestamp
         );
         const streakCount = streakUpdate.streakCount;
 
@@ -150,26 +154,23 @@ export async function POST(req: Request) {
               carbonEstimate,
               isFirstScan,
               streakCount,
-              totalScans
+              totalScans,
+              isFirstScanOfDay
             )
           : { points: 0, reasons: [], isConfirmed: false };
 
         isConfirmed = pointsData.isConfirmed;
         pointsEarned = pointsData.points;
         scanTimestamp = new Date();
-
-        // --- ATOMIC DATABASE UPDATE ---
-        // We perform the atomic increment to update points and scans first.
-        // We also push a new reward transaction record so it can be referenced later.
-        // The lastScanDate match in the filter is the compare-and-set guard:
-        // it only succeeds if the document is still in the state we read it
-        // in, so a concurrent scan can't cause this one to double-consume a
-        // streak protector or double-increment the streak.
+        const statsKey = monthKey(
+          scanTimestamp.getMonth(),
+          scanTimestamp.getFullYear()
+        );
         initialUpdate = await User.findOneAndUpdate(
           {
             email: userEmail,
             lastScanDate: previousLastScanDate,
-            'scans.barcode': { $ne: barcode },
+            'scans.barcode': { $ne: sanitizedBarcode },
             streakProtectors: { $gte: streakUpdate.streakProtectorsUsed },
           },
           {
@@ -181,6 +182,10 @@ export async function POST(req: Request) {
               confirmedPoints: isConfirmed ? pointsEarned : 0,
               unconfirmedPoints: isConfirmed ? 0 : pointsEarned,
               streakProtectors: -streakUpdate.streakProtectorsUsed,
+              [`monthlyStats.${statsKey}.carbon`]: carbonEstimate,
+              [`monthlyStats.${statsKey}.scans`]: 1,
+              [`monthlyStats.${statsKey}.points`]: pointsEarned,
+              lowCarbonScans: carbonEstimate < 1 ? 1 : 0,
             },
             $set: {
               streakCount: streakUpdate.streakCount,
@@ -193,7 +198,7 @@ export async function POST(req: Request) {
                 carbonEstimate: carbonEstimate,
                 category: carbonData.category,
                 confidence: carbonData.confidence,
-                barcode: barcode,
+                barcode: sanitizedBarcode,
                 date: scanTimestamp,
                 source: carbonData.source,
               },
@@ -204,25 +209,19 @@ export async function POST(req: Request) {
                 pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
                 reason: 'scan',
                 description: `Scanned ${product.product_name}`,
-                barcode: barcode,
+                barcode: sanitizedBarcode,
                 date: scanTimestamp,
               },
             },
           },
           {
-            new: true, // IMPORTANT: Returns the ground-truth updated document from the DB
+            new: true,
             runValidators: true,
           }
         );
 
         if (initialUpdate) {
-          // Compare-and-set succeeded — now process achievements and
-          // level-up within the same retry scope. If any post-scan write
-          // fails, the next retry iteration re-reads fresh state and
-          // re-computes everything (achievement dedup via $ne and level
-          // $max are both idempotent).
           try {
-            // --- ACHIEVEMENTS ---
             const computedAchievements = checkAchievements
               ? checkAchievements(initialUpdate)
               : [];
@@ -275,6 +274,7 @@ export async function POST(req: Request) {
                       unconfirmedPoints: isAchievementConfirmed
                         ? 0
                         : record.points,
+                      [`monthlyStats.${statsKey}.points`]: record.points,
                     },
                   },
                   { new: false }
@@ -287,8 +287,6 @@ export async function POST(req: Request) {
                 }
               }
             }
-
-            // --- LEVEL-UP ---
             const latestForLevel = await User.findOne({ email: userEmail });
             const levelData = calculateLevel
               ? calculateLevel(latestForLevel?.totalPointsEarned || 0)
@@ -303,19 +301,13 @@ export async function POST(req: Request) {
                 }
               );
             }
-
-            // All post-scan writes succeeded — exit the retry loop.
-            // Re-fetch the user if achievements or level changed.
             if (
               levelData.level > oldLevel ||
               actuallyInsertedAchievements.length > 0
             ) {
               const freshUser = await User.findOne({ email: userEmail });
               if (!freshUser) {
-                console.error(
-                  '❌ User document missing after scan update:',
-                  userEmail
-                );
+                // User document missing is a critical error but we don't expose user info
                 return NextResponse.json(
                   { error: 'User account no longer exists' },
                   { status: 404 }
@@ -323,40 +315,51 @@ export async function POST(req: Request) {
               }
               updatedUser = freshUser;
             }
-
-            // Cap scans to last 500 entries and rewardTransactions to last 1000
             await User.updateOne({ email: userEmail }, [
               { $set: { scans: { $slice: ['$scans', -500] } } },
               {
                 $set: {
                   rewardTransactions: {
-                    $slice: ['$rewardTransactions', -1000],
+                    $concatArrays: [
+                      {
+                        $slice: [
+                          {
+                            $filter: {
+                              input: { $ifNull: ['$rewardTransactions', []] },
+                              as: 't',
+                              cond: { $ne: ['$$t.pointsType', 'unconfirmed'] },
+                            },
+                          },
+                          -1000,
+                        ],
+                      },
+                      {
+                        $filter: {
+                          input: { $ifNull: ['$rewardTransactions', []] },
+                          as: 't',
+                          cond: { $eq: ['$$t.pointsType', 'unconfirmed'] },
+                        },
+                      },
+                    ],
                   },
                 },
               },
             ]);
-
-            // Store final state for response and break retry loop
             initialUpdate = updatedUser;
             break;
-          } catch (_postError) {
-            // Post-scan write failed (achievement or level-up). Log and
-            // retry the entire cycle from fresh state — the compare-and-set
-            // guard on lastScanDate ensures we don't double-count the scan.
+          } catch (postError) {
             console.warn(
               `Post-scan write failed, retry ${attempt + 1}/${MAX_RETRIES}:`,
-              _postError
+              postError instanceof Error ? postError.message : String(postError)
             );
             initialUpdate = null;
           }
         }
-        // Filter didn't match (another request updated lastScanDate) or
-        // post-scan writes failed — retry against fresh state.
       }
 
       if (!initialUpdate || !streakUpdate || !pointsData) {
         const alreadyScanned = await User.findOne(
-          { email: userEmail, 'scans.barcode': barcode },
+          { email: userEmail, 'scans.barcode': sanitizedBarcode },
           { projection: { _id: 1 } }
         );
         const reason = alreadyScanned
@@ -364,9 +367,6 @@ export async function POST(req: Request) {
           : 'Scan could not be recorded due to concurrent updates. Please try again.';
         return NextResponse.json({ error: reason }, { status: 409 });
       }
-
-      // Refresh user snapshot if confirmAgedPoints made changes
-      // and achievements/level-up didn't already re-fetch
       if (agedPointsConfirmed && updatedUser) {
         const freshUser = await User.findOne({ email: userEmail });
         if (freshUser) updatedUser = freshUser;
@@ -375,9 +375,6 @@ export async function POST(req: Request) {
       const monthlyBonus = calculateMonthlyBonus
         ? calculateMonthlyBonus(initialUpdate)
         : 0;
-
-      // We use the ground-truth data from 'updatedUser' for the final response.
-      // This ensures the UI is always in sync with the actual database state.
       const pointsSummary = getUserPointsSummary(updatedUser);
 
       const productImage =
@@ -438,11 +435,17 @@ export async function POST(req: Request) {
         },
       });
     } catch (dbError) {
-      console.error('🔥 Failed to update user stats:', dbError);
+      console.error(
+        'Database error during scan:',
+        dbError instanceof Error ? dbError.message : 'Unknown database error'
+      );
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
   } catch (error) {
-    console.error('🔥 Error in scan API:', error);
+    console.error(
+      'Scan API error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Failed to scan product' },
       { status: 500 }

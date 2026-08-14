@@ -6,13 +6,13 @@ import dbConnect from '@/lib/mongodb';
 import mongoose from 'mongoose';
 import User, { type IUser } from '@/models/User';
 import { setAuthCookie } from '@/lib/auth';
+import { verifyFirebaseIdToken } from '@/lib/firebase-admin';
+import { normalizeEmail } from '@/lib/normalize-email';
 
 type LeanUser = mongoose.FlattenMaps<IUser> & { _id: mongoose.Types.ObjectId };
 
 interface GoogleAuthRequestBody {
-  name?: string;
-  email?: string;
-  firebaseUid?: string;
+  idToken?: string;
 }
 
 export async function POST(req: Request) {
@@ -34,34 +34,39 @@ export async function POST(req: Request) {
     );
   }
 
-  const { name, email, firebaseUid } = body as GoogleAuthRequestBody;
+  const { idToken } = body as GoogleAuthRequestBody;
 
-  if (
-    typeof name !== 'string' ||
-    typeof email !== 'string' ||
-    typeof firebaseUid !== 'string' ||
-    !name.trim() ||
-    !email.trim() ||
-    !firebaseUid.trim()
-  ) {
+  if (typeof idToken !== 'string' || !idToken.trim()) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  const trimmedName = name.trim();
-  const trimmedEmail = email.trim();
-  const trimmedFirebaseUid = firebaseUid.trim();
+  // SECURITY: Verify the Firebase ID token server-side. The client can no
+  // longer supply a trusted email/firebaseUid pair — identity is derived
+  // from the verified token only.
+  const verified = await verifyFirebaseIdToken(idToken.trim());
+
+  if (!verified) {
+    return NextResponse.json(
+      { error: 'Invalid or expired authentication token' },
+      { status: 401 }
+    );
+  }
+
+  const normalizedEmail = normalizeEmail(verified.email);
 
   let userDoc: LeanUser | null = null;
   try {
     await dbConnect();
     userDoc = await User.findOneAndUpdate(
-      { email: trimmedEmail },
+      { email: normalizedEmail },
       {
-        $setOnInsert: {
-          email: trimmedEmail,
-          name: trimmedName,
-          firebaseUid: trimmedFirebaseUid,
+        $set: {
+          firebaseUid: verified.uid,
           authProvider: 'google',
+        },
+        $setOnInsert: {
+          email: normalizedEmail,
+          name: verified.name,
           avatarId: 'avatar-1',
           monthlyCarbon: 0,
           totalScanned: 0,
@@ -74,9 +79,21 @@ export async function POST(req: Request) {
         lean: true,
       }
     );
-  } catch (err) {
+  } catch (err: any) {
+    if (
+      err?.code === 11000 ||
+      (err?.name === 'MongoServerError' && err?.code === 11000)
+    ) {
+      return NextResponse.json(
+        { error: 'An account with this email already exists' },
+        { status: 409 }
+      );
+    }
     // FIX: Suppress linting rule for tracking low-level operational failures
-    console.error('Failed to upsert user in google route:', err);
+    console.error(
+      'Failed to upsert user in google route:',
+      err instanceof Error ? err.message : 'Unknown error'
+    );
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 

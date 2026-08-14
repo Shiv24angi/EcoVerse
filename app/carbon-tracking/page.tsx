@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
@@ -40,12 +41,46 @@ export default function CarbonTrackingPage() {
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
   const [savingGoal, setSavingGoal] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user?.email) return;
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (isEditingGoal) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        editButtonRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditingGoal]);
 
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!user) {
+      setLoading(false);
+      router.push('/auth/signin');
+      return;
+    }
+
+    if (!user.email) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchUserData = async () => {
       try {
         const res = await fetch('/api/user/score');
         if (res.ok) {
@@ -60,7 +95,7 @@ export default function CarbonTrackingPage() {
     };
 
     fetchUserData();
-  }, [user?.email]);
+  }, [user, isLoading, router]);
 
   const persistGoal = async (value: number | null) => {
     setSavingGoal(true);
@@ -115,7 +150,7 @@ export default function CarbonTrackingPage() {
     await persistGoal(null);
   };
 
-  if (loading) {
+  if (isLoading || loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
@@ -124,6 +159,8 @@ export default function CarbonTrackingPage() {
       </DashboardLayout>
     );
   }
+
+  if (!user) return null;
 
   if (!userData) {
     return (
@@ -135,10 +172,10 @@ export default function CarbonTrackingPage() {
 
   const monthlyGoal = userData.monthlyCarbonGoal ?? 40;
   const progressPercentage = (userData.monthlyCarbon / monthlyGoal) * 100;
-  const dailyAverage =
-    userData.scans.length > 0
-      ? userData.monthlyCarbon / userData.scans.length
-      : 0;
+
+  const now = new Date();
+  const daysInMonth = now.getDate();
+  const dailyAverage = userData.monthlyCarbon / daysInMonth;
 
   // Group scans by date for better display
   const scansByDate = userData.scans.reduce(
@@ -244,6 +281,7 @@ export default function CarbonTrackingPage() {
               </div>
               {!isEditingGoal && (
                 <Button
+                  ref={editButtonRef}
                   variant="ghost"
                   size="sm"
                   className="text-indigo-700"
@@ -260,6 +298,7 @@ export default function CarbonTrackingPage() {
             {isEditingGoal && (
               <div className="flex items-center gap-2 mt-2">
                 <Input
+                  ref={inputRef}
                   type="number"
                   min={1}
                   max={10000}
@@ -269,6 +308,15 @@ export default function CarbonTrackingPage() {
                   onChange={(e) => setGoalInput(e.target.value)}
                   className="w-32"
                   disabled={savingGoal}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveGoal();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setIsEditingGoal(false);
+                    }
+                  }}
                 />
                 <span className="text-sm text-gray-600">kg CO₂ / month</span>
                 <Button
