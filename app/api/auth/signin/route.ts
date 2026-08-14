@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
     const userData = {
       _id: user._id,
-      email: user.email,
+      email: normalizeEmail(user.email),
       name: user.name,
       monthlyCarbon: user.monthlyCarbon || 0,
       totalScanned: user.totalScanned || 0,
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     // Set the auth_token cookie so middleware can verify the session and
     // inject x-user-email on subsequent requests, matching the behavior
     // already implemented for Google Sign-In.
-    await setAuthCookie(user.email, user._id.toString());
+    await setAuthCookie(normalizeEmail(user.email), user._id.toString());
 
     return NextResponse.json({ user: userData }, { status: 200 });
   } catch (error) {

@@ -44,7 +44,7 @@ export async function GET() {
     const userData = {
       _id: user._id,
       name: user.name || '',
-      email: user.email || '',
+      email: normalizeEmail(user.email),
       joinedAt: user.createdAt
         ? new Date(user.createdAt).toISOString().split('T')[0]
         : user.joinedAt || '',
@@ -62,7 +62,7 @@ export async function GET() {
 
     if (exp && exp - now < threeDaysInSeconds) {
       const newToken = await signToken({
-        email: user.email,
+        email: normalizeEmail(user.email),
         userId: user._id.toString(),
       });
 

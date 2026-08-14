@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { normalizeEmail } from './normalize-email';
 
 const FALLBACK_SECRET = 'fallback_secret_for_development_only';
 
@@ -70,7 +71,7 @@ export async function verifyToken(token: string) {
 // path) so all auth entry points (Google, email/password signin and signup)
 // stay consistent.
 export async function setAuthCookie(email: string, userId: string) {
-  const token = await signToken({ email, userId });
+  const token = await signToken({ email: normalizeEmail(email), userId });
 
   const cookieStore = await cookies();
   cookieStore.set('auth_token', token, {
@@ -103,7 +104,7 @@ export async function verifyCookieAuth(
   }
 
   const payload = await verifyToken(authToken);
-  if (!payload || payload.email !== email) {
+  if (!payload || normalizeEmail(payload.email) !== normalizeEmail(email)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

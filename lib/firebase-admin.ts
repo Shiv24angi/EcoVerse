@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { normalizeEmail } from './normalize-email';
 
 let adminApp: App | null = null;
 
@@ -53,7 +54,7 @@ export async function verifyFirebaseIdToken(
 
     return {
       uid: decoded.uid,
-      email: decoded.email.toLowerCase(),
+      email: normalizeEmail(decoded.email),
       name:
         (typeof decoded.name === 'string' && decoded.name.trim()
           ? decoded.name.trim()
