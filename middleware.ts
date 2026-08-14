@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
+import {
+  isApiPath,
+  getClientIdentifier,
+  checkRateLimit,
+  buildRateLimitResponse,
+} from './lib/rate-limit';
 
 const protectedRoutes = [
   '/dashboard',
@@ -19,6 +25,17 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
+
+  // Rate limit public API endpoints before any auth/DB work (Issue #459).
+  // Rejected requests get a 429 with standard rate-limit headers so clients can
+  // back off. Rate limiting is per (route path + client identifier).
+  if (isApiPath(pathname)) {
+    const identifier = getClientIdentifier(request.headers);
+    const rateLimit = checkRateLimit(pathname, identifier);
+    if (!rateLimit.success) {
+      return buildRateLimitResponse(rateLimit);
+    }
+  }
 
   // If missing token on protected route, redirect to signin
   if (isProtectedRoute && !token) {
