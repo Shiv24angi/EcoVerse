@@ -172,8 +172,11 @@ export async function POST(req: Request) {
     const oldLevel = user.level || 1;
     const pointsToAward = challenge.rewardPoints;
     const earnedAt = new Date();
+    const levelData = calculateLevel(
+      (user.totalPointsEarned || 0) + pointsToAward
+    );
 
-    // Atomic update to award points, transaction, and completed challenge record
+    // Atomic update to award points, level, transaction, and completed challenge record in a single DB query
     const updatedUser = await User.findOneAndUpdate(
       {
         email,
@@ -184,6 +187,9 @@ export async function POST(req: Request) {
           rewardPoints: pointsToAward,
           totalPointsEarned: pointsToAward,
           confirmedPoints: pointsToAward, // Challenge rewards are immediately confirmed
+        },
+        $max: {
+          level: levelData.level,
         },
         $push: {
           completedChallenges: {
@@ -216,24 +222,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check level-up
-    const levelData = calculateLevel(updatedUser.totalPointsEarned || 0);
-    if (levelData.level > oldLevel) {
-      await User.updateOne(
-        { email },
-        {
-          $max: { level: levelData.level },
-          $set: { updatedAt: new Date() },
-        }
-      );
-    }
-
     return NextResponse.json({
       success: true,
       pointsAwarded: pointsToAward,
       rewardPoints: updatedUser.rewardPoints,
       leveledUp: levelData.level > oldLevel,
-      newLevel: levelData.level,
+      newLevel: updatedUser.level,
       message: `Congratulations! You earned ${pointsToAward} points for completing "${challenge.name}".`,
     });
   } catch (error) {

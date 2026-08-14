@@ -24,95 +24,118 @@ export async function POST(req: Request) {
 
   try {
     await dbConnect();
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     const currentDate = new Date();
-    const lastCheck = user.lastMonthlyBonusCheck
-      ? new Date(user.lastMonthlyBonusCheck)
-      : null;
+    const bonusMonth = currentDate.getMonth();
+    const bonusYear = currentDate.getFullYear();
 
-    // Check if we need to award monthly bonus
-    const isSameMonthAndYear =
-      !!lastCheck &&
-      lastCheck.getMonth() === currentDate.getMonth() &&
-      lastCheck.getFullYear() === currentDate.getFullYear();
-
-    if (!isSameMonthAndYear) {
-      const monthlyBonus = calculateMonthlyBonus(user);
-
-      if (monthlyBonus) {
-        // Atomically award monthly bonus to prevent race conditions
-        const bonusMonth = currentDate.getMonth();
-        const bonusYear = currentDate.getFullYear();
-        const updatedUser = await User.findOneAndUpdate(
-          {
-            _id: user._id,
+    const notCheckedThisMonthFilter = {
+      $or: [
+        { lastMonthlyBonusCheck: null },
+        {
+          $expr: {
             $or: [
-              { lastMonthlyBonusCheck: null },
               {
-                $expr: {
-                  $or: [
-                    {
-                      $ne: [
-                        { $month: '$lastMonthlyBonusCheck' },
-                        bonusMonth + 1,
-                      ],
-                    },
-                    { $ne: [{ $year: '$lastMonthlyBonusCheck' }, bonusYear] },
-                  ],
-                },
+                $ne: [{ $month: '$lastMonthlyBonusCheck' }, bonusMonth + 1],
               },
+              { $ne: [{ $year: '$lastMonthlyBonusCheck' }, bonusYear] },
             ],
           },
-          {
-            $inc: {
-              confirmedPoints: monthlyBonus.points,
-              totalPointsEarned: monthlyBonus.points,
-              monthlyBonusesEarned: 1,
-            },
-            $push: {
-              rewardTransactions: {
-                type: 'earned',
-                points: monthlyBonus.points,
-                pointsType: 'confirmed',
-                reason: 'monthly_bonus',
-                description: monthlyBonus.reason,
-                date: currentDate,
-                confirmedAt: currentDate,
-              },
-            },
-            $set: { lastMonthlyBonusCheck: currentDate },
+        },
+      ],
+    };
+
+    // Attempt Tier 1 atomic update (Eco Champion: < 20kg monthly carbon & >= 10 scans)
+    let bonusConfig = {
+      points: 1000,
+      reason: 'Eco Champion - Monthly carbon under 20kg',
+    };
+
+    let updatedUser = await User.findOneAndUpdate(
+      {
+        email,
+        monthlyCarbon: { $lt: 20 },
+        totalScanned: { $gte: 10 },
+        ...notCheckedThisMonthFilter,
+      },
+      {
+        $inc: {
+          confirmedPoints: bonusConfig.points,
+          totalPointsEarned: bonusConfig.points,
+          rewardPoints: bonusConfig.points,
+          monthlyBonusesEarned: 1,
+        },
+        $push: {
+          rewardTransactions: {
+            type: 'earned',
+            points: bonusConfig.points,
+            pointsType: 'confirmed',
+            reason: 'monthly_bonus',
+            description: bonusConfig.reason,
+            date: currentDate,
+            confirmedAt: currentDate,
           },
-          { new: true }
-        );
+        },
+        $set: { lastMonthlyBonusCheck: currentDate },
+      },
+      { new: true }
+    );
 
-        if (!updatedUser) {
-          // Another request already awarded the bonus
-          return NextResponse.json({
-            bonusAwarded: false,
-            message: 'Monthly bonus already awarded',
-          });
-        }
+    // If not eligible for Tier 1, attempt Tier 2 atomic update (Monthly Goal: < 30kg monthly carbon & >= 5 scans)
+    if (!updatedUser) {
+      bonusConfig = {
+        points: 500,
+        reason: 'Monthly Goal - Carbon under 30kg',
+      };
 
-        const newRewardPoints =
-          (updatedUser.confirmedPoints || 0) +
-          (updatedUser.unconfirmedPoints || 0);
-        await User.findByIdAndUpdate(updatedUser._id, {
-          $set: { rewardPoints: newRewardPoints },
-        });
+      updatedUser = await User.findOneAndUpdate(
+        {
+          email,
+          monthlyCarbon: { $lt: 30 },
+          totalScanned: { $gte: 5 },
+          ...notCheckedThisMonthFilter,
+        },
+        {
+          $inc: {
+            confirmedPoints: bonusConfig.points,
+            totalPointsEarned: bonusConfig.points,
+            rewardPoints: bonusConfig.points,
+            monthlyBonusesEarned: 1,
+          },
+          $push: {
+            rewardTransactions: {
+              type: 'earned',
+              points: bonusConfig.points,
+              pointsType: 'confirmed',
+              reason: 'monthly_bonus',
+              description: bonusConfig.reason,
+              date: currentDate,
+              confirmedAt: currentDate,
+            },
+          },
+          $set: { lastMonthlyBonusCheck: currentDate },
+        },
+        { new: true }
+      );
+    }
 
-        return NextResponse.json({
-          bonusAwarded: true,
-          bonus: monthlyBonus,
-          newTotalPoints: newRewardPoints,
-          confirmedPoints: updatedUser.confirmedPoints,
-          unconfirmedPoints: updatedUser.unconfirmedPoints,
-        });
-      }
+    if (updatedUser) {
+      const newRewardPoints =
+        (updatedUser.confirmedPoints || 0) +
+        (updatedUser.unconfirmedPoints || 0);
+
+      return NextResponse.json({
+        bonusAwarded: true,
+        bonus: bonusConfig,
+        newTotalPoints: newRewardPoints,
+        confirmedPoints: updatedUser.confirmedPoints,
+        unconfirmedPoints: updatedUser.unconfirmedPoints,
+      });
+    }
+
+    // Check if user exists to distinguish 404 from "No bonus available"
+    const userExists = await User.exists({ email });
+    if (!userExists) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json({

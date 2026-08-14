@@ -245,59 +245,21 @@ export async function POST(req: Request) {
     );
   }
 
+  // Find the item in the shop (static array check - 0 DB calls)
+  const shopItem = REWARD_SHOP_ITEMS.find((item) => item.id === itemId);
+  if (!shopItem) {
+    return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+  }
+
+  // Check if item is available
+  if (!shopItem.available) {
+    return NextResponse.json({ error: 'Item not available' }, { status: 400 });
+  }
+
   try {
     await dbConnect();
-
-    // Step 1: Initial read for validation (gives specific error messages to frontend)
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Find the item in the shop
-    const shopItem = REWARD_SHOP_ITEMS.find((item) => item.id === itemId);
-    if (!shopItem) {
-      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
-    }
-
-    // Check if item is available
-    if (!shopItem.available) {
-      return NextResponse.json(
-        { error: 'Item not available' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already purchased this item (only for non-repeatable items)
     const isRepeatable = REPEATABLE_ITEMS.includes(itemId);
-    const alreadyPurchased =
-      !isRepeatable &&
-      user.purchasedItems?.some((item) => item.itemId === itemId);
-    if (alreadyPurchased) {
-      return NextResponse.json(
-        { error: 'Item already purchased' },
-        { status: 400 }
-      );
-    }
 
-    // Check if user has enough confirmed points
-    const confirmedPoints = user.confirmedPoints || 0;
-    if (confirmedPoints < shopItem.cost) {
-      return NextResponse.json(
-        {
-          error: 'Insufficient confirmed points',
-          required: shopItem.cost,
-          confirmedPoints: confirmedPoints,
-          unconfirmedPoints: user.unconfirmedPoints || 0,
-          message:
-            'Only confirmed points can be used for purchases. Unconfirmed points will be confirmed automatically after 7 days.',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Step 2: Atomic Update to prevent TOCTOU race conditions (Double Spending)
     // Build the dynamic update object based on item effects
     interface RedeemUpdateQuery {
       $inc: {
@@ -375,7 +337,8 @@ export async function POST(req: Request) {
         break;
     }
 
-    // Execute atomic update - MongoDB guarantees single-document atomicity
+    // Execute atomic update directly - MongoDB checks email, confirmed points balance,
+    // and one-time item duplicate constraint in a single atomic operation
     const updateFilter: {
       email: string;
       confirmedPoints: { $gte: number };
@@ -395,24 +358,55 @@ export async function POST(req: Request) {
       { new: true } // Return the updated document
     );
 
-    // If updatedUser is null, it means a concurrent request already deducted the points!
-    if (!updatedUser) {
+    if (updatedUser) {
+      return NextResponse.json({
+        success: true,
+        remainingPoints: updatedUser.rewardPoints,
+        purchasedItem: shopItem,
+        message: `${shopItem.name} redeemed successfully!`,
+      });
+    }
+
+    // Atomic update returned null: perform targeted lookup to report exact failure reason
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const alreadyPurchased =
+      !isRepeatable &&
+      user.purchasedItems?.some((item) => item.itemId === itemId);
+    if (alreadyPurchased) {
       return NextResponse.json(
-        {
-          error: 'Transaction failed',
-          message:
-            'The purchase could not be completed. The item may have already been purchased or your point balance changed during the transaction.',
-        },
-        { status: 409 }
+        { error: 'Item already purchased' },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      remainingPoints: updatedUser.rewardPoints,
-      purchasedItem: shopItem,
-      message: `${shopItem.name} redeemed successfully!`,
-    });
+    const confirmedPoints = user.confirmedPoints || 0;
+    if (confirmedPoints < shopItem.cost) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient confirmed points',
+          required: shopItem.cost,
+          confirmedPoints: confirmedPoints,
+          unconfirmedPoints: user.unconfirmedPoints || 0,
+          message:
+            'Only confirmed points can be used for purchases. Unconfirmed points will be confirmed automatically after 7 days.',
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: 'Transaction failed',
+        message:
+          'The purchase could not be completed. The item may have already been purchased or your point balance changed during the transaction.',
+      },
+      { status: 409 }
+    );
   } catch (error) {
     console.error('Error redeeming reward:', error);
     return NextResponse.json(

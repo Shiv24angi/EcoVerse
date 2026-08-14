@@ -186,7 +186,7 @@ describe('Rewards API Route', () => {
       });
     });
 
-    it('should reject duplicate purchase for one-time items in initial validation', async () => {
+    it('should reject duplicate purchase for one-time items in atomic filter failure', async () => {
       const mockUser = {
         email: 'test@example.com',
         confirmedPoints: 1000,
@@ -204,6 +204,7 @@ describe('Rewards API Route', () => {
         ],
       };
 
+      (User.findOneAndUpdate as jest.Mock).mockResolvedValue(null);
       (User.findOne as jest.Mock).mockResolvedValue(mockUser);
 
       const request = new Request('http://localhost/api/rewards', {
@@ -219,7 +220,14 @@ describe('Rewards API Route', () => {
       expect(response.status).toBe(400);
       const data = await response.json();
       expect(data.error).toBe('Item already purchased');
-      expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+      expect(User.findOneAndUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'test@example.com',
+          'purchasedItems.itemId': { $ne: 'eco_hero_badge' },
+        }),
+        expect.any(Object),
+        { new: true }
+      );
     });
 
     it('should query with $ne itemId filter when purchasing a one-time item', async () => {
