@@ -12,14 +12,41 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { email, password } = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = body as { email?: string; password?: string };
     const normalizedEmail =
       typeof email === 'string' ? normalizeEmail(email) : '';
+
+    if (typeof password !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
 
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
     }
 
     if (!user.password) {
@@ -36,7 +63,7 @@ export async function POST(req: Request) {
 
     if (!isMatch) {
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
