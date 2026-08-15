@@ -142,6 +142,11 @@ export async function POST(req: Request) {
       );
     }
 
+    // Normalize the product name after validation so stored scans and reward
+    // transaction descriptions use the trimmed value (avoids messy/duplicate
+    // manual entries with leading/trailing whitespace — issue #392).
+    const trimmedProductName = productName.trim();
+
     await dbConnect();
     await checkAndRunMonthlyRollover(email);
     const MAX_RETRIES = 5;
@@ -162,7 +167,7 @@ export async function POST(req: Request) {
       const duplicateWindowStart = new Date(Date.now() - DUPLICATE_WINDOW_MS);
       const isDuplicate = user.scans?.some(
         (scan: IScan) =>
-          scan.productName === productName &&
+          scan.productName === trimmedProductName &&
           scan.carbonEstimate === carbonValue &&
           scan.source === 'Manual Entry' &&
           new Date(scan.date) >= duplicateWindowStart
@@ -234,7 +239,7 @@ export async function POST(req: Request) {
           },
           $push: {
             scans: {
-              productName,
+              productName: trimmedProductName,
               carbonEstimate: carbonValue,
               category: 'Manual Entry',
               confidence: 'medium',
@@ -248,7 +253,7 @@ export async function POST(req: Request) {
               points: pointsEarned,
               pointsType: isConfirmed ? 'confirmed' : 'unconfirmed',
               reason: 'scan',
-              description: `Manual entry: ${productName}`,
+              description: `Manual entry: ${trimmedProductName}`,
               date: new Date(),
             },
           },

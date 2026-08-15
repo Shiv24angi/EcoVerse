@@ -75,7 +75,8 @@ export async function POST(req: Request) {
     let product;
     try {
       const productRes = await axios.get<OpenFoodFactsResponse>(
-        `https://world.openfoodfacts.org/api/v0/product/${sanitizedBarcode}.json`
+        `https://world.openfoodfacts.org/api/v0/product/${sanitizedBarcode}.json`,
+        { timeout: 10000 } // 10 second timeout
       );
       product = productRes.data.product;
     } catch (offError) {
