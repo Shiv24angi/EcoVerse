@@ -12,7 +12,20 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { email, password } = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = (body ?? {}) as {
+      email?: string;
+      password?: string;
+    };
     const normalizedEmail =
       typeof email === 'string' ? normalizeEmail(email) : '';
 
