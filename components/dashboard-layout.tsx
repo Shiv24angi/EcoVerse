@@ -53,8 +53,6 @@ export default function DashboardLayout({
 
   if (!user) return null;
 
-  console.warn('Rendered avatar:', user.avatarId);
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
