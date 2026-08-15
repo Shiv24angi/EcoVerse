@@ -52,26 +52,20 @@ export async function GET() {
         ? (error as NodeJS.ErrnoException & { hostname?: string })
         : undefined;
 
-    // Note: code/errno/syscall/hostname are safe to include unconditionally
-    // here because the whole endpoint already returns 403 in production
-    // before reaching this point (see the guard at the top of GET).
+    // The raw code/errno/syscall/hostname fields expose low-level connection
+    // metadata (hostnames, syscall names) and are only useful server-side. They
+    // are already captured by the console.error above, so keep them out of the
+    // HTTP response. The human-readable message + suggestions remain so the
+    // debug endpoint stays useful for developers (#437).
     const errorInfo: {
       status: string;
       error: string;
-      code?: string;
-      errno?: number;
-      syscall?: string;
-      hostname?: string;
       timestamp: string;
       message?: string;
       suggestions?: string[];
     } = {
       status: 'failed',
       error: message,
-      code: nodeError?.code,
-      errno: nodeError?.errno,
-      syscall: nodeError?.syscall,
-      hostname: nodeError?.hostname,
       timestamp: new Date().toISOString(),
     };
 
