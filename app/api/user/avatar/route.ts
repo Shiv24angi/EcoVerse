@@ -44,9 +44,15 @@ export async function PUT(req: Request) {
       { status: 200 }
     );
   } catch (error) {
+    // Log the detailed error server-side, but return only a stable generic
+    // message to the client so parse/validation/db internals are not leaked
+    // (issue #336).
     const message =
       error instanceof Error ? error.message : 'Unknown server error';
-    console.error('🔥 Avatar update error:', message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('Avatar update error:', message);
+    return NextResponse.json(
+      { error: 'Failed to update avatar. Please try again.' },
+      { status: 500 }
+    );
   }
 }
