@@ -14,7 +14,17 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { avatarId } = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const { avatarId } = (body ?? {}) as { avatarId?: unknown };
 
     if (!avatarId) {
       return NextResponse.json({ error: 'Missing avatarId' }, { status: 400 });
