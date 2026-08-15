@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
   Card,
@@ -107,9 +107,9 @@ export default function RewardsPage() {
     } else {
       fetchRewardsData();
     }
-  }, [user, router]);
+  }, [user, router, fetchRewardsData]);
 
-  const fetchRewardsData = async () => {
+  const fetchRewardsData = useCallback(async () => {
     try {
       const response = await fetch('/api/rewards', {
         headers: { 'x-user-email': user?.email ?? '' },
@@ -123,7 +123,7 @@ export default function RewardsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const handlePurchase = async (itemId: string) => {
     if (!user || purchasing) return;
