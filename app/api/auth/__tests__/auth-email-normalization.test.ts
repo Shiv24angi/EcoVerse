@@ -9,6 +9,8 @@ import { GET as sessionHandler } from '../session/route';
 import User from '@/models/User';
 import { setAuthCookie, verifyToken } from '@/lib/auth';
 import { verifyFirebaseIdToken } from '@/lib/firebase-admin';
+import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
 
 jest.mock('@/lib/mongodb', () => ({
   __esModule: true,
@@ -124,7 +126,6 @@ describe('Auth Routes Email Casing Normalization (#378)', () => {
       });
 
       // bcrypt compare mock
-      const bcrypt = require('bcryptjs');
       jest
         .spyOn(bcrypt, 'compare')
         .mockImplementation(() => Promise.resolve(true));
@@ -188,7 +189,6 @@ describe('Auth Routes Email Casing Normalization (#378)', () => {
 
   describe('GET /api/auth/session', () => {
     it('normalizes token payload email before user lookup', async () => {
-      const { cookies } = require('next/headers');
       (cookies as jest.Mock).mockResolvedValue({
         get: jest.fn().mockReturnValue({ value: 'valid-session-token' }),
         set: jest.fn(),

@@ -235,6 +235,10 @@ const UserSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+UserSchema.index(
+  { email: 1 },
+  { unique: true, collation: { locale: 'en', strength: 2 } }
+);
 UserSchema.index({ firebaseUid: 1 }, { sparse: true });
 UserSchema.index({ email: 1, firebaseUid: 1 });
 UserSchema.path('unconfirmedPoints').validate(
