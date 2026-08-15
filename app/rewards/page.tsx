@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/components/auth-provider';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import {
   Card,
@@ -101,15 +101,7 @@ export default function RewardsPage() {
   const [purchasing, setPurchasing] = useState(false);
   const [selectedItem, setSelectedItem] = useState<RewardShopItem | null>(null);
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/auth/signin');
-    } else {
-      fetchRewardsData();
-    }
-  }, [user, router]);
-
-  const fetchRewardsData = async () => {
+  const fetchRewardsData = useCallback(async () => {
     try {
       const response = await fetch('/api/rewards', {
         headers: { 'x-user-email': user?.email ?? '' },
@@ -123,7 +115,15 @@ export default function RewardsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/auth/signin');
+    } else {
+      fetchRewardsData();
+    }
+  }, [user, router, fetchRewardsData]);
 
   const handlePurchase = async (itemId: string) => {
     if (!user || purchasing) return;
