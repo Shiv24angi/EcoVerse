@@ -49,7 +49,14 @@ export async function POST(req: Request) {
 
   const userEmail = normalizeEmail(rawUserEmail);
 
-  const { barcode } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+  }
+
+  const { barcode } = (body ?? {}) as { barcode?: string };
 
   if (!barcode) {
     return NextResponse.json({ error: 'Barcode missing' }, { status: 400 });
