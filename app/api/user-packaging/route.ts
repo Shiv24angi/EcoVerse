@@ -12,7 +12,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { barcode, material } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+  }
+
+  const { barcode, material } = (body ?? {}) as {
+    barcode?: string;
+    material?: string;
+  };
 
   if (!barcode || !material) {
     return NextResponse.json({ error: 'Missing data' }, { status: 400 });
