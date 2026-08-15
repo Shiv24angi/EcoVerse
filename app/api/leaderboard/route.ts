@@ -2,11 +2,16 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { getUserPointsSummary } from '@/lib/rewards-system';
 
 const DEFAULT_PAGE_SIZE = 20;
+
+const isValidObjectId = (value: string): boolean =>
+  mongoose.Types.ObjectId.isValid(value) &&
+  /^[a-fA-F0-9]{24}$/.test(value);
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,6 +29,18 @@ export async function GET(request: NextRequest) {
       100
     );
     const userId = searchParams.get('userId');
+
+    // Validate query params before they reach User.findById, otherwise an
+    // invalid ObjectId throws a Mongoose cast error and the route returns 500
+    // (issue #355). Invalid userId is a client error; an invalid cursor is
+    // ignored so the caller gets a safe first-page response.
+    if (userId && !isValidObjectId(userId)) {
+      return NextResponse.json(
+        { error: 'Invalid userId' },
+        { status: 400 }
+      );
+    }
+    const safeCursor = cursor && isValidObjectId(cursor) ? cursor : null;
 
     // Compute global stats once via aggregation.
     const [statsResult] = await User.aggregate([
@@ -78,8 +95,8 @@ export async function GET(request: NextRequest) {
     // Build cursor-based filter matching the sort order:
     //   { totalPointsEarned: -1, level: -1, totalScanned: -1, _id: -1 }
     const filter: Record<string, unknown> = {};
-    if (cursor) {
-      const cursorDoc = await User.findById(cursor)
+    if (safeCursor) {
+      const cursorDoc = await User.findById(safeCursor)
         .select('totalPointsEarned level totalScanned')
         .lean();
       if (cursorDoc) {
