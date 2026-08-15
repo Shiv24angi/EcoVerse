@@ -239,7 +239,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { itemId } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+  }
+
+  const { itemId } = (body ?? {}) as { itemId?: string };
 
   if (!itemId) {
     return NextResponse.json(
