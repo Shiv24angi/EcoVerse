@@ -191,7 +191,6 @@ const UserSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -237,7 +236,11 @@ const UserSchema = new mongoose.Schema(
 );
 UserSchema.index(
   { email: 1 },
-  { unique: true, collation: { locale: 'en', strength: 2 } }
+  {
+    unique: true,
+    collation: { locale: 'en', strength: 2 },
+    name: 'user_email_unique_ci',
+  }
 );
 UserSchema.index({ firebaseUid: 1 }, { sparse: true });
 UserSchema.index({ email: 1, firebaseUid: 1 });

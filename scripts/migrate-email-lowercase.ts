@@ -5,6 +5,39 @@ import { normalizeEmail } from '../lib/normalize-email';
 
 type UserData = Record<string, unknown>;
 
+export type MonthlyStatsEntry = {
+  carbon?: number;
+  scans?: number;
+  points?: number;
+};
+export type MonthlyStatsMap = Record<string, MonthlyStatsEntry>;
+
+export function mergeMonthlyStats(
+  existing?: MonthlyStatsMap,
+  incomingList?: MonthlyStatsMap[]
+): MonthlyStatsMap {
+  const result: MonthlyStatsMap = {};
+  const allMaps = [existing, ...(incomingList || [])];
+
+  for (const stats of allMaps) {
+    if (!stats || typeof stats !== 'object') continue;
+    for (const [monthKey, entry] of Object.entries(stats)) {
+      if (!entry || typeof entry !== 'object') continue;
+      if (!result[monthKey]) {
+        result[monthKey] = { carbon: 0, scans: 0, points: 0 };
+      }
+      result[monthKey].carbon =
+        (Number(result[monthKey].carbon) || 0) + (Number(entry.carbon) || 0);
+      result[monthKey].scans =
+        (Number(result[monthKey].scans) || 0) + (Number(entry.scans) || 0);
+      result[monthKey].points =
+        (Number(result[monthKey].points) || 0) + (Number(entry.points) || 0);
+    }
+  }
+
+  return result;
+}
+
 export function mergeAchievements(
   existing: Partial<IAchievement>[],
   incoming: Partial<IAchievement>[]
@@ -120,6 +153,10 @@ export function consolidateUserData(
       ...duplicates.flatMap((d) => (d.activeBadges as string[]) || []),
     ])
   );
+  merged.monthlyStats = mergeMonthlyStats(
+    primary.monthlyStats as MonthlyStatsMap,
+    duplicates.map((d) => d.monthlyStats as MonthlyStatsMap)
+  );
 
   return merged;
 }
@@ -135,6 +172,12 @@ export async function runMigration() {
   for (const user of allUsers) {
     if (!user.email) continue;
     const canonical = normalizeEmail(user.email);
+    if (!canonical) {
+      console.warn(
+        `[Invalid Email Warning] User ID ${user._id} has an invalid or empty canonical email. Skipping automatic migration for manual remediation.`
+      );
+      continue;
+    }
     const list = groupsMap.get(canonical) || [];
     list.push(user);
     groupsMap.set(canonical, list);
@@ -153,6 +196,10 @@ export async function runMigration() {
       }
     } else if (users.length > 1) {
       users.sort((a, b) => {
+        const aExact = a.email === canonical ? 0 : 1;
+        const bExact = b.email === canonical ? 0 : 1;
+        if (aExact !== bExact) return aExact - bExact;
+
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return timeA - timeB;
@@ -178,8 +225,49 @@ export async function runMigration() {
 
       const dupIds = duplicates.map((d) => d._id);
 
-      await User.updateOne({ _id: primary._id }, { $set: consolidated });
-      await User.deleteMany({ _id: { $in: dupIds } });
+      let session: Record<string, unknown> | null = null;
+      if (
+        User.db &&
+        typeof (User.db as { startSession?: () => Promise<unknown> })
+          .startSession === 'function'
+      ) {
+        try {
+          session = (await (
+            User.db as { startSession: () => Promise<Record<string, unknown>> }
+          ).startSession()) as Record<string, unknown>;
+          if (typeof session.startTransaction === 'function') {
+            (session.startTransaction as () => void)();
+          }
+        } catch (_) {
+          session = null;
+        }
+      }
+
+      try {
+        if (session) {
+          await User.updateOne(
+            { _id: primary._id },
+            { $set: consolidated },
+            { session }
+          );
+          await User.deleteMany({ _id: { $in: dupIds } }, { session });
+          if (typeof session.commitTransaction === 'function') {
+            await (session.commitTransaction as () => Promise<void>)();
+          }
+        } else {
+          await User.updateOne({ _id: primary._id }, { $set: consolidated });
+          await User.deleteMany({ _id: { $in: dupIds } });
+        }
+      } catch (err) {
+        if (session && typeof session.abortTransaction === 'function') {
+          await (session.abortTransaction as () => Promise<void>)();
+        }
+        throw err;
+      } finally {
+        if (session && typeof session.endSession === 'function') {
+          await (session.endSession as () => Promise<void>)();
+        }
+      }
 
       resolvedCollisionsCount++;
       removedDuplicatesCount += duplicates.length;
@@ -193,7 +281,8 @@ export async function runMigration() {
     );
     await User.syncIndexes();
   } catch (err) {
-    console.warn('Index sync warning:', err);
+    console.error('Index sync failed:', err);
+    throw err;
   }
 
   console.log(

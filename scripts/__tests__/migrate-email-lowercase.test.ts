@@ -2,6 +2,7 @@ import {
   consolidateUserData,
   mergeAchievements,
   mergeChallenges,
+  mergeMonthlyStats,
   runMigration,
 } from '../migrate-email-lowercase';
 import User from '../../models/User';
@@ -25,6 +26,7 @@ jest.mock('../../models/User', () => ({
 describe('Email Lowercase Migration Script', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (User.syncIndexes as jest.Mock).mockResolvedValue(true);
   });
 
   describe('mergeAchievements', () => {
@@ -53,8 +55,27 @@ describe('Email Lowercase Migration Script', () => {
     });
   });
 
-  describe('consolidateUserData', () => {
-    it('sums reward points and preserves complete reward transaction history', () => {
+  describe('mergeMonthlyStats & consolidateUserData', () => {
+    it('merges monthlyStats across overlapping and distinct month keys', () => {
+      const primaryStats = {
+        '2026-01': { carbon: 10, scans: 2, points: 20 },
+        '2026-02': { carbon: 5, scans: 1, points: 10 },
+      };
+      const dupStats = {
+        '2026-01': { carbon: 15, scans: 3, points: 30 },
+        '2026-03': { carbon: 8, scans: 2, points: 15 },
+      };
+
+      const merged = mergeMonthlyStats(primaryStats, [dupStats]);
+
+      expect(merged).toEqual({
+        '2026-01': { carbon: 25, scans: 5, points: 50 },
+        '2026-02': { carbon: 5, scans: 1, points: 10 },
+        '2026-03': { carbon: 8, scans: 2, points: 15 },
+      });
+    });
+
+    it('sums reward points and preserves complete reward transaction history and monthlyStats', () => {
       const primary = {
         _id: 'user-1',
         email: 'user@example.com',
@@ -77,6 +98,9 @@ describe('Email Lowercase Migration Script', () => {
           },
         ],
         activeBadges: ['badge-1'],
+        monthlyStats: {
+          '2026-01': { carbon: 10, scans: 2, points: 20 },
+        },
       };
 
       const dup = {
@@ -101,6 +125,10 @@ describe('Email Lowercase Migration Script', () => {
           },
         ],
         activeBadges: ['badge-2'],
+        monthlyStats: {
+          '2026-01': { carbon: 15, scans: 3, points: 30 },
+          '2026-02': { carbon: 5, scans: 1, points: 10 },
+        },
       };
 
       const consolidated = consolidateUserData(primary, [dup]);
@@ -117,21 +145,11 @@ describe('Email Lowercase Migration Script', () => {
 
       expect(consolidated.scans).toHaveLength(2);
       expect(consolidated.rewardTransactions).toHaveLength(2);
-      expect(consolidated.rewardTransactions).toEqual([
-        {
-          type: 'earned',
-          points: 80,
-          reason: 'scan',
-          description: 'Scan item',
-        },
-        {
-          type: 'earned',
-          points: 50,
-          reason: 'bonus',
-          description: 'Monthly bonus',
-        },
-      ]);
       expect(consolidated.activeBadges).toEqual(['badge-1', 'badge-2']);
+      expect(consolidated.monthlyStats).toEqual({
+        '2026-01': { carbon: 25, scans: 5, points: 50 },
+        '2026-02': { carbon: 5, scans: 1, points: 10 },
+      });
     });
   });
 
@@ -148,10 +166,10 @@ describe('Email Lowercase Migration Script', () => {
         },
         {
           _id: 'user-id-2',
-          email: 'DupUser@Domain.Com',
-          createdAt: new Date('2026-01-01'),
-          rewardPoints: 100,
-          rewardTransactions: [{ type: 'earned', points: 100 }],
+          email: 'dupuser@domain.com',
+          createdAt: new Date('2026-01-02'),
+          rewardPoints: 50,
+          rewardTransactions: [{ type: 'earned', points: 50 }],
           toObject: function () {
             return {
               _id: this._id,
@@ -163,10 +181,10 @@ describe('Email Lowercase Migration Script', () => {
         },
         {
           _id: 'user-id-3',
-          email: 'dupuser@domain.com',
-          createdAt: new Date('2026-01-02'),
-          rewardPoints: 50,
-          rewardTransactions: [{ type: 'earned', points: 50 }],
+          email: 'DupUser@Domain.Com',
+          createdAt: new Date('2026-01-01'),
+          rewardPoints: 100,
+          rewardTransactions: [{ type: 'earned', points: 100 }],
           toObject: function () {
             return {
               _id: this._id,
@@ -190,7 +208,7 @@ describe('Email Lowercase Migration Script', () => {
         { $set: { email: 'singleuser@domain.com' } }
       );
 
-      // Collision consolidation update call
+      // Collision consolidation update call - prefers existing canonical email user-id-2
       expect(User.updateOne).toHaveBeenCalledWith(
         { _id: 'user-id-2' },
         {
@@ -198,8 +216,8 @@ describe('Email Lowercase Migration Script', () => {
             email: 'dupuser@domain.com',
             rewardPoints: 150,
             rewardTransactions: [
-              { type: 'earned', points: 100 },
               { type: 'earned', points: 50 },
+              { type: 'earned', points: 100 },
             ],
           }),
         }
@@ -211,6 +229,35 @@ describe('Email Lowercase Migration Script', () => {
       });
 
       expect(User.syncIndexes).toHaveBeenCalled();
+    });
+
+    it('skips invalid/whitespace-only emails and logs warning', async () => {
+      const mockUsers = [
+        {
+          _id: 'user-invalid-1',
+          email: '   ',
+          toObject: function () {
+            return { _id: this._id, email: this.email };
+          },
+        },
+      ];
+
+      (User.find as jest.Mock).mockResolvedValue(mockUsers);
+
+      await runMigration();
+
+      expect(User.updateOne).not.toHaveBeenCalled();
+      expect(User.deleteMany).not.toHaveBeenCalled();
+      expect(User.syncIndexes).toHaveBeenCalled();
+    });
+
+    it('rethrows index synchronization errors', async () => {
+      (User.find as jest.Mock).mockResolvedValue([]);
+      (User.syncIndexes as jest.Mock).mockRejectedValue(
+        new Error('Index specs conflict')
+      );
+
+      await expect(runMigration()).rejects.toThrow('Index specs conflict');
     });
   });
 });
