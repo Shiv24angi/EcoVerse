@@ -12,6 +12,7 @@
     "test:ci": "jest --ci",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "migrate:email-lowercase": "ts-node scripts/migrate-email-lowercase.ts",
     "prepare": "husky || true"
   },
   "dependencies": {

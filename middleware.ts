@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
+import { normalizeEmail } from './lib/normalize-email';
 
 const protectedRoutes = [
   '/dashboard',
@@ -35,7 +36,7 @@ export async function middleware(request: NextRequest) {
   if (token) {
     const payload = await verifyToken(token);
     if (payload && payload.email) {
-      requestHeaders.set('x-user-email', payload.email.toLowerCase());
+      requestHeaders.set('x-user-email', normalizeEmail(payload.email));
     } else if (isProtectedRoute) {
       // Invalid token on a protected route
       return NextResponse.redirect(new URL('/auth/signin', request.url));

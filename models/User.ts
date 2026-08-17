@@ -188,7 +188,12 @@ const UserSchema = new mongoose.Schema(
     name: { type: String, required: true },
     username: { type: String, default: null },
     full_name: { type: String, default: null },
-    email: { type: String, required: true, unique: true },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
     password: { type: String, required: false, default: null },
     monthlyCarbon: { type: Number, default: 0 },
     monthlyCarbonGoal: { type: Number, default: null },
@@ -227,6 +232,14 @@ const UserSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+  }
+);
+UserSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    collation: { locale: 'en', strength: 2 },
+    name: 'user_email_unique_ci',
   }
 );
 UserSchema.index({ firebaseUid: 1 }, { sparse: true });
