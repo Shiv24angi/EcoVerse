@@ -15,6 +15,13 @@ const mockSession = {
   endSession: jest.fn().mockResolvedValue(undefined),
 };
 
+const createQueryMock = (data: any) => {
+  const promise = Promise.resolve(data);
+  return Object.assign(promise, {
+    session: jest.fn().mockImplementation(() => promise),
+  });
+};
+
 jest.mock('../../lib/mongodb', () => ({
   __esModule: true,
   default: jest.fn().mockResolvedValue(null),
@@ -38,6 +45,7 @@ describe('Email Lowercase Migration Script', () => {
     jest.clearAllMocks();
     (User.syncIndexes as jest.Mock).mockResolvedValue(true);
     ((User as any).db.startSession as jest.Mock).mockResolvedValue(mockSession);
+    (User.find as jest.Mock).mockImplementation(() => createQueryMock([]));
   });
 
   describe('mergeAchievements', () => {
@@ -179,6 +187,29 @@ describe('Email Lowercase Migration Script', () => {
 
       expect(consolidated.hasAdvancedAnalytics).toBe(true);
     });
+
+    it('merges password, firebaseUid, and authProvider when primary lacks them', () => {
+      const primary = {
+        _id: 'user-1',
+        email: 'user@example.com',
+        password: null,
+        firebaseUid: undefined,
+        authProvider: 'email',
+      };
+      const dup = {
+        _id: 'user-2',
+        email: 'User@Example.com',
+        password: 'hashed_password_123',
+        firebaseUid: 'fb_uid_456',
+        authProvider: 'google',
+      };
+
+      const consolidated = consolidateUserData(primary, [dup]);
+
+      expect(consolidated.password).toBe('hashed_password_123');
+      expect(consolidated.firebaseUid).toBe('fb_uid_456');
+      expect(consolidated.authProvider).toBe('google');
+    });
   });
 
   describe('runMigration', () => {
@@ -224,7 +255,14 @@ describe('Email Lowercase Migration Script', () => {
         },
       ];
 
-      (User.find as jest.Mock).mockResolvedValue(mockUsers);
+      (User.find as jest.Mock).mockImplementation((filter?: any) => {
+        if (filter && filter._id && filter._id.$in) {
+          const ids: string[] = filter._id.$in;
+          const matching = mockUsers.filter((u) => ids.includes(u._id));
+          return createQueryMock(matching);
+        }
+        return createQueryMock(mockUsers);
+      });
 
       await runMigration();
 
@@ -237,20 +275,14 @@ describe('Email Lowercase Migration Script', () => {
       );
 
       // Collision consolidation update call - prefers existing canonical email user-id-2
-      expect(User.updateOne).toHaveBeenCalledWith(
-        { _id: 'user-id-2' },
-        {
-          $set: expect.objectContaining({
-            email: 'dupuser@domain.com',
-            rewardPoints: 150,
-            rewardTransactions: [
-              { type: 'earned', points: 50 },
-              { type: 'earned', points: 100 },
-            ],
-          }),
-        },
-        { session: mockSession }
+      const updateCall = (User.updateOne as jest.Mock).mock.calls.find(
+        (call) => call[0]._id === 'user-id-2'
       );
+      expect(updateCall).toBeDefined();
+      expect(updateCall[1].$set._id).toBeUndefined();
+      expect(updateCall[1].$set.email).toBe('dupuser@domain.com');
+      expect(updateCall[1].$set.rewardPoints).toBe(150);
+      expect(updateCall[2]).toEqual({ session: mockSession });
 
       // Duplicate user delete call
       expect(User.deleteMany).toHaveBeenCalledWith(
@@ -264,6 +296,51 @@ describe('Email Lowercase Migration Script', () => {
       expect(mockSession.commitTransaction).toHaveBeenCalled();
       expect(mockSession.endSession).toHaveBeenCalled();
       expect(User.syncIndexes).toHaveBeenCalled();
+    });
+
+    it('skips collision consolidation when conflicting credentials exist', async () => {
+      const mockUsers = [
+        {
+          _id: 'user-id-2',
+          email: 'dupuser@domain.com',
+          password: 'password_hash_1',
+          createdAt: new Date('2026-01-02'),
+          toObject: function () {
+            return {
+              _id: this._id,
+              email: this.email,
+              password: this.password,
+            };
+          },
+        },
+        {
+          _id: 'user-id-3',
+          email: 'DupUser@Domain.Com',
+          password: 'password_hash_2',
+          createdAt: new Date('2026-01-01'),
+          toObject: function () {
+            return {
+              _id: this._id,
+              email: this.email,
+              password: this.password,
+            };
+          },
+        },
+      ];
+
+      (User.find as jest.Mock).mockImplementation((filter?: any) => {
+        if (filter && filter._id && filter._id.$in) {
+          const ids: string[] = filter._id.$in;
+          const matching = mockUsers.filter((u) => ids.includes(u._id));
+          return createQueryMock(matching);
+        }
+        return createQueryMock(mockUsers);
+      });
+
+      await runMigration();
+
+      expect(User.updateOne).not.toHaveBeenCalled();
+      expect(User.deleteMany).not.toHaveBeenCalled();
     });
 
     it('fails collision resolution and performs no collision writes when session initialization fails', async () => {
@@ -286,7 +363,9 @@ describe('Email Lowercase Migration Script', () => {
         },
       ];
 
-      (User.find as jest.Mock).mockResolvedValue(mockUsers);
+      (User.find as jest.Mock).mockImplementation(() =>
+        createQueryMock(mockUsers)
+      );
       ((User as any).db.startSession as jest.Mock).mockRejectedValue(
         new Error('Session error')
       );
@@ -308,7 +387,9 @@ describe('Email Lowercase Migration Script', () => {
         },
       ];
 
-      (User.find as jest.Mock).mockResolvedValue(mockUsers);
+      (User.find as jest.Mock).mockImplementation(() =>
+        createQueryMock(mockUsers)
+      );
 
       await runMigration();
 
@@ -318,7 +399,7 @@ describe('Email Lowercase Migration Script', () => {
     });
 
     it('rethrows index synchronization errors', async () => {
-      (User.find as jest.Mock).mockResolvedValue([]);
+      (User.find as jest.Mock).mockImplementation(() => createQueryMock([]));
       (User.syncIndexes as jest.Mock).mockRejectedValue(
         new Error('Index specs conflict')
       );

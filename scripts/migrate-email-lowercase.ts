@@ -161,6 +161,48 @@ export function consolidateUserData(
     Boolean(primary.hasAdvancedAnalytics) ||
     duplicates.some((d) => Boolean(d.hasAdvancedAnalytics));
 
+  if (
+    (!merged.password || String(merged.password).trim() === '') &&
+    duplicates.some((d) => d.password && String(d.password).trim() !== '')
+  ) {
+    const dupWithPass = duplicates.find(
+      (d) => d.password && String(d.password).trim() !== ''
+    );
+    if (dupWithPass) {
+      merged.password = dupWithPass.password;
+    }
+  }
+
+  if (
+    (!merged.firebaseUid || String(merged.firebaseUid).trim() === '') &&
+    duplicates.some((d) => d.firebaseUid && String(d.firebaseUid).trim() !== '')
+  ) {
+    const dupWithUid = duplicates.find(
+      (d) => d.firebaseUid && String(d.firebaseUid).trim() !== ''
+    );
+    if (dupWithUid) {
+      merged.firebaseUid = dupWithUid.firebaseUid;
+    }
+  }
+
+  if (
+    (!merged.authProvider || merged.authProvider === 'email') &&
+    duplicates.some((d) => d.authProvider && d.authProvider !== 'email')
+  ) {
+    const dupWithProvider = duplicates.find(
+      (d) => d.authProvider && d.authProvider !== 'email'
+    );
+    if (dupWithProvider) {
+      merged.authProvider = dupWithProvider.authProvider;
+    }
+  } else if (
+    (!merged.authProvider || merged.authProvider === 'email') &&
+    merged.firebaseUid &&
+    !merged.password
+  ) {
+    merged.authProvider = 'google';
+  }
+
   return merged;
 }
 
@@ -198,35 +240,7 @@ export async function runMigration() {
         updatedCount++;
       }
     } else if (users.length > 1) {
-      users.sort((a, b) => {
-        const aExact = a.email === canonical ? 0 : 1;
-        const bExact = b.email === canonical ? 0 : 1;
-        if (aExact !== bExact) return aExact - bExact;
-
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return timeA - timeB;
-      });
-
-      const primary = users[0];
-      const duplicates = users.slice(1);
-
-      console.warn(
-        `[Collision Resolution] Consolidating ${duplicates.length} duplicate user record(s) into primary user ID ${primary._id} for canonical email "${canonical}".`
-      );
-
-      const primaryObj = (
-        typeof primary.toObject === 'function' ? primary.toObject() : primary
-      ) as UserData;
-      const dupObjs = duplicates.map((d) =>
-        typeof d.toObject === 'function' ? d.toObject() : d
-      ) as UserData[];
-
-      const consolidated = consolidateUserData(primaryObj, dupObjs);
-
-      consolidated.email = canonical;
-
-      const dupIds = duplicates.map((d) => d._id);
+      const groupUserIds = users.map((u) => u._id);
 
       let session: Record<string, unknown> | null = null;
       try {
@@ -259,6 +273,79 @@ export async function runMigration() {
       }
 
       try {
+        const query = User.find({ _id: { $in: groupUserIds } });
+        const freshUsers = (
+          typeof (query as { session?: (s: unknown) => unknown }).session ===
+          'function'
+            ? await (
+                query as { session: (s: unknown) => Promise<typeof allUsers> }
+              ).session(session)
+            : await query
+        ) as typeof allUsers;
+
+        if (!freshUsers || freshUsers.length <= 1) {
+          if (typeof session.commitTransaction === 'function') {
+            await (session.commitTransaction as () => Promise<void>)();
+          }
+          continue;
+        }
+
+        freshUsers.sort((a, b) => {
+          const aExact = a.email === canonical ? 0 : 1;
+          const bExact = b.email === canonical ? 0 : 1;
+          if (aExact !== bExact) return aExact - bExact;
+
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return timeA - timeB;
+        });
+
+        const passwords = Array.from(
+          new Set(
+            freshUsers
+              .map((u) => u.password)
+              .filter((p) => typeof p === 'string' && p.trim() !== '')
+          )
+        );
+        const firebaseUids = Array.from(
+          new Set(
+            freshUsers
+              .map((u) => u.firebaseUid)
+              .filter((uid) => typeof uid === 'string' && uid.trim() !== '')
+          )
+        );
+
+        if (passwords.length > 1 || firebaseUids.length > 1) {
+          console.warn(
+            `[Credential Conflict Warning] User collision group for canonical email "${canonical}" contains conflicting authentication credentials (password or firebaseUid). Skipping automatic migration for manual remediation.`
+          );
+          if (typeof session.commitTransaction === 'function') {
+            await (session.commitTransaction as () => Promise<void>)();
+          }
+          continue;
+        }
+
+        const primary = freshUsers[0];
+        const duplicates = freshUsers.slice(1);
+
+        console.warn(
+          `[Collision Resolution] Consolidating ${duplicates.length} duplicate user record(s) into primary user ID ${primary._id} for canonical email "${canonical}".`
+        );
+
+        const primaryObj = (
+          typeof primary.toObject === 'function' ? primary.toObject() : primary
+        ) as UserData;
+        const dupObjs = duplicates.map((d) =>
+          typeof d.toObject === 'function' ? d.toObject() : d
+        ) as UserData[];
+
+        const consolidated = consolidateUserData(primaryObj, dupObjs);
+
+        consolidated.email = canonical;
+        delete consolidated._id;
+
+        const dupIds = duplicates.map((d) => d._id);
+
         await User.updateOne(
           { _id: primary._id },
           { $set: consolidated },
@@ -268,6 +355,10 @@ export async function runMigration() {
         if (typeof session.commitTransaction === 'function') {
           await (session.commitTransaction as () => Promise<void>)();
         }
+
+        resolvedCollisionsCount++;
+        removedDuplicatesCount += duplicates.length;
+        updatedCount++;
       } catch (err) {
         if (session && typeof session.abortTransaction === 'function') {
           await (session.abortTransaction as () => Promise<void>)().catch(
@@ -280,10 +371,6 @@ export async function runMigration() {
           await (session.endSession as () => Promise<void>)().catch(() => {});
         }
       }
-
-      resolvedCollisionsCount++;
-      removedDuplicatesCount += duplicates.length;
-      updatedCount++;
     }
   }
 
