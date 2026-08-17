@@ -8,6 +8,13 @@ import {
 import User from '../../models/User';
 import dbConnect from '../../lib/mongodb';
 
+const mockSession = {
+  startTransaction: jest.fn(),
+  commitTransaction: jest.fn().mockResolvedValue(undefined),
+  abortTransaction: jest.fn().mockResolvedValue(undefined),
+  endSession: jest.fn().mockResolvedValue(undefined),
+};
+
 jest.mock('../../lib/mongodb', () => ({
   __esModule: true,
   default: jest.fn().mockResolvedValue(null),
@@ -20,6 +27,9 @@ jest.mock('../../models/User', () => ({
     updateOne: jest.fn(),
     deleteMany: jest.fn(),
     syncIndexes: jest.fn().mockResolvedValue(true),
+    db: {
+      startSession: jest.fn(),
+    },
   },
 }));
 
@@ -27,6 +37,7 @@ describe('Email Lowercase Migration Script', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (User.syncIndexes as jest.Mock).mockResolvedValue(true);
+    ((User as any).db.startSession as jest.Mock).mockResolvedValue(mockSession);
   });
 
   describe('mergeAchievements', () => {
@@ -151,6 +162,23 @@ describe('Email Lowercase Migration Script', () => {
         '2026-02': { carbon: 5, scans: 1, points: 10 },
       });
     });
+
+    it('preserves hasAdvancedAnalytics with logical OR when true only on a duplicate', () => {
+      const primary = {
+        _id: 'user-1',
+        email: 'user@example.com',
+        hasAdvancedAnalytics: false,
+      };
+      const dup = {
+        _id: 'user-2',
+        email: 'User@Example.com',
+        hasAdvancedAnalytics: true,
+      };
+
+      const consolidated = consolidateUserData(primary, [dup]);
+
+      expect(consolidated.hasAdvancedAnalytics).toBe(true);
+    });
   });
 
   describe('runMigration', () => {
@@ -220,15 +248,53 @@ describe('Email Lowercase Migration Script', () => {
               { type: 'earned', points: 100 },
             ],
           }),
-        }
+        },
+        { session: mockSession }
       );
 
       // Duplicate user delete call
-      expect(User.deleteMany).toHaveBeenCalledWith({
-        _id: { $in: ['user-id-3'] },
-      });
+      expect(User.deleteMany).toHaveBeenCalledWith(
+        {
+          _id: { $in: ['user-id-3'] },
+        },
+        { session: mockSession }
+      );
 
+      expect(mockSession.startTransaction).toHaveBeenCalled();
+      expect(mockSession.commitTransaction).toHaveBeenCalled();
+      expect(mockSession.endSession).toHaveBeenCalled();
       expect(User.syncIndexes).toHaveBeenCalled();
+    });
+
+    it('fails collision resolution and performs no collision writes when session initialization fails', async () => {
+      const mockUsers = [
+        {
+          _id: 'user-id-2',
+          email: 'dupuser@domain.com',
+          createdAt: new Date('2026-01-02'),
+          toObject: function () {
+            return { _id: this._id, email: this.email };
+          },
+        },
+        {
+          _id: 'user-id-3',
+          email: 'DupUser@Domain.Com',
+          createdAt: new Date('2026-01-01'),
+          toObject: function () {
+            return { _id: this._id, email: this.email };
+          },
+        },
+      ];
+
+      (User.find as jest.Mock).mockResolvedValue(mockUsers);
+      ((User as any).db.startSession as jest.Mock).mockRejectedValue(
+        new Error('Session error')
+      );
+
+      await expect(runMigration()).rejects.toThrow('Session error');
+
+      expect(User.updateOne).not.toHaveBeenCalled();
+      expect(User.deleteMany).not.toHaveBeenCalled();
     });
 
     it('skips invalid/whitespace-only emails and logs warning', async () => {

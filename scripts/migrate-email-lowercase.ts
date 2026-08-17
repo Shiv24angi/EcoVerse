@@ -157,6 +157,9 @@ export function consolidateUserData(
     primary.monthlyStats as MonthlyStatsMap,
     duplicates.map((d) => d.monthlyStats as MonthlyStatsMap)
   );
+  merged.hasAdvancedAnalytics =
+    Boolean(primary.hasAdvancedAnalytics) ||
+    duplicates.some((d) => Boolean(d.hasAdvancedAnalytics));
 
   return merged;
 }
@@ -226,46 +229,55 @@ export async function runMigration() {
       const dupIds = duplicates.map((d) => d._id);
 
       let session: Record<string, unknown> | null = null;
-      if (
-        User.db &&
-        typeof (User.db as { startSession?: () => Promise<unknown> })
-          .startSession === 'function'
-      ) {
-        try {
-          session = (await (
-            User.db as { startSession: () => Promise<Record<string, unknown>> }
-          ).startSession()) as Record<string, unknown>;
-          if (typeof session.startTransaction === 'function') {
-            (session.startTransaction as () => void)();
-          }
-        } catch (_) {
-          session = null;
+      try {
+        if (
+          !User.db ||
+          typeof (User.db as { startSession?: unknown }).startSession !==
+            'function'
+        ) {
+          throw new Error(
+            'Database session support is required for collision resolution'
+          );
         }
+
+        session = (await (
+          User.db as { startSession: () => Promise<Record<string, unknown>> }
+        ).startSession()) as Record<string, unknown>;
+
+        if (!session || typeof session.startTransaction !== 'function') {
+          throw new Error(
+            'Transaction support is required for collision resolution'
+          );
+        }
+
+        (session.startTransaction as () => void)();
+      } catch (initErr) {
+        if (session && typeof session.endSession === 'function') {
+          await (session.endSession as () => Promise<void>)().catch(() => {});
+        }
+        throw initErr;
       }
 
       try {
-        if (session) {
-          await User.updateOne(
-            { _id: primary._id },
-            { $set: consolidated },
-            { session }
-          );
-          await User.deleteMany({ _id: { $in: dupIds } }, { session });
-          if (typeof session.commitTransaction === 'function') {
-            await (session.commitTransaction as () => Promise<void>)();
-          }
-        } else {
-          await User.updateOne({ _id: primary._id }, { $set: consolidated });
-          await User.deleteMany({ _id: { $in: dupIds } });
+        await User.updateOne(
+          { _id: primary._id },
+          { $set: consolidated },
+          { session }
+        );
+        await User.deleteMany({ _id: { $in: dupIds } }, { session });
+        if (typeof session.commitTransaction === 'function') {
+          await (session.commitTransaction as () => Promise<void>)();
         }
       } catch (err) {
         if (session && typeof session.abortTransaction === 'function') {
-          await (session.abortTransaction as () => Promise<void>)();
+          await (session.abortTransaction as () => Promise<void>)().catch(
+            () => {}
+          );
         }
         throw err;
       } finally {
         if (session && typeof session.endSession === 'function') {
-          await (session.endSession as () => Promise<void>)();
+          await (session.endSession as () => Promise<void>)().catch(() => {});
         }
       }
 
